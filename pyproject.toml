@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mixins"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Composable mixins for Python services: structured logging with correlation IDs and sensitive data classification."
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -60,6 +60,9 @@ dev = [
     "types-grpcio",
     "mixins[all]",
 ]
+
+[tool.hatch.version]
+path = "mixin_logging/config/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["mixin_logging", "mixin_sensitivity"]

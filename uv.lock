@@ -859,7 +859,6 @@ wheels = [
 
 [[package]]
 name = "mixins"
-version = "0.1.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -924,7 +923,7 @@ requires-dist = [
     { name = "urllib3", marker = "extra == 'all'" },
     { name = "urllib3", marker = "extra == 'urllib3'" },
 ]
-provides-extras = ["aiohttp", "botocore", "celery", "grpc", "httpx", "requests", "urllib3", "all"]
+provides-extras = ["aiohttp", "all", "botocore", "celery", "grpc", "httpx", "requests", "urllib3"]
 
 [package.metadata.requires-dev]
 dev = [
