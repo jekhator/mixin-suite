@@ -1,0 +1,37 @@
+name: dto-strict
+
+# DTO-discipline lint (frozen+slots, facade-ban, R001-R006). Per-repo copy of
+# the canonical gate; runs on the root-layout package. Empty baseline at
+# v0.2.0 (clean rebuild — 0 violations).
+# Lint step: whole package (native test-file exemption via R007/R008 rules).
+# LOC-cap step: source dirs only (test density exempt from cap per review record).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Run dto-strict
+        run: uvx --python 3.12 dto-strict@0.3.0 mixin_logging/ mixin_sensitivity/ --format github
+      - name: Check LOC cap
+        run: |
+          for dir in mixin_logging/adapters/{aiohttp,asgi,botocore,celery,cloud,constants,graphql,grpc,httpx,requests,stdlib,urllib3,websocket,wsgi} mixin_logging/common/{constants,utils} mixin_logging/config mixin_logging/context/{constants,correlation} mixin_logging/decorators/{constants,logged} mixin_logging/mixin mixin_sensitivity/common/{constants,utils} mixin_sensitivity/config mixin_sensitivity/decorators/{constants,phi_aware,pci_aware,pii_aware,secret_aware,sensitive} mixin_sensitivity/services/{classify,mask}; do
+            uvx --python 3.12 dto-strict@0.3.0 loc-cap "$dir"
+          done

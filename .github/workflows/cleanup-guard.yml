@@ -1,0 +1,63 @@
+name: Cleanup Guard
+
+on:
+  pull_request
+
+jobs:
+  adapter-documentation:
+    name: Verify all adapters have audit and review docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check adapter documentation completeness
+        run: |
+          set -e
+
+          echo "Checking that all adapter packages have audit and review documentation..."
+
+          ADAPTERS_DIR="mixin_logging/adapters"
+          AUDITS_DIR="docs/audits"
+          REVIEWS_DIR="docs/reviews"
+
+          if [ ! -d "$ADAPTERS_DIR" ]; then
+            echo "ERROR: Adapters directory not found: $ADAPTERS_DIR"
+            exit 1
+          fi
+
+          # Find all adapter directories (exclude non-adapter dirs like constants, tests, __pycache__)
+          ADAPTERS=$(find "$ADAPTERS_DIR" -maxdepth 1 -type d ! -name "__pycache__" ! -name "tests" ! -name "constants" ! -name "adapters" ! -path "$ADAPTERS_DIR")
+
+          MISSING_DOCS=0
+
+          for adapter_dir in $ADAPTERS; do
+            adapter_name=$(basename "$adapter_dir")
+
+            # Skip if no adapter files (empty directory)
+            if [ -z "$(find "$adapter_dir" -maxdepth 1 -type f -name "*.py")" ]; then
+              continue
+            fi
+
+            audit_file=$(find "$AUDITS_DIR" -name "*$adapter_name*audit*" 2>/dev/null | head -1)
+            review_file=$(find "$REVIEWS_DIR" -name "*$adapter_name*review*" 2>/dev/null | head -1)
+
+            if [ -z "$audit_file" ]; then
+              echo "FAIL: Adapter '$adapter_name' missing audit doc in $AUDITS_DIR"
+              MISSING_DOCS=$((MISSING_DOCS + 1))
+            fi
+
+            if [ -z "$review_file" ]; then
+              echo "FAIL: Adapter '$adapter_name' missing review doc in $REVIEWS_DIR"
+              MISSING_DOCS=$((MISSING_DOCS + 1))
+            fi
+          done
+
+          if [ $MISSING_DOCS -gt 0 ]; then
+            echo ""
+            echo "ERROR: $MISSING_DOCS adapter(s) missing documentation."
+            echo "Each adapter under mixin_logging/adapters/<name>/ must have:"
+            echo "  - docs/audits/*<name>*audit*.md"
+            echo "  - docs/reviews/*<name>*review*.md"
+            exit 1
+          fi
+
+          echo "✓ All adapter packages have corresponding audit and review docs."
