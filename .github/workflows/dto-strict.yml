@@ -33,7 +33,7 @@ jobs:
           echo "=== dto-strict: mixin_logging ===" && \
           uvx --python 3.12 dto-strict@0.3.0 mixin_logging/ --format github && \
           echo "=== dto-strict: mixin_sensitivity ===" && \
-          uvx --python 3.12 dto-strict@0.3.0 mixin_sensitivity/ --baseline .dto-strict-baseline-sensitivity.json --format github
+          uvx --python 3.12 dto-strict@0.3.0 mixin_sensitivity/ --format github
       - name: Check LOC cap
         run: |
           for dir in mixin_logging/adapters/{aiohttp,asgi,botocore,celery,cloud,constants,graphql,grpc,httpx,requests,stdlib,urllib3,websocket,wsgi} mixin_logging/common/{constants,utils} mixin_logging/config mixin_logging/context/{constants,correlation} mixin_logging/decorators/{constants,logged} mixin_logging/mixin mixin_sensitivity/common/{constants,utils} mixin_sensitivity/config mixin_sensitivity/decorators/{constants,phi_aware,pci_aware,pii_aware,secret_aware,sensitive} mixin_sensitivity/services/{classify,mask}; do
