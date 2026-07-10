@@ -858,7 +858,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mixins"
+name = "mixin-suite"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -896,7 +896,7 @@ urllib3 = [
 [package.dev-dependencies]
 dev = [
     { name = "grpcio-tools" },
-    { name = "mixins", extra = ["all"] },
+    { name = "mixin-suite", extra = ["all"] },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -928,7 +928,7 @@ provides-extras = ["aiohttp", "all", "botocore", "celery", "grpc", "httpx", "req
 [package.metadata.requires-dev]
 dev = [
     { name = "grpcio-tools" },
-    { name = "mixins", extras = ["all"] },
+    { name = "mixin-suite", extras = ["all"] },
     { name = "mypy" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-asyncio" },

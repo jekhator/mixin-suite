@@ -33,4 +33,4 @@ The original distributions remain live on PyPI:
 - `mixin-logging` (v0.6.0 and prior): https://pypi.org/project/mixin-logging/
 - `mixin-sensitivity` (v0.4.0 and prior): https://pypi.org/project/mixin-sensitivity/
 
-New consumers should use the unified `mixins` distribution. Existing consumers of the separate packages can continue using them without changes.
+New consumers should use the unified `mixin-suite` distribution. Existing consumers of the separate packages can continue using them without changes.
