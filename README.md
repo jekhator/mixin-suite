@@ -1,10 +1,10 @@
-# mixins
+# mixin-suite
 
 **Composable Python mixins for production services:** structured logging with automatic correlation-ID propagation, and sensitive-data classification and masking for frozen dataclasses.
 
-[![PyPI version](https://img.shields.io/pypi/v/mixins.svg)](https://pypi.org/project/mixins/)
+[![PyPI version](https://img.shields.io/pypi/v/mixins.svg)](https://pypi.org/project/mixin-suite/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Python Versions](https://img.shields.io/pypi/pyversions/mixins.svg)](https://pypi.org/project/mixins/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/mixins.svg)](https://pypi.org/project/mixin-suite/)
 
 This distribution consolidates two concern-specific packages:
 
@@ -75,26 +75,26 @@ logger.info("Creds: %s", creds)  # SAFE: repr shows "api_token=***"
 ## Installation
 
 ```bash
-pip install mixins
+pip install mixin-suite
 ```
 
 or with uv:
 
 ```bash
-uv add mixins
+uv add mixin-suite
 ```
 
 With optional dependencies for specific logging adapters:
 
 ```bash
-uv add "mixins[aiohttp]"      # aiohttp client instrumentation
-uv add "mixins[urllib3]"      # urllib3 client instrumentation
-uv add "mixins[httpx]"        # HTTPX client instrumentation
-uv add "mixins[requests]"     # Requests client instrumentation
-uv add "mixins[celery]"       # Celery task propagation
-uv add "mixins[botocore]"     # AWS SDK instrumentation
-uv add "mixins[grpc]"         # gRPC server instrumentation
-uv add "mixins[all]"          # All adapters
+uv add "mixin-suite[aiohttp]"      # aiohttp client instrumentation
+uv add "mixin-suite[urllib3]"      # urllib3 client instrumentation
+uv add "mixin-suite[httpx]"        # HTTPX client instrumentation
+uv add "mixin-suite[requests]"     # Requests client instrumentation
+uv add "mixin-suite[celery]"       # Celery task propagation
+uv add "mixin-suite[botocore]"     # AWS SDK instrumentation
+uv add "mixin-suite[grpc]"         # gRPC server instrumentation
+uv add "mixin-suite[all]"          # All adapters
 ```
 
 Requires **Python 3.11+** (3.11 and 3.12 tested).

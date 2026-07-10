@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mixins"
+name = "mixin-suite"
 dynamic = ["version"]
 description = "Composable mixins for Python services: structured logging with correlation IDs and sensitive data classification."
 readme = "README.md"
@@ -25,10 +25,10 @@ classifiers = [
 keywords = ["logging", "structured-logging", "correlation-id", "distributed-tracing", "observability", "dataclass", "repr", "serialization", "sensitive-data", "masking"]
 
 [project.urls]
-Homepage = "https://pypi.org/project/mixins"
-Repository = "https://github.com/jekhator/mixins"
-Issues = "https://github.com/jekhator/mixins/issues"
-Changelog = "https://github.com/jekhator/mixins/blob/main/CHANGELOG.md"
+Homepage = "https://pypi.org/project/mixin-suite/"
+Repository = "https://github.com/jekhator/mixin-suite"
+Issues = "https://github.com/jekhator/mixin-suite/issues"
+Changelog = "https://github.com/jekhator/mixin-suite/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 aiohttp = ["aiohttp"]
@@ -58,7 +58,7 @@ dev = [
     "types-requests",
     "grpcio-tools",
     "types-grpcio",
-    "mixins[all]",
+    "mixin-suite[all]",
 ]
 
 [tool.hatch.version]
