@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to logging-mixin!
+Thank you for your interest in contributing to mixin-suite!
 
 ## Development Setup
 
@@ -12,8 +12,8 @@ Thank you for your interest in contributing to logging-mixin!
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jekhator/logging-mixin.git
-   cd logging-mixin
+   git clone https://github.com/jekhator/mixin-suite.git
+   cd mixin-suite
    ```
 
 2. Install dependencies and all optional extras:
@@ -35,7 +35,7 @@ uv run pytest
 
 For coverage report:
 ```bash
-uv run pytest --cov=logging_mixin
+uv run pytest --cov=mixin_logging --cov=mixin_sensitivity --cov-report=term-missing
 ```
 
 ## Linting and Code Style
