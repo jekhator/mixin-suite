@@ -31,7 +31,7 @@ jobs:
       - name: Run dto-strict
         run: |
           echo "=== dto-strict: mixin_logging ===" && \
-          uvx --python 3.12 dto-strict@0.3.0 mixin_logging/ --baseline .dto-strict-baseline-logging.json --format github && \
+          uvx --python 3.12 dto-strict@0.3.0 mixin_logging/ --format github && \
           echo "=== dto-strict: mixin_sensitivity ===" && \
           uvx --python 3.12 dto-strict@0.3.0 mixin_sensitivity/ --baseline .dto-strict-baseline-sensitivity.json --format github
       - name: Check LOC cap
