@@ -1,0 +1,73 @@
+name: Attribution Gate
+
+# Server-side enforcement: rejects pushes/PRs whose commit messages contain
+# Claude/Anthropic attribution. Catches GitHub squash-merge propagation that
+# bypasses local commit-msg, pre-push, and PreToolUse hooks.
+#
+# Per-repo copy of the canonical attribution gate.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  scan:
+    name: Scan commit messages for attribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine commit range
+        id: range
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            BASE="$PR_BASE"
+            HEAD="$PR_HEAD"
+          else
+            BASE="$PUSH_BEFORE"
+            HEAD="$PUSH_AFTER"
+            if [ "$BASE" = "0000000000000000000000000000000000000000" ] || [ -z "$BASE" ]; then
+              git fetch origin main:refs/remotes/origin/main 2>/dev/null || true
+              BASE=$(git merge-base origin/main "$HEAD" 2>/dev/null || git rev-list --max-parents=0 "$HEAD" | tail -1)
+            fi
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "head=$HEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Scan for Claude/Anthropic attribution
+        env:
+          BASE: ${{ steps.range.outputs.base }}
+          HEAD: ${{ steps.range.outputs.head }}
+          PATTERN: 'co-authored-by.*(claude|anthropic)|generated with claude|@claude|noreply@anthropic|🤖'
+        run: |
+          set -uo pipefail
+          OFFENDING=""
+          for sha in $(git rev-list "$BASE..$HEAD"); do
+            MSG=$(git log -1 --pretty=format:"%B" "$sha")
+            if echo "$MSG" | grep -qiE "$PATTERN"; then
+              AUTHOR=$(git log -1 --pretty=format:"%an" "$sha")
+              SUBJECT=$(git log -1 --pretty=format:"%s" "$sha")
+              OFFENDING="${OFFENDING}  ${sha:0:8} | author=${AUTHOR} | ${SUBJECT}"$'\n'
+            fi
+          done
+          if [ -n "$OFFENDING" ]; then
+            echo "::error::Claude/Anthropic attribution detected in commit messages"
+            echo "Offending commits in range $BASE..$HEAD:"
+            printf '%s' "$OFFENDING"
+            exit 1
+          fi
+          echo "OK: no attribution detected in $BASE..$HEAD"

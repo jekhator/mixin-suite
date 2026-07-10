@@ -1,0 +1,1 @@
+"""WSGI adapter tests."""

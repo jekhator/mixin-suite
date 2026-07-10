@@ -1,0 +1,133 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mixins"
+dynamic = ["version"]
+description = "Composable mixins for Python services: structured logging with correlation IDs and sensitive data classification."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "C. James Ekhator" }]
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+keywords = ["logging", "structured-logging", "correlation-id", "distributed-tracing", "observability", "dataclass", "repr", "serialization", "sensitive-data", "masking"]
+
+[project.urls]
+Homepage = "https://pypi.org/project/mixins"
+Repository = "https://github.com/jekhator/mixins"
+Issues = "https://github.com/jekhator/mixins/issues"
+Changelog = "https://github.com/jekhator/mixins/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+aiohttp = ["aiohttp"]
+botocore = ["botocore"]
+celery = ["celery"]
+grpc = ["grpcio"]
+httpx = ["httpx"]
+requests = ["requests"]
+urllib3 = ["urllib3"]
+all = [
+    "aiohttp",
+    "botocore",
+    "celery",
+    "grpcio",
+    "httpx",
+    "requests",
+    "urllib3"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "pytest-asyncio",
+    "mypy",
+    "ruff",
+    "types-requests",
+    "grpcio-tools",
+    "types-grpcio",
+    "mixins[all]",
+]
+
+[tool.hatch.version]
+path = "mixin_logging/config/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mixin_logging", "mixin_sensitivity"]
+exclude = [
+    "mixin_logging/**/tests",
+    "mixin_logging/conftest.py",
+    "mixin_sensitivity/**/tests",
+    "mixin_sensitivity/conftest.py",
+    "conftest.py"
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["mixin_logging", "mixin_sensitivity"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+asyncio_mode = "strict"
+
+[tool.coverage.run]
+source = ["mixin_logging", "mixin_sensitivity"]
+branch = true
+omit = [
+    "mixin_logging/**/tests/*",
+    "mixin_logging/common/constants/tests.py",
+    "mixin_logging/conftest.py",
+    "mixin_sensitivity/**/tests/*",
+    "mixin_sensitivity/conftest.py",
+    "conftest.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = ["I", "TID252", "PLC0414"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["mixin_logging", "mixin_sensitivity"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.dto-strict]
+paths = ["mixin_logging/", "mixin_sensitivity/"]
+
+[tool.dto-strict.loc-cap]
+hard_cap = 300
+soft_target = 200
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
