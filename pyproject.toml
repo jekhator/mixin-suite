@@ -123,6 +123,7 @@ ban-relative-imports = "all"
 
 [tool.dto-strict]
 paths = ["mixin_logging/", "mixin_sensitivity/"]
+exception_tags = ["fixture"]
 
 [tool.dto-strict.loc-cap]
 hard_cap = 300

@@ -2,7 +2,7 @@
 
 ## Reporting Vulnerabilities
 
-If you discover a security vulnerability in logging-mixin, please report it privately using GitHub's security vulnerability reporting feature.
+If you discover a security vulnerability in mixin-suite, please report it privately using GitHub's security vulnerability reporting feature.
 
 ### How to Report
 
@@ -18,4 +18,4 @@ I appreciate responsible disclosure and will acknowledge receipt of your report 
 - Correlation IDs are treated as untrusted user input and sanitized before use
 - No sensitive data is logged by default
 
-For detailed security implementation, see the adapter documentation in `docs/apps/adapters/`.
+For detailed security implementation, see the adapter documentation in `docs/mixin_logging/apps/adapters/` and classifier documentation in `docs/mixin_sensitivity/apps/decorators/`.

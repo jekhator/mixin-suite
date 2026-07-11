@@ -2,9 +2,10 @@
 
 **Composable Python mixins for production services:** structured logging with automatic correlation-ID propagation, and sensitive-data classification and masking for frozen dataclasses.
 
-[![PyPI version](https://img.shields.io/pypi/v/mixins.svg)](https://pypi.org/project/mixin-suite/)
+[![PyPI version](https://img.shields.io/pypi/v/mixin-suite.svg)](https://pypi.org/project/mixin-suite/)
+[![CI](https://github.com/jekhator/mixin-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/jekhator/mixin-suite/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Python Versions](https://img.shields.io/pypi/pyversions/mixins.svg)](https://pypi.org/project/mixin-suite/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/mixin-suite.svg)](https://pypi.org/project/mixin-suite/)
 
 This distribution consolidates two concern-specific packages:
 
@@ -74,30 +75,37 @@ logger.info("Creds: %s", creds)  # SAFE: repr shows "api_token=***"
 
 ## Installation
 
+**Base installation:**
 ```bash
 pip install mixin-suite
 ```
 
 or with uv:
-
 ```bash
 uv add mixin-suite
 ```
 
-With optional dependencies for specific logging adapters:
+**With optional extras for logging adapters:**
 
+Base package includes `mixin_logging` (stdlib adapter only) and `mixin_sensitivity` (no dependencies).
+
+Optional extras (mixin_logging adapters):
+- `[aiohttp]` — aiohttp client instrumentation
+- `[botocore]` — AWS SDK instrumentation
+- `[celery]` — Celery task propagation
+- `[grpc]` — gRPC server instrumentation
+- `[httpx]` — HTTPX client instrumentation
+- `[requests]` — Requests client instrumentation
+- `[urllib3]` — urllib3 client instrumentation
+- `[all]` — All adapters
+
+Install with extras:
 ```bash
-uv add "mixin-suite[aiohttp]"      # aiohttp client instrumentation
-uv add "mixin-suite[urllib3]"      # urllib3 client instrumentation
-uv add "mixin-suite[httpx]"        # HTTPX client instrumentation
-uv add "mixin-suite[requests]"     # Requests client instrumentation
-uv add "mixin-suite[celery]"       # Celery task propagation
-uv add "mixin-suite[botocore]"     # AWS SDK instrumentation
-uv add "mixin-suite[grpc]"         # gRPC server instrumentation
-uv add "mixin-suite[all]"          # All adapters
+uv add "mixin-suite[httpx,botocore]"  # Multiple extras
+uv add "mixin-suite[all]"             # All adapters
 ```
 
-Requires **Python 3.11+** (3.11 and 3.12 tested).
+**Python version:** Requires Python 3.11 or later (3.11 and 3.12 tested).
 
 ## Quick Start
 
@@ -183,7 +191,9 @@ profile = classify(user)
 
 ## Run-Verified Examples
 
-### Complete Logging Example
+These examples are executed against the published mixin-suite==0.1.0 distribution.
+
+### Logging Example: Correlation-ID Propagation
 
 ```python
 import logging
@@ -216,23 +226,23 @@ class DocumentService(LoggingMixin):
 
 
 # Execute with correlation context
-set_correlation_id("req-2026-07-05-001")
+set_correlation_id("req-2026-07-10-001")
 service = DocumentService()
 result = service.upload("report.pdf", 1024000)
 status = service.process("doc-123")
 ```
 
-Output:
+**Output (mixin-suite==0.1.0):**
 ```
-2026-07-06 18:35:59,419 - __main__.DocumentService - INFO - document.upload.start - correlation_id=req-2026-07-05-001
-2026-07-06 18:35:59,419 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-05-001
-2026-07-06 18:35:59,419 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-05-001
-2026-07-06 18:35:59,419 - __main__.DocumentService - INFO - document.process.start - correlation_id=req-2026-07-05-001
-2026-07-06 18:35:59,420 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-05-001
-2026-07-06 18:35:59,420 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-05-001
+2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - document.upload.start - correlation_id=req-2026-07-10-001
+2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
+2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-10-001
+2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - document.process.start - correlation_id=req-2026-07-10-001
+2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-10-001
+2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-10-001
 ```
 
-### Complete Sensitivity Example
+### Sensitivity Example: Data Masking
 
 ```python
 from dataclasses import dataclass, field
@@ -257,15 +267,17 @@ record = HealthRecord(
 
 # Safe repr
 print(repr(record))
-# → HealthRecord(patient_id=42, ssn='***', diagnosis='***', treatment_notes='***', attending_physician='Dr. Smith')
 
 # Introspect profile
 profile = classify(record)
-assert profile.classes == (
-    ('ssn', Sensitivity.PHI),
-    ('diagnosis', Sensitivity.PHI),
-    ('treatment_notes', Sensitivity.PHI),
-)
+print(f"PHI fields: {[f for f, s in profile.classes if s == Sensitivity.PHI]}")
+```
+
+**Output (mixin-suite==0.1.0):**
+```
+HealthRecord(patient_id=42, ssn=***, diagnosis=***, treatment_notes=***, attending_physician='Dr. Smith')
+
+PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 ```
 
 ## Documentation
@@ -273,6 +285,29 @@ assert profile.classes == (
 - **Logging:** See `docs/mixin_logging/` for detailed adapter documentation, architecture, and integration patterns
 - **Sensitivity:** See `docs/mixin_sensitivity/` for classifier API, masking customization, and examples
 - **Historical Changelogs:** See `docs/mixin_logging/CHANGELOG-history.md` and `docs/mixin_sensitivity/CHANGELOG-history.md`
+
+## Public API
+
+### mixin_logging (v0.6.0)
+
+Core classes and functions:
+- `LoggingMixin` — Base class providing `log_info()`, `log_debug()`, and `@logged` support
+- `logged(event_name)` — Decorator for automatic event logging and error handling
+- `set_correlation_id(id)` — Set the correlation ID for the current context
+- `get_correlation_id()` — Retrieve the current correlation ID
+- `clear_correlation_id()` — Clear the correlation ID from context
+- `CorrelationContext` — Data class representing correlation metadata
+- `ContextVarClient` — Internal context-variable manager for correlation propagation
+- `LoggedClient`, `LoggedContainer` — Internal decorator implementation details
+- `PUBLIC_API` — Frozenset of all public names
+
+### mixin_sensitivity (v0.4.0)
+
+Core classes and functions:
+- `sensitive` — Class decorator enabling automatic masking of sensitive fields
+- `classify(dataclass_or_instance)` — Introspect sensitivity profile of a dataclass
+- `Sensitivity` — Enum taxonomy: PHI, PII, PCI, SECRET
+- `SensitivityProfile` — Data class containing field-to-sensitivity mappings
 
 ## Imports
 
