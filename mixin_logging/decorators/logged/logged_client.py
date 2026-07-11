@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import inspect
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
@@ -45,24 +47,120 @@ class LoggedClient:
         self,
         method: Callable[Concatenate[Service, Params], Result],
         for_static_or_class: bool = False,
+        class_module_name: str | None = None,
+        class_name: str | None = None,
     ) -> Callable[Concatenate[Service, Params], Result]:
         """Wrap a single callable with start/error logging envelope.
 
         Args:
             method: The callable to wrap.
-            for_static_or_class: If True, skip logging (method has no LoggingMixin instance).
+            for_static_or_class: If True, use module-level logger fallback.
+            class_module_name: Module of the decorated class (for fallback logger).
+            class_name: Name of the decorated class (for fallback logger).
         """
 
         if for_static_or_class:
+            if class_module_name and class_name:
+                module_logger = logging.getLogger(class_module_name).getChild(
+                    class_name,
+                )
+
+                if asyncio.iscoroutinefunction(method):
+
+                    @functools.wraps(method)
+                    async def async_static_or_class_wrapper(
+                        *args: Params.args, **kwargs: Params.kwargs
+                    ) -> Result:
+                        module_logger.info(self.container.start)
+                        try:
+                            return await method(*args, **kwargs)  # type: ignore[arg-type, return-value]
+                        except Exception as error:
+                            module_logger.error(
+                                self.container.error,
+                                extra={
+                                    const.LOG_FIELD_ERROR_TYPE: type(
+                                        error,
+                                    ).__name__,
+                                    const.LOG_FIELD_ERROR_CODE: getattr(
+                                        error,
+                                        const.ATTRIBUTE_CODE,
+                                        None,
+                                    ),
+                                },
+                            )
+                            raise
+
+                    setattr(
+                        async_static_or_class_wrapper,
+                        const.ATTRIBUTE_LOGGED_MARKER,
+                        True,
+                    )
+                    return async_static_or_class_wrapper  # type: ignore[return-value]
+
+                @functools.wraps(method)
+                def static_or_class_wrapper(
+                    *args: Params.args, **kwargs: Params.kwargs
+                ) -> Result:
+                    module_logger.info(self.container.start)
+                    try:
+                        return method(*args, **kwargs)  # type: ignore[arg-type, return-value]
+                    except Exception as error:
+                        module_logger.error(
+                            self.container.error,
+                            extra={
+                                const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
+                                const.LOG_FIELD_ERROR_CODE: getattr(
+                                    error,
+                                    const.ATTRIBUTE_CODE,
+                                    None,
+                                ),
+                            },
+                        )
+                        raise
+
+                setattr(static_or_class_wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
+                return static_or_class_wrapper  # type: ignore[return-value]
 
             @functools.wraps(method)
-            def static_or_class_wrapper(
+            def static_or_class_wrapper_no_logging(
                 *args: Params.args, **kwargs: Params.kwargs
             ) -> Result:
                 return method(*args, **kwargs)  # type: ignore[arg-type, return-value]
 
-            setattr(static_or_class_wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
-            return static_or_class_wrapper  # type: ignore[return-value]
+            setattr(
+                static_or_class_wrapper_no_logging,
+                const.ATTRIBUTE_LOGGED_MARKER,
+                True,
+            )
+            return static_or_class_wrapper_no_logging  # type: ignore[return-value]
+
+        if asyncio.iscoroutinefunction(method):
+
+            @functools.wraps(method)
+            async def async_wrapper(
+                instance: Service,
+                *args: Params.args,
+                **kwargs: Params.kwargs,
+            ) -> Result:
+                instance.log_info(self.container.start)
+                try:
+                    return await method(instance, *args, **kwargs)  # type: ignore[arg-type, return-value]
+                except Exception as error:
+                    instance.log_error(
+                        self.container.error,
+                        **{
+                            const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
+                            const.LOG_FIELD_ERROR_CODE: getattr(
+                                error,
+                                const.ATTRIBUTE_CODE,
+                                None,
+                            ),
+                        },
+                    )
+                    raise
+
+            setattr(async_wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
+            return async_wrapper  # type: ignore[return-value]
 
         @functools.wraps(method)
         def wrapper(
@@ -105,6 +203,8 @@ class LoggedClient:
                 wrapped = method_client._wrap_callable(  # type: ignore[arg-type, type-var]
                     value.__func__,
                     for_static_or_class=True,
+                    class_module_name=cls.__module__,
+                    class_name=cls.__name__,
                 )
                 setattr(cls, name, classmethod(wrapped))
             elif isinstance(value, staticmethod):
@@ -113,6 +213,8 @@ class LoggedClient:
                 wrapped = method_client._wrap_callable(  # type: ignore[arg-type, type-var]
                     value.__func__,
                     for_static_or_class=True,
+                    class_module_name=cls.__module__,
+                    class_name=cls.__name__,
                 )
                 setattr(cls, name, staticmethod(wrapped))
             elif callable(value):
