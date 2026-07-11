@@ -1,4 +1,4 @@
-# Tree Audit Report — mixin-suite (2026-07-09)
+# Tree Audit Report: mixin-suite (2026-07-09)
 
 ## Summary
 
@@ -53,9 +53,9 @@ No stray files, scripts, scratch directories, or artifacts found at root level.
 
 | Item | Status | Action | Notes |
 |---|---|---|---|
-| Root conftest.py | Absent | None | Correct — per-package conftests provide isolation |
+| Root conftest.py | Absent | None | Correct: per-package conftests provide isolation |
 | `.dto-strict-baseline-*.json` | Removed (by chore/drop-empty-baseline) | Merged | Empty baselines dropped per gating |
-| Per-package conftest.py | Present in both packages | None | Correct — autouse fixtures active, isolation verified |
+| Per-package conftest.py | Present in both packages | None | Correct: autouse fixtures active, isolation verified |
 | Canonical root files | 13 files present | None | Complete and correct |
 | Cache dirs (pytest, mypy, ruff, coverage) | Gitignored | None | Correct via .gitignore |
 | Stray directories at root | None | None | Clean |
