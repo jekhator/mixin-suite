@@ -191,7 +191,7 @@ profile = classify(user)
 
 ## Run-Verified Examples
 
-These examples are executed against the published mixin-suite==0.1.0 distribution.
+These examples are executed against the published mixin-suite==0.1.1 distribution.
 
 ### Logging Example: Correlation-ID Propagation
 
@@ -232,7 +232,7 @@ result = service.upload("report.pdf", 1024000)
 status = service.process("doc-123")
 ```
 
-**Output (mixin-suite==0.1.0):**
+**Output (Python 3.12, mixin-suite==0.1.1):**
 ```
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - document.upload.start - correlation_id=req-2026-07-10-001
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
@@ -273,7 +273,7 @@ profile = classify(record)
 print(f"PHI fields: {[f for f, s in profile.classes if s == Sensitivity.PHI]}")
 ```
 
-**Output (mixin-suite==0.1.0):**
+**Output (Python 3.12, mixin-suite==0.1.1):**
 ```
 HealthRecord(patient_id=42, ssn=***, diagnosis=***, treatment_notes=***, attending_physician='Dr. Smith')
 
