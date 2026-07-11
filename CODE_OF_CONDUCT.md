@@ -2,7 +2,7 @@
 
 ## My Commitment
 
-I maintain this project solo, and I am committed to keeping it a welcoming space for everyone who participates in issues, pull requests, and discussions. I pledge to treat every participant with respect and dignity, regardless of age, body size, caste, disability, ethnicity, gender, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, sexual identity and orientation, or any other dimension of diversity.
+I maintain this project solo, and I am committed to keeping it a welcoming space for everyone who participates in issues, pull requests, and discussions. I pledge to treat every participant with respect and dignity, regardless of age, body size, caste, disability, ethnicity, gender, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or any other dimension of diversity.
 
 ## Standards
 
