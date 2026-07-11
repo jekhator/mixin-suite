@@ -143,10 +143,10 @@ __all__ = [
 
 | Gate | Command | Result |
 |------|---------|--------|
-| **dto-strict** | `uvx dto-strict@0.3.0 mixin_logging/` | ✅ PASS (no violations) |
+| **strict-module** | `uvx --python 3.12 --from strict-suite==0.1.0 strict-module mixin_logging/` | ✅ PASS (no violations) |
 | **ruff check** | `uv run ruff check mixin_logging/` | ✅ PASS (no violations) |
 | **ruff format** | `uv run ruff format mixin_logging/` | ✅ PASS (no changes needed) |
-| **LOC cap (300 hard / 200 soft)** | `uvx dto-strict@0.3.0 loc-cap mixin_logging/` | ✅ PASS (8 files > 200 LOC, 0 files > 300 LOC) |
+| **LOC cap (300 hard / 200 soft)** | `uvx --python 3.12 --from strict-suite==0.1.0 strict-module loc-cap mixin_logging/` | ✅ PASS (8 files > 200 LOC, 0 files > 300 LOC) |
 | **pytest coverage (95% min)** | `uv run pytest --cov --cov-fail-under=95` | ✅ PASS (271 tests) |
 
 ---

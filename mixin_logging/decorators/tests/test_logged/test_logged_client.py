@@ -195,6 +195,66 @@ class TestLoggedDecorator:
         assert error_records[0].__dict__["error_type"] == "RuntimeError"
         assert error_records[0].__dict__["code"] is None
 
+    def test_logged_async_instance_method_emits_events(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged on async instance method emits start/error events."""
+        import asyncio
+
+        class Svc(LoggingMixin):
+            """Test service instance for async @logged decorator testing."""
+
+            __slots__ = ()
+
+            @logged(event=test_const.EVENT_PROCESS)
+            async def do_work_async(self) -> str:
+                await asyncio.sleep(0)
+                return "done"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = asyncio.run(svc.do_work_async())
+
+        assert result == "done"
+        assert len(collector.records) >= 1
+        assert any(
+            rec.getMessage() == test_const.EVENT_PROCESS_START
+            for rec in collector.records
+        )
+
+    def test_logged_async_instance_method_emits_error_event(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged on async instance method emits error event on exception."""
+        import asyncio
+
+        class Svc(LoggingMixin):
+            """Test service instance for async @logged exception handling."""
+
+            __slots__ = ()
+
+            @logged(event=test_const.EVENT_PROCESS)
+            async def do_work_async(self) -> None:
+                await asyncio.sleep(0)
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise ValueError(msg)
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+
+        with pytest.raises(ValueError):
+            asyncio.run(svc.do_work_async())
+
+        error_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_ERROR
+        ]
+        assert len(error_records) == 1
+        assert error_records[0].__dict__["error_type"] == "ValueError"
+
 
 class TestLoggedClient:
     """Tests for LoggedClient: decorator factory and invocation."""
@@ -577,3 +637,187 @@ class TestLoggedClassLevel:
             match=const.ERROR_MSG_TARGET_NOT_CLASS_OR_CALLABLE,
         ):
             decorator(not_a_callable)
+
+    def test_logged_class_level_classmethod_emits_events(self) -> None:
+        """@logged on class emits start/error events for classmethods."""
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with classmethod."""
+
+            __slots__ = ()
+
+            @classmethod
+            def create(cls) -> Svc:
+                return cls()
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        result = Svc.create()
+
+        assert isinstance(result, Svc)
+        assert len(collector.buffer) >= 1
+        messages = [rec.getMessage() for rec in collector.buffer]
+        assert any("process.create.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
+
+    def test_logged_class_level_staticmethod_emits_events(self) -> None:
+        """@logged on class emits start/error events for staticmethods."""
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with staticmethod."""
+
+            __slots__ = ()
+
+            @staticmethod
+            def helper() -> str:
+                return "help"
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        result = Svc.helper()
+
+        assert result == "help"
+        assert len(collector.buffer) >= 1
+        messages = [rec.getMessage() for rec in collector.buffer]
+        assert any("process.helper.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
+
+    def test_logged_class_level_classmethod_error_event(self) -> None:
+        """@logged on class emits error event when classmethod raises."""
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with failing classmethod."""
+
+            __slots__ = ()
+
+            @classmethod
+            def create_failing(cls) -> Svc:
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise ValueError(msg)
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        with pytest.raises(ValueError):
+            Svc.create_failing()
+
+        error_records = [
+            rec
+            for rec in collector.buffer
+            if "process.create_failing.error" in rec.getMessage()
+        ]
+        assert len(error_records) == 1
+        assert error_records[0].__dict__["error_type"] == "ValueError"
+
+    def test_logged_class_level_staticmethod_error_event(self) -> None:
+        """@logged on class emits error event when staticmethod raises."""
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with failing staticmethod."""
+
+            __slots__ = ()
+
+            @staticmethod
+            def helper_failing() -> str:
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise RuntimeError(msg)
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        with pytest.raises(RuntimeError):
+            Svc.helper_failing()
+
+        error_records = [
+            rec
+            for rec in collector.buffer
+            if "process.helper_failing.error" in rec.getMessage()
+        ]
+        assert len(error_records) == 1
+        assert error_records[0].__dict__["error_type"] == "RuntimeError"
+
+    def test_logged_class_level_async_classmethod_emits_events(self) -> None:
+        """@logged on class emits events for async classmethods."""
+        import asyncio
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with async classmethod."""
+
+            __slots__ = ()
+
+            @classmethod
+            async def create_async(cls) -> Svc:
+                await asyncio.sleep(0)
+                return cls()
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        result = asyncio.run(Svc.create_async())
+
+        assert isinstance(result, Svc)
+        assert len(collector.buffer) >= 1
+        messages = [rec.getMessage() for rec in collector.buffer]
+        assert any("process.create_async.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
+
+    def test_logged_class_level_async_staticmethod_emits_events(self) -> None:
+        """@logged on class emits events for async staticmethods."""
+        import asyncio
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with async staticmethod."""
+
+            __slots__ = ()
+
+            @staticmethod
+            async def helper_async() -> str:
+                await asyncio.sleep(0)
+                return "help"
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        result = asyncio.run(Svc.helper_async())
+
+        assert result == "help"
+        assert len(collector.buffer) >= 1
+        messages = [rec.getMessage() for rec in collector.buffer]
+        assert any("process.helper_async.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )

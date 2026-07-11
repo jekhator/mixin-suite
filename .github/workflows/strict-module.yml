@@ -1,4 +1,4 @@
-name: dto-strict
+name: strict-module
 
 # DTO-discipline lint (frozen+slots, facade-ban, R001-R006). Per-repo copy of
 # the canonical gate; runs on the root-layout package. Empty baseline at
@@ -28,14 +28,14 @@ jobs:
           enable-cache: true
       - name: Install Python 3.12
         run: uv python install 3.12
-      - name: Run dto-strict
+      - name: Run strict-module
         run: |
-          echo "=== dto-strict: mixin_logging ===" && \
-          uvx --python 3.12 dto-strict@0.3.0 mixin_logging/ --format github && \
-          echo "=== dto-strict: mixin_sensitivity ===" && \
-          uvx --python 3.12 dto-strict@0.3.0 mixin_sensitivity/ --format github
+          echo "=== strict-module: mixin_logging ===" && \
+          uvx --python 3.12 --from strict-suite==0.1.0 strict-module mixin_logging/ --format github && \
+          echo "=== strict-module: mixin_sensitivity ===" && \
+          uvx --python 3.12 --from strict-suite==0.1.0 strict-module mixin_sensitivity/ --format github
       - name: Check LOC cap
         run: |
           for dir in mixin_logging/adapters/{aiohttp,asgi,botocore,celery,cloud,constants,graphql,grpc,httpx,requests,stdlib,urllib3,websocket,wsgi} mixin_logging/common/{constants,utils} mixin_logging/config mixin_logging/context/{constants,correlation} mixin_logging/decorators/{constants,logged} mixin_logging/mixin mixin_sensitivity/common/{constants,utils} mixin_sensitivity/config mixin_sensitivity/decorators/{constants,phi_aware,pci_aware,pii_aware,secret_aware,sensitive} mixin_sensitivity/services/{classify,mask}; do
-            uvx --python 3.12 dto-strict@0.3.0 loc-cap "$dir"
+            uvx --python 3.12 --from strict-suite==0.1.0 strict-module loc-cap "$dir"
           done
