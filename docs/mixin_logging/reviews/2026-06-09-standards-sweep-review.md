@@ -111,7 +111,7 @@ All remaining constants files (botocore, requests, wsgi, stdlib) also alphabetic
 |------|---------|--------|----------|
 | **ruff check** | `uv run ruff check mixin_logging/` | ✅ PASS | All checks passed! |
 | **ruff format** | `uv run ruff format --check mixin_logging/` | ✅ PASS | 107 files already formatted |
-| **dto-strict** | `uvx dto-strict@0.3.0 mixin_logging/` | ✅ PASS | Clean (no violations) |
+| **strict-module** | `uvx --python 3.12 --from strict-suite==0.1.0 strict-module mixin_logging/` | ✅ PASS | Clean (no violations) |
 | **pytest** | `uv run pytest --cov --cov-fail-under=95 -v` | ✅ PASS | 283 passed in 2.91s |
 
 ---
