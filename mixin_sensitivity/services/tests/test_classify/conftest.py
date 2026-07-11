@@ -11,7 +11,7 @@ from mixin_sensitivity.services.classify.classify_objects import Sensitivity
 
 
 @pytest.fixture
-def mixed_type() -> type[Any]:
+def mixed_type() -> type[Any]:  # noqa: dto-strict-R006  # fixture
     """A frozen dataclass with multiple sensitivity classes and one untagged field."""
 
     @dataclass(frozen=True, slots=True)
@@ -27,7 +27,7 @@ def mixed_type() -> type[Any]:
 
 
 @pytest.fixture
-def unclassified_type() -> type[Any]:
+def unclassified_type() -> type[Any]:  # noqa: dto-strict-R006  # fixture
     """A frozen dataclass with no sensitivity-tagged fields."""
 
     @dataclass(frozen=True, slots=True)
