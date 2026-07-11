@@ -663,9 +663,9 @@ class TestLoggedClassLevel:
         assert isinstance(result, Svc)
         assert len(collector.buffer) >= 1
         messages = [rec.getMessage() for rec in collector.buffer]
-        assert any(
-            "process.create.start" in msg for msg in messages
-        ), f"Expected start event in {messages}"
+        assert any("process.create.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
 
     def test_logged_class_level_staticmethod_emits_events(self) -> None:
         """@logged on class emits start/error events for staticmethods."""
@@ -692,9 +692,9 @@ class TestLoggedClassLevel:
         assert result == "help"
         assert len(collector.buffer) >= 1
         messages = [rec.getMessage() for rec in collector.buffer]
-        assert any(
-            "process.helper.start" in msg for msg in messages
-        ), f"Expected start event in {messages}"
+        assert any("process.helper.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
 
     def test_logged_class_level_classmethod_error_event(self) -> None:
         """@logged on class emits error event when classmethod raises."""
@@ -721,7 +721,8 @@ class TestLoggedClassLevel:
             Svc.create_failing()
 
         error_records = [
-            rec for rec in collector.buffer
+            rec
+            for rec in collector.buffer
             if "process.create_failing.error" in rec.getMessage()
         ]
         assert len(error_records) == 1
@@ -752,7 +753,8 @@ class TestLoggedClassLevel:
             Svc.helper_failing()
 
         error_records = [
-            rec for rec in collector.buffer
+            rec
+            for rec in collector.buffer
             if "process.helper_failing.error" in rec.getMessage()
         ]
         assert len(error_records) == 1
@@ -785,9 +787,9 @@ class TestLoggedClassLevel:
         assert isinstance(result, Svc)
         assert len(collector.buffer) >= 1
         messages = [rec.getMessage() for rec in collector.buffer]
-        assert any(
-            "process.create_async.start" in msg for msg in messages
-        ), f"Expected start event in {messages}"
+        assert any("process.create_async.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
 
     def test_logged_class_level_async_staticmethod_emits_events(self) -> None:
         """@logged on class emits events for async staticmethods."""
@@ -816,6 +818,6 @@ class TestLoggedClassLevel:
         assert result == "help"
         assert len(collector.buffer) >= 1
         messages = [rec.getMessage() for rec in collector.buffer]
-        assert any(
-            "process.helper_async.start" in msg for msg in messages
-        ), f"Expected start event in {messages}"
+        assert any("process.helper_async.start" in msg for msg in messages), (
+            f"Expected start event in {messages}"
+        )
