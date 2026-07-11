@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-11
+
+### Fixed
+
+- Documentation conformance release: README badges and per-package run-verified examples, docs index, corrected extras list formatting, canonical docs tree naming, and removal of internal artifacts. No code changes.
+
 ## [0.1.0] - 2026-07-09
 
 ### Added
