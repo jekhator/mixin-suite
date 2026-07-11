@@ -132,7 +132,7 @@ mixin_logging/
 - **Root-layout package structure**, `mixin_logging/<concern>/` (no `src/` wrapper); one concern per app dir.
 - **Curated public API**, top-level `mixin_logging/__init__.py` is the single source of truth for the public surface. Internal subpackage `__init__.py` files are empty (docstring only, no re-exports). Public users import from the top level: `from mixin_logging import LoggingMixin, logged, CorrelationContext, ...`. Internal code and the top `__init__.py` both import from the defining file (e.g., `from .correlation.correlation_objects import CorrelationContext`), not from subpackage `__init__`s.
 - **Decoupled from masking**, `LoggingMixin` does not inspect or compose masking hooks; callers explicitly pass masked data via `**extra`. This preserves framework-neutral scope and avoids hidden dependencies on `pii-aware-mixin`.
-- **Frozen dataclasses**, `CorrelationContext`, `ContextVarClient`, `@logged` all use `@dataclass(frozen=True, slots=True)` per `dto-strict` standards.
+- **Frozen dataclasses**, `CorrelationContext`, `ContextVarClient`, `@logged` all use `@dataclass(frozen=True, slots=True)` per `strict-module` standards.
 
 ## Adapter Design: ASGI
 
