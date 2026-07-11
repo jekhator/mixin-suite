@@ -90,14 +90,14 @@ uv add mixin-suite
 Base package includes `mixin_logging` (stdlib adapter only) and `mixin_sensitivity` (no dependencies).
 
 Optional extras (mixin_logging adapters):
-- `[aiohttp]` — aiohttp client instrumentation
-- `[botocore]` — AWS SDK instrumentation
-- `[celery]` — Celery task propagation
-- `[grpc]` — gRPC server instrumentation
-- `[httpx]` — HTTPX client instrumentation
-- `[requests]` — Requests client instrumentation
-- `[urllib3]` — urllib3 client instrumentation
-- `[all]` — All adapters
+- `[aiohttp]`: aiohttp client instrumentation
+- `[botocore]`: AWS SDK instrumentation
+- `[celery]`: Celery task propagation
+- `[grpc]`: gRPC server instrumentation
+- `[httpx]`: HTTPX client instrumentation
+- `[requests]`: Requests client instrumentation
+- `[urllib3]`: urllib3 client instrumentation
+- `[all]`: All adapters
 
 Install with extras:
 ```bash
@@ -291,23 +291,23 @@ PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 ### mixin_logging (v0.6.0)
 
 Core classes and functions:
-- `LoggingMixin` — Base class providing `log_info()`, `log_debug()`, and `@logged` support
-- `logged(event_name)` — Decorator for automatic event logging and error handling
-- `set_correlation_id(id)` — Set the correlation ID for the current context
-- `get_correlation_id()` — Retrieve the current correlation ID
-- `clear_correlation_id()` — Clear the correlation ID from context
-- `CorrelationContext` — Data class representing correlation metadata
-- `ContextVarClient` — Internal context-variable manager for correlation propagation
-- `LoggedClient`, `LoggedContainer` — Internal decorator implementation details
-- `PUBLIC_API` — Frozenset of all public names
+- `LoggingMixin`: Base class providing `log_info()`, `log_debug()`, and `@logged` support
+- `logged(event_name)`: Decorator for automatic event logging and error handling
+- `set_correlation_id(id)`: Set the correlation ID for the current context
+- `get_correlation_id()`: Retrieve the current correlation ID
+- `clear_correlation_id()`: Clear the correlation ID from context
+- `CorrelationContext`: Data class representing correlation metadata
+- `ContextVarClient`: Internal context-variable manager for correlation propagation
+- `LoggedClient`, `LoggedContainer`: Internal decorator implementation details
+- `PUBLIC_API`: Frozenset of all public names
 
 ### mixin_sensitivity (v0.4.0)
 
 Core classes and functions:
-- `sensitive` — Class decorator enabling automatic masking of sensitive fields
-- `classify(dataclass_or_instance)` — Introspect sensitivity profile of a dataclass
-- `Sensitivity` — Enum taxonomy: PHI, PII, PCI, SECRET
-- `SensitivityProfile` — Data class containing field-to-sensitivity mappings
+- `sensitive`: Class decorator enabling automatic masking of sensitive fields
+- `classify(dataclass_or_instance)`: Introspect sensitivity profile of a dataclass
+- `Sensitivity`: Enum taxonomy: PHI, PII, PCI, SECRET
+- `SensitivityProfile`: Data class containing field-to-sensitivity mappings
 
 ## Imports
 

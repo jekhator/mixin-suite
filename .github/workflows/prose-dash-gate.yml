@@ -1,0 +1,32 @@
+name: Prose Dash Gate
+
+# Scans markdown files for banned em-dashes (U+2014) and en-dashes (U+2013).
+# Box-drawing characters (U+2500-series) do not match this pattern and pass through.
+# This gate prevents recurring manual sweeps by automating the catch at PR-time.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan markdown for banned dashes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for em-dashes and en-dashes in markdown
+        run: |
+          set -uo pipefail
+          if grep -rPn '\x{2014}|\x{2013}' --include='*.md' . 2>/dev/null; then
+            echo "::error::Em-dashes (U+2014) or en-dashes (U+2013) found in markdown. Replace with commas or periods."
+            exit 1
+          fi
+          echo "OK: no em-dashes or en-dashes in markdown"
