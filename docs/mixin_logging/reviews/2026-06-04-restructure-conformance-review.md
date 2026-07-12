@@ -155,13 +155,13 @@ __all__ = [
 
 **Workflow changes:**
 - `.github/workflows/ci.yml` :  Added concurrency + permissions blocks, upgraded pytest coverage flag ✅
-- `.github/workflows/dto-strict.yml` :  Upgraded to dto-strict@0.3.0, removed path filters, added concurrency ✅
+- `.github/workflows/strict-module.yml` :  Upgraded to strict-module@0.3.0, removed path filters, added concurrency ✅
 - `.github/workflows/ruff.yml` :  Removed path filters, added concurrency + permissions ✅
-- `.github/workflows/loc-cap.yml` :  **DELETED** (consolidated into dto-strict.yml) ✅
+- `.github/workflows/loc-cap.yml` :  **DELETED** (consolidated into strict-module.yml) ✅
 - `.github/workflows/cleanup-guard.yml` :  Updated adapter path check from `apps/adapters` → `adapters` ✅
 - `.github/workflows/publish.yml` :  Updated PyPI action from `release/v1` → `v1` ✅
 
-**Rationale:** Removing path filters allows full test coverage on all pushes (preventing hidden failures in unmonitored paths). Consolidating LOC cap into dto-strict workflow reduces workflow duplication.
+**Rationale:** Removing path filters allows full test coverage on all pushes (preventing hidden failures in unmonitored paths). Consolidating LOC cap into strict-module workflow reduces workflow duplication.
 
 ---
 

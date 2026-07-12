@@ -227,7 +227,7 @@ if message["type"] == const.RESPONSE_START_MESSAGE_TYPE:
 | No orphaned constants | ✅ | Every Final in __all__; every __all__ item has Final |
 | No stale comment dividers | ✅ | grep "# ---" = 0 matches |
 | Test suite passing (283 tests) | ✅ | 283 passed in 2.91s, 95%+ coverage |
-| All standards gates pass (ruff, dto-strict, pytest) | ✅ | ruff/dto-strict clean, pytest green |
+| All standards gates pass (ruff, strict-module, pytest) | ✅ | ruff/strict-module clean, pytest green |
 | No AI attribution in source | ✅ | grep for claude/anthropic/co-authored = 0 matches |
 | No behavioral changes | ✅ | All test logic and assertions semantically identical |
 | Test class structure preserved | ✅ | All test methods in TestConcern classes; no restructuring |
