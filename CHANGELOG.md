@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Classmethod and staticmethod logging fallback**: The `@logged` decorator now emits start/error events for classmethods and staticmethods using a module-level logger fallback when no LoggingMixin instance is available. Events are derived from the decorated class's module and class name, maintaining the same payload shape as instance-method events (error_type and code fields). Both sync and async variants are supported.
 
+### Changed
+
+- **Tool config section rename**: Renamed pyproject.toml tool configuration sections from `[tool.dto-strict]` and `[tool.dto-strict.loc-cap]` to `[tool.strict-module]` and `[tool.strict-module.loc-cap]` respectively for consistency with domain-suite and the strict-module package naming convention. Configuration values remain unchanged.
+
 ## [0.1.1] - 2026-07-11
 
 ### Fixed

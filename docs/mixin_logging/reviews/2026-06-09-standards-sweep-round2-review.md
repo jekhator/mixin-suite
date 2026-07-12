@@ -261,7 +261,7 @@ class CaptureHandler(http.server.BaseHTTPRequestHandler):
 | Docstrings have no internal file refs | ✅ | grep for `utils._RecordCollector`, `PUBLIC_API`, file paths = 0 matches |
 | No verb/noun phrase violations | ✅ | Methods = verb-phrases; classes/modules = noun-phrases; all valid |
 | Test suite passes (283 tests) | ✅ | 283 passed in 3.13s, 100% coverage |
-| All standards gates pass | ✅ | ruff check/format, dto-strict, pytest all green |
+| All standards gates pass | ✅ | ruff check/format, strict-module, pytest all green |
 | No public API renames | ✅ | grep for `^[\+\-].*def ` in diff = 0 matches (docstrings only) |
 | No signature changes | ✅ | All method signatures identical (type hints, parameters unchanged) |
 | No control-flow drift | ✅ | Code paths lines 27-61 (cloud_objects.py) and 28-60 (test_wsgi) identical |

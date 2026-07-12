@@ -221,7 +221,7 @@ All checklist items pass. Code is production-ready:
 - No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
 - LOC under cap on all files (max 74 LOC).
 - Security audit confirms no code defects. All 8 threat questions resolved with NO ISSUE verdicts.
-- Implementation agent confirms all gates pass: ruff check/format clean, mypy clean, dto-strict clean, LOC cap pass, 28 tests pass, 100% coverage.
+- Implementation agent confirms all gates pass: ruff check/format clean, mypy clean, strict-module clean, LOC cap pass, 28 tests pass, 100% coverage.
 
 **Recommended merge:** Ready for integration. No code changes needed. The adapter is secure and complete.
 
@@ -244,4 +244,4 @@ All checklist items pass. Code is production-ready:
 - [x] No docstring cross-system refs
 - [x] No em dashes
 - [x] No employer/AI-assistant attribution
-- [x] All gates pass (ruff, mypy, dto-strict, LOC, tests)
+- [x] All gates pass (ruff, mypy, strict-module, LOC, tests)

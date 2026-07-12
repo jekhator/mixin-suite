@@ -49,7 +49,7 @@ uv add mixin-logging
 
 ### Changed
 
-- **Standards-conformance sweep**: Unified constants organization and semantic-literal extraction across all adapters and common modules. Canonical docstring-format section headers and deep extraction to dedicated constants modules. Integration with `dto-strict` v0.2.2+ for dataclass configuration and metadata validation.
+- **Standards-conformance sweep**: Unified constants organization and semantic-literal extraction across all adapters and common modules. Canonical docstring-format section headers and deep extraction to dedicated constants modules. Integration with `strict-module` v0.2.2+ for dataclass configuration and metadata validation.
 - **Docstring and naming conformance**: Package-wide consistency in documentation and parameter naming. All public methods, classes, and packages now start with imperative action verbs. One-line verb-phrase docstrings and scoped module docstrings for semantic clarity.
 - **Publish workflow trigger**: Release workflow now triggered by version-tag push instead of release-branch. Chore/release-* branch pattern deprecated.
 
@@ -72,7 +72,7 @@ uv add mixin-logging
 ### Changed
 
 - **Canonical import-idiom enforcement**: Applied `ruff isort` + `PLC0414` (redundant-self-aliases) to standardize imports across adapters. Removed self-referential re-exports in adapter `__init__` files (PR #51).
-- **LOC-cap scoping refinement**: Adjusted line-count enforcement to target source code only, excluding tests. Configuration in `[tool.dto-strict.loc-cap]` remains (hard_cap=300, soft_target=200), but scope now focuses on maintainability of production code (PR #50).
+- **LOC-cap scoping refinement**: Adjusted line-count enforcement to target source code only, excluding tests. Configuration in `[tool.strict-module.loc-cap]` remains (hard_cap=300, soft_target=200), but scope now focuses on maintainability of production code (PR #50).
 - **Documentation improvements**: Extensive docs refresh: adapter table expansion, correlation semantics clarification, FAQ additions, version sweep across README and guides. Code of Conduct alignment with Contributor Covenant 2.1 (PR #44, #47).
 
 ### Fixed
@@ -112,7 +112,7 @@ uv add mixin-logging
 - **Dependency management**: Adopted `uv` for faster, more predictable lock-file generation. Committed `uv.lock`; CI migrated to `astral-sh/setup-uv@v4`.
 - **Python version requirement**: Dropped Python 3.10 support. Now requires Python >=3.11 (3.11 and 3.12 supported).
 - **Package layout**: Root-layout restructure: `logging_mixin/adapters/` package with 8 specialized adapter modules (objects/ + client/ split per adapter type).
-- **LOC-cap CI gate**: Automated line-count enforcement via `dto-strict loc-cap` subcommand; vendored `scripts/check_loc_cap.py` removed. Configuration in `[tool.dto-strict.loc-cap]` (hard_cap=300, soft_target=200).
+- **LOC-cap CI gate**: Automated line-count enforcement via `strict-module loc-cap` subcommand; vendored `scripts/check_loc_cap.py` removed. Configuration in `[tool.strict-module.loc-cap]` (hard_cap=300, soft_target=200).
 
 ### Removed
 

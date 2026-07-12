@@ -121,11 +121,11 @@ known-first-party = ["mixin_logging", "mixin_sensitivity"]
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.dto-strict]
+[tool.strict-module]
 paths = ["mixin_logging/", "mixin_sensitivity/"]
 exception_tags = ["fixture"]
 
-[tool.dto-strict.loc-cap]
+[tool.strict-module.loc-cap]
 hard_cap = 300
 soft_target = 200
 
