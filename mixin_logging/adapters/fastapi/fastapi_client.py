@@ -26,7 +26,9 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         set_correlation_id(correlation.correlation_id)
         try:
             response = await call_next(request)
-            response.headers[correlation.response_header[0]] = correlation.response_header[1]
+            response.headers[correlation.response_header[0]] = (
+                correlation.response_header[1]
+            )
             return response
         finally:
             clear_correlation_id()
@@ -42,5 +44,7 @@ async def get_correlation_id_dependency() -> str:
 
     corr_id = get_correlation_id()
     if corr_id is None:
-        raise ValueError("Correlation ID not set in context; ensure CorrelationIdMiddleware is installed")
+        raise ValueError(
+            "Correlation ID not set in context; ensure CorrelationIdMiddleware is installed"
+        )
     return corr_id
