@@ -1,1 +1,1 @@
-"""Adapter constants: asgi, wsgi, httpx, requests, cloud, botocore, celery, stdlib."""
+"""Adapter constants: asgi, wsgi, httpx, requests, fastapi, cloud, botocore, celery, stdlib."""

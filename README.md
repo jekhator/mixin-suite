@@ -9,7 +9,7 @@
 
 This distribution consolidates two concern-specific packages:
 
-- **mixin-logging** (v0.6.0): End-to-end correlation-ID propagation across 13 adapters for distributed systems
+- **mixin-logging** (v0.6.0): End-to-end correlation-ID propagation across 14 adapters for distributed systems
 - **mixin-sensitivity** (v0.4.0): Decorator-based sensitivity classification and masking for frozen dataclasses
 
 Both packages retain their original import roots (`mixin_logging`, `mixin_sensitivity`) and can be used independently or together.
@@ -93,6 +93,7 @@ Optional extras (mixin_logging adapters):
 - `[aiohttp]`: aiohttp client instrumentation
 - `[botocore]`: AWS SDK instrumentation
 - `[celery]`: Celery task propagation
+- `[fastapi]`: FastAPI middleware and dependencies
 - `[grpc]`: gRPC server instrumentation
 - `[httpx]`: HTTPX client instrumentation
 - `[requests]`: Requests client instrumentation
@@ -121,17 +122,27 @@ logging.basicConfig()
 logging.getLogger().addFilter(CorrelationLogFilter())
 ```
 
-#### 2. Set correlation ID at request boundary
+#### 2. Install FastAPI adapter and add middleware
+
+For FastAPI applications:
+
+```python
+from fastapi import FastAPI
+from mixin_logging.adapters.fastapi import CorrelationIdMiddleware
+
+app = FastAPI()
+app.add_middleware(CorrelationIdMiddleware)
+```
+
+Or manually for other frameworks:
 
 ```python
 from mixin_logging import set_correlation_id
-from fastapi import FastAPI, Request
-
-app = FastAPI()
+from fastapi import Request
 
 @app.middleware("http")
 async def correlation_middleware(request: Request, call_next):
-    set_correlation_id(request.headers.get("X-Correlation-ID", "auto-gen-id"))
+    set_correlation_id(request.headers.get("x-correlation-id", "auto-gen"))
     return await call_next(request)
 ```
 
