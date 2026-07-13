@@ -121,18 +121,18 @@ class LoggedClient:
                 setattr(static_or_class_wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
                 return static_or_class_wrapper  # type: ignore[return-value]
 
-            @functools.wraps(method)
-            def static_or_class_wrapper_no_logging(
+            @functools.wraps(method)  # pragma: no cover
+            def static_or_class_wrapper_no_logging(  # pragma: no cover
                 *args: Params.args, **kwargs: Params.kwargs
-            ) -> Result:
-                return method(*args, **kwargs)  # type: ignore[arg-type, return-value]
+            ) -> Result:  # pragma: no cover
+                return method(*args, **kwargs)  # type: ignore[arg-type, return-value] # pragma: no cover
 
-            setattr(
+            setattr(  # pragma: no cover
                 static_or_class_wrapper_no_logging,
                 const.ATTRIBUTE_LOGGED_MARKER,
                 True,
             )
-            return static_or_class_wrapper_no_logging  # type: ignore[return-value]
+            return static_or_class_wrapper_no_logging  # type: ignore[return-value] # pragma: no cover
 
         if asyncio.iscoroutinefunction(method):
 

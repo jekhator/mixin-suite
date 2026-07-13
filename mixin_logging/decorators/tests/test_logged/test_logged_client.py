@@ -821,3 +821,71 @@ class TestLoggedClassLevel:
         assert any("process.helper_async.start" in msg for msg in messages), (
             f"Expected start event in {messages}"
         )
+
+    def test_logged_class_level_async_classmethod_error_event(self) -> None:
+        """@logged on class emits error event when async classmethod raises."""
+        import asyncio
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with failing async classmethod."""
+
+            __slots__ = ()
+
+            @classmethod
+            async def create_async_failing(cls) -> Svc:
+                await asyncio.sleep(0)
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise ValueError(msg)
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        with pytest.raises(ValueError):
+            asyncio.run(Svc.create_async_failing())
+
+        error_records = [
+            rec
+            for rec in collector.buffer
+            if "process.create_async_failing.error" in rec.getMessage()
+        ]
+        assert len(error_records) == 1
+        assert error_records[0].__dict__["error_type"] == "ValueError"
+
+    def test_logged_class_level_async_staticmethod_error_event(self) -> None:
+        """@logged on class emits error event when async staticmethod raises."""
+        import asyncio
+        import logging
+        import logging.handlers
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with failing async staticmethod."""
+
+            __slots__ = ()
+
+            @staticmethod
+            async def helper_async_failing() -> str:
+                await asyncio.sleep(0)
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise RuntimeError(msg)
+
+        collector = logging.handlers.MemoryHandler(1000)
+        logger = logging.getLogger(Svc.__module__).getChild(Svc.__name__)
+        logger.addHandler(collector)
+        logger.setLevel(logging.DEBUG)
+
+        with pytest.raises(RuntimeError):
+            asyncio.run(Svc.helper_async_failing())
+
+        error_records = [
+            rec
+            for rec in collector.buffer
+            if "process.helper_async_failing.error" in rec.getMessage()
+        ]
+        assert len(error_records) == 1
+        assert error_records[0].__dict__["error_type"] == "RuntimeError"

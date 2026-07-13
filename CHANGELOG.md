@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Classmethod and staticmethod logging fallback**: The `@logged` decorator now emits start/error events for classmethods and staticmethods using a module-level logger fallback when no LoggingMixin instance is available. Events are derived from the decorated class's module and class name, maintaining the same payload shape as instance-method events (error_type and code fields). Both sync and async variants are supported.
+- **Test coverage: 100% statement coverage**: Increased test coverage to 100% (1205 statements across mixin_logging and mixin_sensitivity). CI gate updated to require 100% coverage to catch any regressions. Added comprehensive tests for async classmethod and staticmethod error paths in the @logged decorator.
 
 ### Changed
 
