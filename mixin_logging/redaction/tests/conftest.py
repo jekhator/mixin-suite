@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from mixin_logging.redaction import RedactionClient, RedactionFilter
+from mixin_logging.redaction import RedactionFilter
 
 
 class TestHandler(logging.Handler):

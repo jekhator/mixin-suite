@@ -2,7 +2,6 @@
 
 import asyncio
 import time
-from typing import Callable
 
 import pytest
 
@@ -156,7 +155,9 @@ class TestRetried:
                 raise ValueError("Fail")
             return "success"
 
-        retry_on = lambda exc: isinstance(exc, ValueError)
+        def retry_on(exc: BaseException) -> bool:
+            return isinstance(exc, ValueError)
+
         decorated = retried(max_attempts=5, retry_on=retry_on)(
             sometimes_fails
         )
@@ -170,7 +171,9 @@ class TestRetried:
         def always_fails() -> None:
             raise ValueError("Fail")
 
-        retry_on = lambda exc: isinstance(exc, IOError)
+        def retry_on(exc: BaseException) -> bool:
+            return isinstance(exc, IOError)
+
         decorated = retried(max_attempts=5, retry_on=retry_on)(always_fails)
 
         with pytest.raises(ValueError, match="Fail"):
@@ -185,7 +188,8 @@ class TestRetried:
         def raises_io_error() -> None:
             raise IOError("io error")
 
-        retry_on_io = lambda exc: isinstance(exc, IOError)
+        def retry_on_io(exc: BaseException) -> bool:
+            return isinstance(exc, IOError)
 
         with pytest.raises(ValueError):
             retried(max_attempts=5, retry_on=retry_on_io)(
