@@ -67,24 +67,26 @@ dev = [
 path = "mixin_logging/config/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["mixin_logging", "mixin_sensitivity"]
+packages = ["mixin_logging", "mixin_sensitivity", "mixin_retry"]
 exclude = [
     "mixin_logging/**/tests",
     "mixin_logging/conftest.py",
     "mixin_sensitivity/**/tests",
     "mixin_sensitivity/conftest.py",
+    "mixin_retry/**/tests",
+    "mixin_retry/conftest.py",
     "conftest.py"
 ]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-testpaths = ["mixin_logging", "mixin_sensitivity"]
+testpaths = ["mixin_logging", "mixin_sensitivity", "mixin_retry"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
 asyncio_mode = "strict"
 
 [tool.coverage.run]
-source = ["mixin_logging", "mixin_sensitivity"]
+source = ["mixin_logging", "mixin_sensitivity", "mixin_retry"]
 branch = true
 omit = [
     "mixin_logging/**/tests/*",
@@ -92,6 +94,8 @@ omit = [
     "mixin_logging/conftest.py",
     "mixin_sensitivity/**/tests/*",
     "mixin_sensitivity/conftest.py",
+    "mixin_retry/**/tests/*",
+    "mixin_retry/conftest.py",
     "conftest.py"
 ]
 
@@ -124,7 +128,7 @@ known-first-party = ["mixin_logging", "mixin_sensitivity"]
 ban-relative-imports = "all"
 
 [tool.strict-module]
-paths = ["mixin_logging/", "mixin_sensitivity/"]
+paths = ["mixin_logging/", "mixin_sensitivity/", "mixin_retry/"]
 exception_tags = ["fixture"]
 
 [tool.strict-module.loc-cap]

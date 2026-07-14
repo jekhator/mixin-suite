@@ -7,12 +7,13 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python Versions](https://img.shields.io/pypi/pyversions/mixin-suite.svg)](https://pypi.org/project/mixin-suite/)
 
-This distribution consolidates two concern-specific packages:
+This distribution consolidates two concern-specific packages and adds composable retry logic:
 
 - **mixin-logging** (v0.6.0): End-to-end correlation-ID propagation across 14 adapters for distributed systems
 - **mixin-sensitivity** (v0.4.0): Decorator-based sensitivity classification and masking for frozen dataclasses
+- **mixin-retry**: Class-capable retry decorator with full-jitter backoff and predicate-based retry conditions
 
-Both packages retain their original import roots (`mixin_logging`, `mixin_sensitivity`) and can be used independently or together.
+All packages retain their original import roots (`mixin_logging`, `mixin_sensitivity`, `mixin_retry`) and can be used independently or together.
 
 ## What They Do
 
@@ -106,7 +107,7 @@ uv add "mixin-suite[httpx,botocore]"  # Multiple extras
 uv add "mixin-suite[all]"             # All adapters
 ```
 
-**Python version:** Requires Python 3.11 or later (3.11 and 3.12 tested).
+**Python version:** Requires Python 3.11 or later (3.11 and 3.14 tested).
 
 ## Quick Start
 
@@ -202,7 +203,7 @@ profile = classify(user)
 
 ## Run-Verified Examples
 
-These examples are executed against the published mixin-suite==0.1.1 distribution.
+These examples are executed against the published mixin-suite==0.2.0 distribution.
 
 ### Logging Example: Correlation-ID Propagation
 
@@ -243,7 +244,7 @@ result = service.upload("report.pdf", 1024000)
 status = service.process("doc-123")
 ```
 
-**Output (Python 3.12, mixin-suite==0.1.1):**
+**Output (Python 3.14, mixin-suite==0.2.0):**
 ```
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - document.upload.start - correlation_id=req-2026-07-10-001
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
@@ -284,7 +285,7 @@ profile = classify(record)
 print(f"PHI fields: {[f for f, s in profile.classes if s == Sensitivity.PHI]}")
 ```
 
-**Output (Python 3.12, mixin-suite==0.1.1):**
+**Output (Python 3.14, mixin-suite==0.2.0):**
 ```
 HealthRecord(patient_id=42, ssn=***, diagnosis=***, treatment_notes=***, attending_physician='Dr. Smith')
 
@@ -320,9 +321,16 @@ Core classes and functions:
 - `Sensitivity`: Enum taxonomy: PHI, PII, PCI, SECRET
 - `SensitivityProfile`: Data class containing field-to-sensitivity mappings
 
+### mixin_retry
+
+Core classes and functions:
+- `retried(retry_on=None, max_retries=3, base_delay_ms=100)`: Class-capable decorator for automatic retry logic with exponential backoff
+- `RetryClient`: Client implementation for retry decorator logic
+- `RetryContainer`: Container for retry decorator metadata
+
 ## Imports
 
-Both packages maintain their original import roots:
+All packages maintain their original import roots:
 
 ```python
 # Logging
@@ -330,14 +338,18 @@ from mixin_logging import LoggingMixin, logged, set_correlation_id, get_correlat
 
 # Sensitivity
 from mixin_sensitivity import sensitive, classify, Sensitivity
+
+# Retry
+from mixin_retry import retried
 ```
 
 ## Contributing
 
-This is a read-only consolidation of two independently-maintained packages. Bug reports and feature requests should be filed in the respective package repositories:
+This is a consolidation of independently-maintained packages. Bug reports and feature requests should be filed in this repository or the respective upstream repositories:
 
-- mixin-logging issues: https://github.com/jekhator/mixin-logging/issues
-- mixin-sensitivity issues: https://github.com/jekhator/mixin-sensitivity/issues
+- mixin-logging historical issues: https://github.com/jekhator/mixin-logging/issues
+- mixin-sensitivity historical issues: https://github.com/jekhator/mixin-sensitivity/issues
+- mixin-retry and suite issues: https://github.com/jekhator/mixin-suite/issues
 
 ## License
 
