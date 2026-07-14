@@ -180,11 +180,11 @@ Total: 428 LOC across 8 files; all well within LOC cap (300 per file).
 
 **PASS**
 
-- No `arcmodality`, `arc-modality`, `JPMC`, customer references, or pricing language.
-- All code is generic library code with no internal brand/phase language.
+- No internal brand affiliation, customer references, or pricing language.
+- All code is generic library code with no internal phase language.
 - README example uses `myapp` (generic).
 
-**Evidence:** All source files clean of forbidden words (grep for arcmodality, phase, JPMC returns zero).
+**Evidence:** All source files use generic neutral language with no employer affiliation, no internal phase language, no customer tier framing.
 
 ---
 
