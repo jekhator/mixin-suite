@@ -51,7 +51,7 @@ def app_with_middleware() -> FastAPI:
 
 
 @pytest.fixture
-def test_client(app_with_middleware: FastAPI) -> TestClient:
+def fastapi_client(app_with_middleware: FastAPI) -> TestClient:
     """Create a test client for the FastAPI app."""
     return TestClient(app_with_middleware)
 

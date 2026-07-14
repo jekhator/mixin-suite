@@ -107,7 +107,9 @@ class TestFastApiCorrelationResponseHeader:
 
     def test_response_header_returns_tuple(self, correlation_id_custom: str) -> None:
         """response_header property returns (name, value) tuple."""
-        corr = FastApiCorrelation(correlation_id=correlation_id_custom, from_header=False)
+        corr = FastApiCorrelation(
+            correlation_id=correlation_id_custom, from_header=False
+        )
         header = corr.response_header
         assert isinstance(header, tuple)
         assert len(header) == 2
@@ -117,7 +119,9 @@ class TestFastApiCorrelationResponseHeader:
         correlation_id_custom: str,
     ) -> None:
         """response_header property includes the correlation ID value."""
-        corr = FastApiCorrelation(correlation_id=correlation_id_custom, from_header=False)
+        corr = FastApiCorrelation(
+            correlation_id=correlation_id_custom, from_header=False
+        )
         name, value = corr.response_header
         assert name == const.CORRELATION_ID_HEADER
         assert value == correlation_id_custom
