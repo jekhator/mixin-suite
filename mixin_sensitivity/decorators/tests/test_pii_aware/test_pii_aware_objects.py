@@ -119,7 +119,6 @@ class TestLooksSensitive:
         self, gdpr_pii_policy: PiiPolicyAware
     ) -> None:
         """looks_sensitive does not match partial substrings of hints."""
-        # "email" is a hint, but "emai" or "ail" should not match
         assert gdpr_pii_policy.looks_sensitive("emai_field") is False
         assert gdpr_pii_policy.looks_sensitive("ail_address") is False
 

@@ -259,7 +259,6 @@ class TestMaskedReprFormat:
         field_set = SensitiveFieldSet.from_dataclass(tagged_class)
         instance = tagged_class(id=1, ssn="123-45-6789", email="user@example.com")
         repr_str = field_set.masked_repr(instance)
-        # Fields declared as: id, ssn, email
         id_pos = repr_str.index("id=")
         ssn_pos = repr_str.index("ssn=")
         email_pos = repr_str.index("email=")

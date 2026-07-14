@@ -5,8 +5,8 @@ from __future__ import annotations
 import http.server
 import socketserver
 import threading
-from collections.abc import Callable, Generator
-from typing import Any, Iterator, cast
+from collections.abc import Callable, Generator, Iterator
+from typing import Any, cast
 
 import pytest
 import requests as requests_lib  # type: ignore[import-untyped]

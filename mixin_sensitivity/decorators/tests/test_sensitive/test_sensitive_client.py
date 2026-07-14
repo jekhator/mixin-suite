@@ -58,9 +58,7 @@ class TestSensitiveDecoratorUntaggedClass:
         decorator = SensitiveDecorator(policies=())
         original_repr = Public.__repr__
         result = decorator(Public)
-        # Untagged class should be returned unchanged with original repr
         assert result is Public
-        # __repr__ should not be replaced for untagged classes
         assert Public(id=1, name="test").__repr__() == original_repr(
             Public(id=1, name="test")
         )
@@ -241,10 +239,8 @@ class TestSensitiveDecoratorInstanceFrozen:
         decorator = SensitiveDecorator(policies=((Sensitivity.PHI, phi_policy),))
         decorator(FrozenUser)
         instance = FrozenUser(id=1, ssn="123-45-6789")
-        # Frozen instances cannot be mutated
         with pytest.raises(AttributeError):
             instance.id = 2  # type: ignore[misc]
-        # But repr should work
         repr_str = repr(instance)
         assert "[MASKED]" in repr_str
 
@@ -303,7 +299,6 @@ class TestSensitiveDecoratorReturnsSameType:
 
         decorator = SensitiveDecorator(policies=())
         decorator(Product)
-        # Should be instantiable without errors
         instance = Product(id=42, code="secret123")
         assert instance.id == 42
         assert instance.code == "secret123"
@@ -370,7 +365,6 @@ class TestSensitiveDecoratorEdgeCases:
         decorator2(Item)  # Apply second decorator
         instance = Item(ssn="999-88-7777")
         repr_str = repr(instance)
-        # Second decorator should have overwritten the first
         assert "[SECOND]" in repr_str
         assert "[FIRST]" not in repr_str
 
