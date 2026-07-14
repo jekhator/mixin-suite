@@ -622,6 +622,7 @@ class TestRetriedAsync:
     @pytest.mark.asyncio
     async def test_cancelled_error_never_retries_async(self) -> None:
         """asyncio.CancelledError is never retried in async context."""
+
         async def raises_cancelled() -> None:
             raise asyncio.CancelledError()
 
@@ -633,6 +634,7 @@ class TestRetriedAsync:
     @pytest.mark.asyncio
     async def test_async_retry_on_predicate_false_does_not_retry(self) -> None:
         """Async: retry_on predicate returning False raises immediately."""
+
         async def async_always_fails() -> None:
             raise ValueError("Fail")
 
@@ -770,4 +772,3 @@ class TestRetriedAsync:
         inner = OuterService.InnerService()
         assert outer.outer_method() == "outer"
         assert inner.inner_method() == "inner"
-

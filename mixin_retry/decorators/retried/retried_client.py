@@ -252,7 +252,9 @@ class RetryClient:
                 delay = self._calculate_delay(attempt)
                 await asyncio.sleep(delay)
 
-        return await method(*args, **kwargs)  # pragma: no cover  # type: ignore[return-value]
+        return await method(
+            *args, **kwargs
+        )  # pragma: no cover  # type: ignore[return-value]
 
     def _decorate_class(self, cls: type) -> type:
         """Fan out decorator to all public methods of a class."""
