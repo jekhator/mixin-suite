@@ -1,6 +1,6 @@
 """Retry decorator constants."""
 
-from mixin_retry.decorators.constants.decorators import (
+from mixin_retry.decorators.constants.retried import (
     ATTRIBUTE_MARKER,
     ATTRIBUTE_MAX_ATTEMPTS,
     BASE_DELAY_DEFAULT,

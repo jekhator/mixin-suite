@@ -6,8 +6,8 @@ from typing import Callable
 
 import pytest
 
-from mixin_retry.decorators.constants import decorators as const
-from mixin_retry.decorators.logged import RetryClient, retried
+from mixin_retry.decorators.constants import retried as const
+from mixin_retry.decorators.retried import RetryClient, retried
 
 
 class TestRetried:
@@ -297,7 +297,7 @@ class TestRetried:
     def test_retry_on_validation(self) -> None:
         """retry_on must be callable if provided."""
         with pytest.raises(ValueError, match="callable"):
-            retried(retry_on="not callable")(lambda: None)
+            retried(retry_on="not callable")(lambda: None)  # type: ignore[arg-type]
 
     def test_invalid_target_type(self) -> None:
         """@retried on invalid target raises TypeError."""

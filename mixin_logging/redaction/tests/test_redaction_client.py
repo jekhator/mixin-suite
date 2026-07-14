@@ -102,7 +102,7 @@ class TestRedactionClient:
             exc_info=None,
         )
 
-        result = test_logger.filters[0].filter(record)
+        result = test_logger.filters[0].filter(record)  # type: ignore[union-attr]
         assert result is True
 
     def test_filter_handles_non_string_fields(
@@ -143,11 +143,11 @@ class TestRedactionClient:
             args=(),
             exc_info=None,
         )
-        record._private = "sensitive_data"
+        record._private = "sensitive_data"  # type: ignore[attr-defined]
 
-        result = test_logger.filters[0].filter(record)
+        result = test_logger.filters[0].filter(record)  # type: ignore[union-attr]
         assert result is True
-        assert record._private == "sensitive_data"
+        assert record._private == "sensitive_data"  # type: ignore[attr-defined]
 
 
 class TestRedactionFilter:
@@ -173,14 +173,14 @@ class TestRedactionFilter:
             args=(),
             exc_info=None,
         )
-        record.api_key = "secret"
+        record.api_key = "secret"  # type: ignore[attr-defined]
 
         original_id = id(record)
         result = redaction_filter.filter(record)
 
         assert result is True
         assert id(record) == original_id
-        assert record.api_key == const.MASK_TOKEN
+        assert record.api_key == const.MASK_TOKEN  # type: ignore[attr-defined]
 
     def test_redaction_constant_value(self) -> None:
         """Redaction token has expected value."""
@@ -199,10 +199,10 @@ class TestRedactionFilter:
             args=(),
             exc_info=None,
         )
-        record.API_KEY = "secret"
+        record.API_KEY = "secret"  # type: ignore[attr-defined]
 
         redaction_filter.filter(record)
-        assert record.API_KEY == const.MASK_TOKEN
+        assert record.API_KEY == const.MASK_TOKEN  # type: ignore[attr-defined]
 
     def test_default_patterns(self) -> None:
         """Default patterns include common sensitive fields."""

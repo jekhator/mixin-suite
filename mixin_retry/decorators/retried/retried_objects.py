@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from mixin_retry.decorators.constants import decorators as const
+from mixin_retry.decorators.constants import retried as const
 
 
 @dataclass(frozen=True, slots=True)
