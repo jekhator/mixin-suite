@@ -12,28 +12,32 @@ PUBLIC_API: frozenset[str] = frozenset([
 """Public API names exported from mixin_retry."""
 
 
-def _validate_public_api() -> None:
-    """Validate that PUBLIC_API names are actually exported from root."""
-    import mixin_retry
+class PublicAPIValidator:
+    """Validates PUBLIC_API exports at module load."""
 
-    for name in PUBLIC_API:
-        if not hasattr(mixin_retry, name):
-            raise ImportError(
-                f"PUBLIC_API includes {name} but it is not exported "
-                "from mixin_retry.__init__"
+    @staticmethod
+    def validate() -> None:
+        """Validate that PUBLIC_API names are actually exported from root."""
+        import mixin_retry
+
+        for name in PUBLIC_API:
+            if not hasattr(mixin_retry, name):
+                raise ImportError(
+                    f"PUBLIC_API includes {name} but it is not exported "
+                    "from mixin_retry.__init__"
+                )
+
+            exported = getattr(mixin_retry, name)
+            if inspect.isclass(exported) or inspect.isfunction(exported):
+                continue
+
+            if callable(exported):
+                continue
+
+            raise TypeError(
+                f"PUBLIC_API includes {name} but it is not "
+                "callable or a class"
             )
 
-        exported = getattr(mixin_retry, name)
-        if inspect.isclass(exported) or inspect.isfunction(exported):
-            continue
 
-        if callable(exported):
-            continue
-
-        raise TypeError(
-            f"PUBLIC_API includes {name} but it is not "
-            "callable or a class"
-        )
-
-
-_validate_public_api()
+PublicAPIValidator.validate()

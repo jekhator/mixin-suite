@@ -11,11 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable, Concatenate, ParamSpec, TypeVar
 
 from mixin_retry.decorators.constants import retried as const
 from mixin_retry.decorators.retried import retried_objects as objs
-from mixin_retry.decorators.retried.retry_helpers import (
-    is_standalone_callable,
-    should_skip_member,
-)
-from mixin_retry.decorators.retried.retry_utils import should_retry_exception
+from mixin_retry.decorators.retried.retry_inspection import RetryInspection
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
@@ -61,10 +57,40 @@ class RetryClient:
             retry_on if retry_on is not None else self._default_retry_on
         )
 
+    @classmethod
+    def with_params(
+        cls,
+        max_attempts: int = 3,
+        base_delay_s: float = const.BASE_DELAY_DEFAULT,
+        max_delay_s: float = const.MAX_DELAY_DEFAULT,
+        jitter: bool = const.JITTER_DEFAULT,
+        retry_on: Callable[[BaseException], bool] | None = None,
+    ) -> RetryClient:
+        """Create a RetryClient with exponential backoff parameters.
+
+        Args:
+            max_attempts: Maximum number of attempts (default 3).
+            base_delay_s: Base delay in seconds (default 1.0).
+            max_delay_s: Maximum delay in seconds (default 60.0).
+            jitter: Enable full jitter (default True).
+            retry_on: Predicate callable(exception) -> bool.
+                Default retries on any Exception.
+
+        Returns:
+            RetryClient instance configured with the given parameters.
+        """
+        return cls(
+            max_attempts=max_attempts,
+            base_delay_s=base_delay_s,
+            max_delay_s=max_delay_s,
+            jitter=jitter,
+            retry_on=retry_on,
+        )
+
     @staticmethod
     def _default_retry_on(exc: BaseException) -> bool:
         """Default retry predicate: retry on Exception, not BaseException."""
-        if not should_retry_exception(exc):
+        if not RetryInspection.should_retry_exception(exc):
             return False
 
         return isinstance(exc, Exception)
@@ -75,7 +101,7 @@ class RetryClient:
             return self._decorate_class(target)
 
         if callable(target):
-            is_standalone = is_standalone_callable(target)
+            is_standalone = RetryInspection.is_standalone_callable(target)
             return self._wrap_callable(target, for_static_or_class=is_standalone)
 
         msg = const.ERROR_MSG_TARGET_NOT_CLASS_OR_CALLABLE
@@ -186,7 +212,7 @@ class RetryClient:
             try:
                 return method(*args, **kwargs)  # type: ignore[return-value]
             except BaseException as exc:
-                if not should_retry_exception(exc):
+                if not RetryInspection.should_retry_exception(exc):
                     raise
 
                 if not self.retry_on(exc):
@@ -223,7 +249,7 @@ class RetryClient:
             try:
                 return await method(*args, **kwargs)  # type: ignore[return-value]
             except BaseException as exc:
-                if not should_retry_exception(exc):
+                if not RetryInspection.should_retry_exception(exc):
                     raise
 
                 if not self.retry_on(exc):
@@ -240,7 +266,7 @@ class RetryClient:
     def _decorate_class(self, cls: type) -> type:
         """Fan out decorator to all public methods of a class."""
         for name, value in cls.__dict__.items():
-            if should_skip_member(name, value):
+            if RetryInspection.should_skip_member(name, value):
                 continue
 
             if hasattr(value, const.ATTRIBUTE_MARKER):
