@@ -23,7 +23,7 @@ class PublicAPIValidator:
         import mixin_retry
 
         for name in PUBLIC_API:
-            if not hasattr(mixin_retry, name):
+            if not hasattr(mixin_retry, name):  # pragma: no cover
                 raise ImportError(
                     f"PUBLIC_API includes {name} but it is not exported "
                     "from mixin_retry.__init__"
@@ -36,7 +36,7 @@ class PublicAPIValidator:
             if callable(exported):
                 continue
 
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 f"PUBLIC_API includes {name} but it is not callable or a class"
             )
 

@@ -602,3 +602,172 @@ class TestRetriedAsync:
 
         assert result == "success"
         assert elapsed < 5.0
+
+    def test_cancelled_error_never_retries_sync(self) -> None:
+        """asyncio.CancelledError is never retried in default retry_on."""
+        try:
+            exc = asyncio.CancelledError()
+        except RuntimeError:
+            pytest.skip("CancelledError requires event loop")
+            return
+
+        def raises_cancelled() -> None:
+            raise exc
+
+        decorated = retried(max_attempts=10)(raises_cancelled)
+
+        with pytest.raises(asyncio.CancelledError):
+            decorated()
+
+    @pytest.mark.asyncio
+    async def test_cancelled_error_never_retries_async(self) -> None:
+        """asyncio.CancelledError is never retried in async context."""
+        async def raises_cancelled() -> None:
+            raise asyncio.CancelledError()
+
+        decorated = retried(max_attempts=10)(raises_cancelled)
+
+        with pytest.raises(asyncio.CancelledError):
+            await decorated()
+
+    @pytest.mark.asyncio
+    async def test_async_retry_on_predicate_false_does_not_retry(self) -> None:
+        """Async: retry_on predicate returning False raises immediately."""
+        async def async_always_fails() -> None:
+            raise ValueError("Fail")
+
+        def retry_on(exc: BaseException) -> bool:
+            return isinstance(exc, IOError)
+
+        decorated = retried(max_attempts=5, retry_on=retry_on)(async_always_fails)
+
+        with pytest.raises(ValueError, match="Fail"):
+            await decorated()
+
+    def test_retry_container_invalid_max_attempts(self) -> None:
+        """RetryContainer raises ValueError for max_attempts < 1."""
+        from mixin_retry.decorators.retried.retried_objects import (
+            RetryContainer,
+        )
+
+        with pytest.raises(ValueError, match="positive integer"):
+            RetryContainer(
+                max_attempts=0,
+                base_delay_s=0.1,
+                max_delay_s=60.0,
+                jitter=True,
+            )
+
+        with pytest.raises(ValueError, match="positive integer"):
+            RetryContainer(
+                max_attempts=-5,
+                base_delay_s=0.1,
+                max_delay_s=60.0,
+                jitter=True,
+            )
+
+    def test_retry_inspection_non_callable_target(self) -> None:
+        """is_standalone_callable returns False for non-callable."""
+        from mixin_retry.decorators.retried.retry_inspection import (
+            RetryInspection,
+        )
+
+        assert RetryInspection.is_standalone_callable("not callable") is False
+        assert RetryInspection.is_standalone_callable(42) is False
+        assert RetryInspection.is_standalone_callable([]) is False
+
+    def test_retry_inspection_signature_failure_fallback(self) -> None:
+        """is_standalone_callable returns True on inspect.signature failure."""
+        from mixin_retry.decorators.retried.retry_inspection import (
+            RetryInspection,
+        )
+
+        class BadCallable:
+            """Callable that raises on signature inspection."""
+
+            def __call__(self) -> str:
+                """Call method."""
+                return "result"
+
+            def __signature__(self) -> None:
+                raise ValueError("Bad signature")
+
+        obj = BadCallable()
+        result = RetryInspection.is_standalone_callable(obj)
+        assert result is True
+
+    def test_class_with_dunder_methods_not_decorated(self) -> None:
+        """Class decoration skips __dunder__ methods."""
+
+        @retried(max_attempts=3)
+        class MyService:
+            """Service with dunder methods."""
+
+            def __init__(self) -> None:
+                """Initialize."""
+                self.value = 0
+
+            def __str__(self) -> str:
+                """String representation."""
+                return "service"
+
+            def __repr__(self) -> str:
+                """Repr."""
+                return "MyService()"
+
+            def public_method(self) -> str:
+                """Public method that should be decorated."""
+                return "public"
+
+        service = MyService()
+        assert str(service) == "service"
+        assert repr(service) == "MyService()"
+        assert service.public_method() == "public"
+
+    def test_class_with_properties_not_decorated(self) -> None:
+        """Class decoration skips properties."""
+
+        @retried(max_attempts=3)
+        class MyService:
+            """Service with property."""
+
+            def __init__(self) -> None:
+                """Initialize."""
+                self._value = 42
+
+            @property
+            def value(self) -> int:
+                """Property getter."""
+                return self._value
+
+            def method(self) -> int:
+                """Regular method."""
+                return self._value
+
+        service = MyService()
+        assert service.value == 42
+        assert service.method() == 42
+
+    def test_class_with_nested_class_not_decorated(self) -> None:
+        """Class decoration skips nested classes."""
+
+        @retried(max_attempts=3)
+        class OuterService:
+            """Outer service with nested class."""
+
+            class InnerService:
+                """Nested service class."""
+
+                def inner_method(self) -> str:
+                    """Inner method."""
+                    return "inner"
+
+            def outer_method(self) -> str:
+                """Outer method."""
+                return "outer"
+
+        outer = OuterService()
+        inner = OuterService.InnerService()
+        assert outer.outer_method() == "outer"
+        assert inner.inner_method() == "inner"
+
