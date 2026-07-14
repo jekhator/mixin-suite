@@ -39,14 +39,10 @@ ATTRIBUTE_MAX_ATTEMPTS: Final = "_max_attempts"
 
 """Validation error messages."""
 
-ERROR_MSG_MAX_ATTEMPTS_INVALID: Final = (
-    "max_attempts must be a positive integer"
-)
+ERROR_MSG_MAX_ATTEMPTS_INVALID: Final = "max_attempts must be a positive integer"
 """Error message for invalid max_attempts."""
 
-ERROR_MSG_INVALID_PREDICATE: Final = (
-    "retry_on predicate must be callable"
-)
+ERROR_MSG_INVALID_PREDICATE: Final = "retry_on predicate must be callable"
 """Error message for invalid retry_on predicate."""
 
 ERROR_MSG_TARGET_NOT_CLASS_OR_CALLABLE: Final = (

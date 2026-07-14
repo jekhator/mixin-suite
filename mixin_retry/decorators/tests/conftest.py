@@ -69,9 +69,7 @@ class CallCounter:
 
         return f"success after {self.count} attempts"
 
-    async def async_eventually_succeeds(
-        self, fail_until: int = 2
-    ) -> str:
+    async def async_eventually_succeeds(self, fail_until: int = 2) -> str:
         """Async version that fails N times then succeeds."""
         self.count += 1
         if self.count <= fail_until:

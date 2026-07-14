@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import inspect
 
-PUBLIC_API: frozenset[str] = frozenset([
-    "RetryClient",
-    "RetryContainer",
-    "retried",
-])
+PUBLIC_API: frozenset[str] = frozenset(
+    [
+        "RetryClient",
+        "RetryContainer",
+        "retried",
+    ]
+)
 """Public API names exported from mixin_retry."""
 
 
@@ -35,8 +37,7 @@ class PublicAPIValidator:
                 continue
 
             raise TypeError(
-                f"PUBLIC_API includes {name} but it is not "
-                "callable or a class"
+                f"PUBLIC_API includes {name} but it is not callable or a class"
             )
 
 

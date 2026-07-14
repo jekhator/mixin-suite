@@ -53,9 +53,7 @@ class RetryClient:
             max_delay_s=max_delay_s,
             jitter=jitter,
         )
-        self.retry_on = (
-            retry_on if retry_on is not None else self._default_retry_on
-        )
+        self.retry_on = retry_on if retry_on is not None else self._default_retry_on
 
     @classmethod
     def with_params(
@@ -116,9 +114,7 @@ class RetryClient:
         Returns:
             Delay in seconds, capped at max_delay_s.
         """
-        exponential_delay = (
-            self.container.base_delay_s * (2 ** attempt)
-        )
+        exponential_delay = self.container.base_delay_s * (2**attempt)
         capped_delay = min(exponential_delay, self.container.max_delay_s)
 
         if not self.container.jitter:
@@ -147,17 +143,13 @@ class RetryClient:
                 async def async_static_wrapper(
                     *args: Params.args, **kwargs: Params.kwargs
                 ) -> Return:
-                    return await self._execute_async(
-                        method, *args, **kwargs
-                    )
+                    return await self._execute_async(method, *args, **kwargs)
 
                 setattr(async_static_wrapper, const.ATTRIBUTE_MARKER, True)
                 return async_static_wrapper  # type: ignore[return-value]
 
             @functools.wraps(method)
-            def static_wrapper(
-                *args: Params.args, **kwargs: Params.kwargs
-            ) -> Return:
+            def static_wrapper(*args: Params.args, **kwargs: Params.kwargs) -> Return:
                 return self._execute_sync(method, *args, **kwargs)
 
             setattr(static_wrapper, const.ATTRIBUTE_MARKER, True)
@@ -171,9 +163,7 @@ class RetryClient:
                 *args: Params.args,
                 **kwargs: Params.kwargs,
             ) -> Return:
-                return await self._execute_async(
-                    method, instance, *args, **kwargs
-                )
+                return await self._execute_async(method, instance, *args, **kwargs)
 
             setattr(async_wrapper, const.ATTRIBUTE_MARKER, True)
             return async_wrapper  # type: ignore[return-value]

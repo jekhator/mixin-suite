@@ -9,15 +9,13 @@ from mixin_logging.redaction.constants import redaction as const
 class TestRedactionClient:
     """Test RedactionClient attachment and filter behavior."""
 
-    def test_attach_default_to_logger(self, test_logger: logging.Logger) -> None:
+    def test_attach_default_to_logger(self, redaction_logger: logging.Logger) -> None:
         """Attach default redaction filter to a logger."""
-        RedactionClient.attach_default(test_logger)
-        assert len(test_logger.filters) > 0
-        assert isinstance(test_logger.filters[0], RedactionFilter)
+        RedactionClient.attach_default(redaction_logger)
+        assert len(redaction_logger.filters) > 0
+        assert isinstance(redaction_logger.filters[0], RedactionFilter)
 
-    def test_filter_masks_api_key_field(
-        self, test_logger: logging.Logger
-    ) -> None:
+    def test_filter_masks_api_key_field(self, redaction_logger: logging.Logger) -> None:
         """Filter masks api_key field."""
         records = []
 
@@ -28,10 +26,10 @@ class TestRedactionClient:
                 records.append(record)
 
         capture = CaptureHandler()
-        test_logger.addHandler(capture)
-        RedactionClient.attach_default(test_logger)
+        redaction_logger.addHandler(capture)
+        RedactionClient.attach_default(redaction_logger)
 
-        test_logger.info(
+        redaction_logger.info(
             "Request",
             extra={"api_key": "secret_key_12345"},
         )
@@ -41,7 +39,7 @@ class TestRedactionClient:
         assert record.__dict__.get("api_key") == const.MASK_TOKEN
 
     def test_filter_preserves_nonsensitive_fields(
-        self, test_logger: logging.Logger
+        self, redaction_logger: logging.Logger
     ) -> None:
         """Filter preserves fields without sensitive names."""
         records = []
@@ -53,10 +51,10 @@ class TestRedactionClient:
                 records.append(record)
 
         capture = CaptureHandler()
-        test_logger.addHandler(capture)
-        RedactionClient.attach_default(test_logger)
+        redaction_logger.addHandler(capture)
+        RedactionClient.attach_default(redaction_logger)
 
-        test_logger.info(
+        redaction_logger.info(
             "User action",
             extra={"user_id": "12345", "action": "login"},
         )
@@ -66,7 +64,9 @@ class TestRedactionClient:
         assert record.__dict__.get("user_id") == "12345"
         assert record.__dict__.get("action") == "login"
 
-    def test_filter_masks_password_field(self, test_logger: logging.Logger) -> None:
+    def test_filter_masks_password_field(
+        self, redaction_logger: logging.Logger
+    ) -> None:
         """Filter masks password field."""
         records = []
 
@@ -77,10 +77,10 @@ class TestRedactionClient:
                 records.append(record)
 
         capture = CaptureHandler()
-        test_logger.addHandler(capture)
-        RedactionClient.attach_default(test_logger)
+        redaction_logger.addHandler(capture)
+        RedactionClient.attach_default(redaction_logger)
 
-        test_logger.info(
+        redaction_logger.info(
             "Auth",
             extra={"password": "user_secret_password"},
         )
@@ -89,9 +89,9 @@ class TestRedactionClient:
         record = records[0]
         assert record.__dict__.get("password") == const.MASK_TOKEN
 
-    def test_filter_returns_true(self, test_logger: logging.Logger) -> None:
+    def test_filter_returns_true(self, redaction_logger: logging.Logger) -> None:
         """Filter always returns True to allow emission."""
-        RedactionClient.attach_default(test_logger)
+        RedactionClient.attach_default(redaction_logger)
         record = logging.LogRecord(
             name="test",
             level=logging.INFO,
@@ -102,11 +102,11 @@ class TestRedactionClient:
             exc_info=None,
         )
 
-        result = test_logger.filters[0].filter(record)  # type: ignore[union-attr]
+        result = redaction_logger.filters[0].filter(record)  # type: ignore[union-attr]
         assert result is True
 
     def test_filter_handles_non_string_fields(
-        self, test_logger: logging.Logger
+        self, redaction_logger: logging.Logger
     ) -> None:
         """Filter handles numeric and other non-string fields."""
         records = []
@@ -118,10 +118,10 @@ class TestRedactionClient:
                 records.append(record)
 
         capture = CaptureHandler()
-        test_logger.addHandler(capture)
-        RedactionClient.attach_default(test_logger)
+        redaction_logger.addHandler(capture)
+        RedactionClient.attach_default(redaction_logger)
 
-        test_logger.info(
+        redaction_logger.info(
             "Metric",
             extra={"count": 42, "duration_ms": 1500},
         )
@@ -131,9 +131,11 @@ class TestRedactionClient:
         assert record.__dict__.get("count") == 42
         assert record.__dict__.get("duration_ms") == 1500
 
-    def test_filter_skips_private_attributes(self, test_logger: logging.Logger) -> None:
+    def test_filter_skips_private_attributes(
+        self, redaction_logger: logging.Logger
+    ) -> None:
         """Filter skips attributes starting with underscore."""
-        RedactionClient.attach_default(test_logger)
+        RedactionClient.attach_default(redaction_logger)
         record = logging.LogRecord(
             name="test",
             level=logging.INFO,
@@ -145,7 +147,7 @@ class TestRedactionClient:
         )
         record._private = "sensitive_data"  # type: ignore[attr-defined]
 
-        result = test_logger.filters[0].filter(record)  # type: ignore[union-attr]
+        result = redaction_logger.filters[0].filter(record)  # type: ignore[union-attr]
         assert result is True
         assert record._private == "sensitive_data"  # type: ignore[attr-defined]
 
@@ -153,9 +155,7 @@ class TestRedactionClient:
 class TestRedactionFilter:
     """Test RedactionFilter directly."""
 
-    def test_filter_object_creation(
-        self, redaction_filter: RedactionFilter
-    ) -> None:
+    def test_filter_object_creation(self, redaction_filter: RedactionFilter) -> None:
         """Create a RedactionFilter instance."""
         assert redaction_filter is not None
         assert len(redaction_filter.sensitive_patterns) > 0

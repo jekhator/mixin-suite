@@ -21,7 +21,7 @@ class TestHandler(logging.Handler):
 
 
 @pytest.fixture
-def test_logger() -> logging.Logger:
+def redaction_logger() -> logging.Logger:
     """Create a fresh logger for each test."""
     logger = logging.getLogger("test_redaction")
     logger.handlers.clear()
@@ -30,7 +30,7 @@ def test_logger() -> logging.Logger:
 
 
 @pytest.fixture
-def test_handler() -> TestHandler:
+def redaction_handler() -> TestHandler:
     """Create a fresh test handler for each test."""
     return TestHandler()
 

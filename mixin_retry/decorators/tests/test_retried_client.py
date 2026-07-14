@@ -158,9 +158,7 @@ class TestRetried:
         def retry_on(exc: BaseException) -> bool:
             return isinstance(exc, ValueError)
 
-        decorated = retried(max_attempts=5, retry_on=retry_on)(
-            sometimes_fails
-        )
+        decorated = retried(max_attempts=5, retry_on=retry_on)(sometimes_fails)
         result = decorated()
         assert result == "success"
         assert call_count == 3
@@ -192,9 +190,7 @@ class TestRetried:
             return isinstance(exc, IOError)
 
         with pytest.raises(ValueError):
-            retried(max_attempts=5, retry_on=retry_on_io)(
-                raises_value_error
-            )()
+            retried(max_attempts=5, retry_on=retry_on_io)(raises_value_error)()
 
     def test_keyboard_interrupt_never_retries(self) -> None:
         """KeyboardInterrupt is never retried."""
@@ -479,13 +475,9 @@ class TestRetriedAsync:
         assert result == "async success"
 
     @pytest.mark.asyncio
-    async def test_async_method_retry(
-        self, service, call_counter
-    ) -> None:
+    async def test_async_method_retry(self, service, call_counter) -> None:
         """Async method retries and eventually succeeds."""
-        decorated = retried(max_attempts=5)(
-            call_counter.async_eventually_succeeds
-        )
+        decorated = retried(max_attempts=5)(call_counter.async_eventually_succeeds)
         result = await decorated(fail_until=2)
         assert "async success" in result
         assert call_counter.count == 3
