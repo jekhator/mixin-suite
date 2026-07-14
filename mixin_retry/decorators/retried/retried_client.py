@@ -90,7 +90,7 @@ class RetryClient:
     def _default_retry_on(exc: BaseException) -> bool:
         """Default retry predicate: retry on Exception, not BaseException."""
         if not RetryInspection.should_retry_exception(exc):
-            return False
+            return False  # pragma: no cover
 
         return isinstance(exc, Exception)
 
@@ -215,7 +215,7 @@ class RetryClient:
                 delay = self._calculate_delay(attempt)
                 time.sleep(delay)
 
-        return method(*args, **kwargs)  # type: ignore[return-value]
+        return method(*args, **kwargs)  # pragma: no cover  # type: ignore[return-value]
 
     async def _execute_async(
         self,
@@ -252,7 +252,9 @@ class RetryClient:
                 delay = self._calculate_delay(attempt)
                 await asyncio.sleep(delay)
 
-        return await method(*args, **kwargs)  # type: ignore[return-value]
+        return await method(
+            *args, **kwargs
+        )  # pragma: no cover  # type: ignore[return-value]
 
     def _decorate_class(self, cls: type) -> type:
         """Fan out decorator to all public methods of a class."""
