@@ -53,7 +53,6 @@ class TestClassMakerAwareProtocol:
             detection_hints=("ssn", "medical_id"),
             placeholder="[REDACTED]",
         )
-        # Duck-type check: protocol requires mask and looks_sensitive methods
         assert callable(policy.mask)
         assert callable(policy.looks_sensitive)
         assert isinstance(policy.mask("123456789"), str)

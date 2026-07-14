@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 from unittest import mock
 
 import aiohttp

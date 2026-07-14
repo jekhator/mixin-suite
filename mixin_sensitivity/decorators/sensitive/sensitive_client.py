@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, is_dataclass
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 from mixin_sensitivity.decorators.classes.compliance import ClassMakerAware
 from mixin_sensitivity.decorators.constants import sensitive as const

@@ -126,7 +126,6 @@ class TestLooksSensitive:
         self, hipaa_phi_policy: PhiPolicyAware
     ) -> None:
         """looks_sensitive returns False for partial matches that don't overlap."""
-        # "ssn" is in hints, "ss" alone does not match
         assert hipaa_phi_policy.looks_sensitive("ss_number") is False
         assert hipaa_phi_policy.looks_sensitive("mr_field") is False
 
