@@ -1,0 +1,43 @@
+"""Public API surface for mixin_retry."""
+
+from __future__ import annotations
+
+import inspect
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+PUBLIC_API: frozenset[str] = frozenset([
+    "RetryClient",
+    "RetryContainer",
+    "retried",
+])
+"""Public API names exported from mixin_retry."""
+
+
+def _validate_public_api() -> None:
+    """Validate that PUBLIC_API names are actually exported from root."""
+    import mixin_retry
+
+    for name in PUBLIC_API:
+        if not hasattr(mixin_retry, name):
+            raise ImportError(
+                f"PUBLIC_API includes {name} but it is not exported "
+                "from mixin_retry.__init__"
+            )
+
+        exported = getattr(mixin_retry, name)
+        if inspect.isclass(exported) or inspect.isfunction(exported):
+            continue
+
+        if callable(exported):
+            continue
+
+        raise TypeError(
+            f"PUBLIC_API includes {name} but it is not "
+            "callable or a class"
+        )
+
+
+_validate_public_api()
