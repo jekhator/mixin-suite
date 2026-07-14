@@ -772,3 +772,64 @@ class TestRetriedAsync:
         inner = OuterService.InnerService()
         assert outer.outer_method() == "outer"
         assert inner.inner_method() == "inner"
+
+    def test_class_decoration_all_member_types(self) -> None:
+        """Class decoration handles all member types correctly."""
+        call_count = {"count": 0}
+
+        @retried(max_attempts=3)
+        class CompleteService:
+            """Service with all member types."""
+
+            VALUE = 42
+
+            def __init__(self) -> None:
+                """Initialize."""
+                self.value = 0
+
+            def __str__(self) -> str:
+                """Dunder method."""
+                return "service"
+
+            @property
+            def prop(self) -> int:
+                """Property should not be decorated."""
+                return 42
+
+            @staticmethod
+            def static_method() -> str:
+                """Static method should be decorated."""
+                call_count["count"] += 1
+                return "static"
+
+            @classmethod
+            def class_method(cls) -> str:
+                """Class method should be decorated."""
+                call_count["count"] += 1
+                return "class"
+
+            def regular_method(self) -> str:
+                """Regular method should be decorated."""
+                call_count["count"] += 1
+                return "regular"
+
+            class _Nested:
+                """Nested class should not be decorated."""
+
+                def nested_method(self) -> str:
+                    """Nested method."""
+                    return "nested"
+
+            def _private(self) -> str:
+                """Private method should not be decorated."""
+                return "private"
+
+        service = CompleteService()
+        assert service.regular_method() == "regular"
+        assert CompleteService.static_method() == "static"
+        assert CompleteService.class_method() == "class"
+        assert service.prop == 42
+        assert str(service) == "service"
+        assert service._private() == "private"
+        assert CompleteService._Nested().nested_method() == "nested"
+        assert call_count["count"] == 3
