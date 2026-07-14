@@ -7,7 +7,8 @@ import functools
 import inspect
 import random
 import time
-from typing import TYPE_CHECKING, Any, Callable, Concatenate, ParamSpec, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from mixin_retry.decorators.constants import retried as const
 from mixin_retry.decorators.retried import retried_objects as objs

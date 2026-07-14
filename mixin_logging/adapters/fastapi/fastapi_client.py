@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_logging.adapters.fastapi import fastapi_objects as objs
+from mixin_logging.adapters.fastapi.constants import ERR_FASTAPI_NO_CORRELATION_ID
 
 
 class CorrelationIdMiddleware(BaseHTTPMiddleware):
@@ -44,7 +45,5 @@ async def get_correlation_id_dependency() -> str:
 
     corr_id = get_correlation_id()
     if corr_id is None:
-        raise ValueError(
-            "Correlation ID not set in context; ensure CorrelationIdMiddleware is installed"
-        )
+        raise ValueError(ERR_FASTAPI_NO_CORRELATION_ID)
     return corr_id
