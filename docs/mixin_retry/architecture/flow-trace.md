@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-mixin_retry/decorators/logged/logged_client.py (+ RetryContainer, constants)
+mixin_retry/decorators/retried/retried_client.py (+ RetryContainer, constants)
 ═══════════════════════════════════════════════════════════════════════════════
 Imports: functools, time, asyncio, random, inspect; dataclass RetryContainer
 ┌─ [DATACLASS,frozen,slots] RetryContainer ──────────┐ max_attempts: int ; base_delay_s: float ; max_delay_s: float ; jitter: bool └─...

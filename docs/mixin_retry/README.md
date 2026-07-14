@@ -137,13 +137,14 @@ Explanation: The decorator automatically retried twice after network failures be
 
 ### Class Decoration
 
-When decorating a class, @retried wraps all public methods:
+When decorating a class, @retried fans out to all public methods:
 
-- Instance methods: self._logger bound per instance
-- Classmethods and staticmethods: module-level logger fallback
-- Methods starting with _ (private) are skipped
-- Properties and nested classes are skipped
-- Methods already decorated with @retried are skipped to avoid double wrapping
+- Instance methods: Wrapped with retry logic; called via the instance binding
+- Classmethods: Extracted, wrapped, re-wrapped as classmethod to preserve semantics
+- Staticmethods: Extracted, wrapped, re-wrapped as staticmethod to preserve semantics
+- Methods starting with _ (private): Skipped entirely
+- Properties and nested classes: Skipped
+- Methods already decorated with @retried (identified by marker attribute): Skipped to prevent double wrapping
 
 ### Async Support
 
