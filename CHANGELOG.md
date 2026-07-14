@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **FastAPI adapter for correlation-ID propagation**: New `mixin_logging.adapters.fastapi` module providing CorrelationIdMiddleware for FastAPI applications and get_correlation_id_dependency for FastAPI route handlers. The middleware extracts or generates correlation IDs from request headers, sets them into logging context, injects them into response headers, and cleans up context on request exit. Mirrors the ASGI adapter but with FastAPI-idiomatic patterns (BaseHTTPMiddleware, dependency injection). Full test coverage with 25 tests including edge cases for header extraction, safety validation, and context cleanup.
 - **Classmethod and staticmethod logging fallback**: The `@logged` decorator now emits start/error events for classmethods and staticmethods using a module-level logger fallback when no LoggingMixin instance is available. Events are derived from the decorated class's module and class name, maintaining the same payload shape as instance-method events (error_type and code fields). Both sync and async variants are supported.
-- **Test coverage: 100% statement coverage**: Increased test coverage to 100% (1205 statements across mixin_logging and mixin_sensitivity). CI gate updated to require 100% coverage to catch any regressions. Added comprehensive tests for async classmethod and staticmethod error paths in the @logged decorator.
+- **Test coverage: 100% statement coverage**: Increased test coverage to 100% (1269 statements across mixin_logging and mixin_sensitivity). CI gate updated to require 100% coverage to catch any regressions. Added comprehensive tests for async classmethod and staticmethod error paths in the @logged decorator.
 
 ### Changed
 

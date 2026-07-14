@@ -34,6 +34,7 @@ Changelog = "https://github.com/jekhator/mixin-suite/blob/main/CHANGELOG.md"
 aiohttp = ["aiohttp"]
 botocore = ["botocore"]
 celery = ["celery"]
+fastapi = ["fastapi"]
 grpc = ["grpcio"]
 httpx = ["httpx"]
 requests = ["requests"]
@@ -42,6 +43,7 @@ all = [
     "aiohttp",
     "botocore",
     "celery",
+    "fastapi",
     "grpcio",
     "httpx",
     "requests",
