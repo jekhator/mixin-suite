@@ -10,6 +10,7 @@ __all__ = [
     "ERROR_MSG_EVENT_EMPTY",
     "ERROR_MSG_TARGET_NOT_CLASS_OR_CALLABLE",
     "EVENT_SEPARATOR",
+    "EVENT_SUFFIX_END",
     "EVENT_SUFFIX_ERROR",
     "EVENT_SUFFIX_START",
     "LOG_FIELD_ERROR_CODE",
@@ -21,6 +22,8 @@ __all__ = [
 
 EVENT_SUFFIX_START: Final = ".start"
 """Log-event suffix appended to base event name for start phase."""
+EVENT_SUFFIX_END: Final = ".end"
+"""Log-event suffix appended to base event name for success phase."""
 EVENT_SUFFIX_ERROR: Final = ".error"
 """Log-event suffix appended to base event name for error phase."""
 

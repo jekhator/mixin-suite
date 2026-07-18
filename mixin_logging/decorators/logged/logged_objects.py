@@ -24,6 +24,11 @@ class LoggedContainer:
         return f"{self.event}{const.EVENT_SUFFIX_START}"
 
     @property
+    def end(self) -> str:
+        """Derive end-event name <event>.end."""
+        return f"{self.event}{const.EVENT_SUFFIX_END}"
+
+    @property
     def error(self) -> str:
         """Derive error-event name <event>.error."""
         return f"{self.event}{const.EVENT_SUFFIX_ERROR}"

@@ -16,6 +16,11 @@ class TestLoggedContainer:
         container = LoggedContainer(test_const.EVENT_AUDIT)
         assert container.start == test_const.EVENT_AUDIT_START
 
+    def test_logged_container_end_property(self) -> None:
+        """LoggedContainer.end derives <event>.end."""
+        container = LoggedContainer(test_const.EVENT_AUDIT)
+        assert container.end == test_const.EVENT_AUDIT_END
+
     def test_logged_container_error_property(self) -> None:
         """LoggedContainer.error derives <event>.error."""
         container = LoggedContainer(test_const.EVENT_AUDIT)

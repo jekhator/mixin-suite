@@ -14,10 +14,13 @@ EVENT_VALIDATE: Final = "validate"
 """Expected log-event strings emitted by @logged."""
 
 EVENT_PROCESS_START: Final = "process.start"
+EVENT_PROCESS_END: Final = "process.end"
 EVENT_PROCESS_ERROR: Final = "process.error"
 EVENT_AUDIT_START: Final = "audit.start"
+EVENT_AUDIT_END: Final = "audit.end"
 EVENT_AUDIT_ERROR: Final = "audit.error"
 EVENT_VALIDATE_START: Final = "validate.start"
+EVENT_VALIDATE_END: Final = "validate.end"
 EVENT_VALIDATE_ERROR: Final = "validate.error"
 
 
