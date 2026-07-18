@@ -31,13 +31,13 @@ jobs:
       - name: Run strict-module
         run: |
           echo "=== strict-module: mixin_logging ===" && \
-          uvx --python 3.14 --from strict-suite==0.2.0 strict-module mixin_logging/ --format github && \
+          uvx --python 3.14 --from strict-suite==0.3.0 strict-module mixin_logging/ --format github && \
           echo "=== strict-module: mixin_sensitivity ===" && \
-          uvx --python 3.14 --from strict-suite==0.2.0 strict-module mixin_sensitivity/ --format github && \
+          uvx --python 3.14 --from strict-suite==0.3.0 strict-module mixin_sensitivity/ --format github && \
           echo "=== strict-module: mixin_retry ===" && \
-          uvx --python 3.14 --from strict-suite==0.2.0 strict-module mixin_retry/ --format github
+          uvx --python 3.14 --from strict-suite==0.3.0 strict-module mixin_retry/ --format github
       - name: Check LOC cap
         run: |
           for dir in mixin_logging/adapters/{aiohttp,asgi,botocore,celery,cloud,constants,graphql,grpc,httpx,requests,stdlib,urllib3,websocket,wsgi} mixin_logging/common/{constants,utils} mixin_logging/config mixin_logging/context/{constants,correlation} mixin_logging/decorators/{constants,logged} mixin_logging/mixin mixin_logging/redaction/{constants} mixin_sensitivity/common/{constants,utils} mixin_sensitivity/config mixin_sensitivity/decorators/{constants,phi_aware,pci_aware,pii_aware,secret_aware,sensitive} mixin_sensitivity/services/{classify,mask} mixin_retry/common/{constants} mixin_retry/decorators/{constants,retried}; do
-            uvx --python 3.14 --from strict-suite==0.2.0 strict-module loc-cap "$dir"
+            uvx --python 3.14 --from strict-suite==0.3.0 strict-module loc-cap "$dir"
           done
