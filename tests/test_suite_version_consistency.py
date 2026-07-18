@@ -9,8 +9,8 @@ class TestSuiteVersionConsistency:
     def test_all_mixin_roots_report_same_version(self) -> None:
         """All three mixin roots (__version__) report identical version string."""
         import mixin_logging
-        import mixin_sensitivity
         import mixin_retry
+        import mixin_sensitivity
 
         logging_version = mixin_logging.__version__
         sensitivity_version = mixin_sensitivity.__version__
