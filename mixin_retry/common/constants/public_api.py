@@ -8,6 +8,7 @@ PUBLIC_API: frozenset[str] = frozenset(
     [
         "RetryClient",
         "RetryContainer",
+        "__version__",
         "retried",
     ]
 )
@@ -30,6 +31,13 @@ class PublicAPIValidator:
                 )
 
             exported = getattr(mixin_retry, name)
+            if name == "__version__":
+                if not isinstance(exported, str):  # pragma: no cover
+                    raise TypeError(
+                        f"PUBLIC_API includes {name} but it is not a string"
+                    )
+                continue
+
             if inspect.isclass(exported) or inspect.isfunction(exported):
                 continue
 

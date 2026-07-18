@@ -267,9 +267,10 @@ class TestLoggedClient:
     def test_logged_client_for_event_container_properties(
         self,
     ) -> None:
-        """LoggedClient container has correct start/error properties."""
+        """LoggedClient container has correct start/end/error properties."""
         client = LoggedClient.for_event(test_const.EVENT_VALIDATE)
         assert client.container.start == test_const.EVENT_VALIDATE_START
+        assert client.container.end == test_const.EVENT_VALIDATE_END
         assert client.container.error == test_const.EVENT_VALIDATE_ERROR
 
 
@@ -888,4 +889,175 @@ class TestLoggedClassLevel:
             if "process.helper_async_failing.error" in rec.getMessage()
         ]
         assert len(error_records) == 1
-        assert error_records[0].__dict__["error_type"] == "RuntimeError"
+
+
+class TestLoggedPayloadCallback:
+    """Tests for @logged payload_from_result callback feature."""
+
+    def test_logged_emits_end_event_when_payload_callback_provided(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged emits <event>.end with payload fields when callback provided."""
+
+        def extract_payload(result: int) -> dict[str, object]:
+            return {"result_value": result}
+
+        class Svc(LoggingMixin):
+            """Test service with payload callback."""
+
+            __slots__ = ()
+
+            @logged(test_const.EVENT_PROCESS, payload_from_result=extract_payload)
+            def compute(self, x: int) -> int:
+                return x * 2
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.compute(21)
+
+        assert result == 42
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert end_records[0].__dict__["result_value"] == 42
+
+    def test_logged_no_end_event_when_payload_callback_absent(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged emits NO .end event when payload_from_result is None."""
+
+        class Svc(LoggingMixin):
+            """Test service without payload callback."""
+
+            __slots__ = ()
+
+            @logged(event=test_const.EVENT_PROCESS)
+            def compute(self, x: int) -> int:
+                return x * 2
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.compute(21)
+
+        assert result == 42
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 0
+
+    def test_logged_error_event_unchanged_with_payload_callback(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged error event behavior unchanged when payload callback provided."""
+
+        def extract_payload(result: int) -> dict[str, object]:
+            return {"result": result}
+
+        class Svc(LoggingMixin):
+            """Test service with payload callback on failing method."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=extract_payload,
+            )
+            def compute(self) -> int:
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise CustomError(msg)
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+
+        with pytest.raises(CustomError):
+            svc.compute()
+
+        error_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_ERROR
+        ]
+        assert len(error_records) == 1
+        assert error_records[0].__dict__["error_type"] == "CustomError"
+
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 0
+
+    def test_logged_async_emits_end_event_with_payload_callback(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged on async method emits .end event with payload when callback provided."""
+        import asyncio
+
+        def extract_payload(result: str) -> dict[str, object]:
+            return {"result_length": len(result)}
+
+        class Svc(LoggingMixin):
+            """Test service with async method and payload callback."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=extract_payload,
+            )
+            async def compute_async(self) -> str:
+                await asyncio.sleep(0)
+                return "completed"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = asyncio.run(svc.compute_async())
+
+        assert result == "completed"
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert end_records[0].__dict__["result_length"] == 9
+
+    def test_logged_payload_callback_receives_correct_result(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """Payload callback receives the actual result value."""
+
+        captured_results: list[object] = []
+
+        def capture_payload(result: dict[str, int]) -> dict[str, object]:
+            captured_results.append(result)
+            return {"status": "ok"}
+
+        class Svc(LoggingMixin):
+            """Test service with capturing payload callback."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=capture_payload,
+            )
+            def return_dict(self, key: str, value: int) -> dict[str, int]:
+                return {key: value}
+
+        svc = Svc()
+        log_capture_factory(svc)
+        svc.return_dict("test", 123)
+
+        assert len(captured_results) == 1
+        assert captured_results[0] == {"test": 123}

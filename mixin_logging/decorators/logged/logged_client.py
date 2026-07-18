@@ -23,14 +23,25 @@ Result = TypeVar("Result")
 
 @dataclass(frozen=True, slots=True)
 class LoggedClient:
-    """Emit <event>.start / <event>.error and re-raise on LoggingMixin methods."""
+    """Emit <event>.start / <event>.end / <event>.error on LoggingMixin methods."""
 
     container: objs.LoggedContainer
+    payload_from_result: Callable[[Any], dict[str, object]] | None = None
+    payload_from_exc: Callable[[BaseException], dict[str, object]] | None = None
 
     @classmethod
-    def for_event(cls, event: str) -> LoggedClient:
-        """Create a LoggedClient from a base event name."""
-        return cls(objs.LoggedContainer(event))
+    def for_event(
+        cls,
+        event: str,
+        payload_from_result: Callable[[Any], dict[str, object]] | None = None,
+        payload_from_exc: Callable[[BaseException], dict[str, object]] | None = None,
+    ) -> LoggedClient:
+        """Create a LoggedClient from a base event name and optional callbacks."""
+        return cls(
+            objs.LoggedContainer(event),
+            payload_from_result=payload_from_result,
+            payload_from_exc=payload_from_exc,
+        )
 
     def __call__(self, target: Any) -> Any:
         """Wrap a callable or fan out to all public methods of a class."""
@@ -144,7 +155,11 @@ class LoggedClient:
             ) -> Result:
                 instance.log_info(self.container.start)
                 try:
-                    return await method(instance, *args, **kwargs)  # type: ignore[arg-type, return-value]
+                    result = await method(instance, *args, **kwargs)  # type: ignore[arg-type, return-value]
+                    if self.payload_from_result is not None:
+                        payload = self.payload_from_result(result)
+                        instance.log_info(self.container.end, **payload)
+                    return result
                 except Exception as error:
                     instance.log_error(
                         self.container.error,
@@ -170,7 +185,11 @@ class LoggedClient:
         ) -> Result:
             instance.log_info(self.container.start)
             try:
-                return method(instance, *args, **kwargs)
+                result = method(instance, *args, **kwargs)
+                if self.payload_from_result is not None:
+                    payload = self.payload_from_result(result)
+                    instance.log_info(self.container.end, **payload)
+                return result
             except Exception as error:
                 instance.log_error(
                     self.container.error,
@@ -199,7 +218,11 @@ class LoggedClient:
 
             if isinstance(value, classmethod):
                 method_event = f"{self.container.event}{const.EVENT_SEPARATOR}{name}"
-                method_client = LoggedClient.for_event(method_event)
+                method_client = LoggedClient.for_event(
+                    method_event,
+                    payload_from_result=self.payload_from_result,
+                    payload_from_exc=self.payload_from_exc,
+                )
                 wrapped = method_client._wrap_callable(  # type: ignore[arg-type, type-var]
                     value.__func__,
                     for_static_or_class=True,
@@ -209,7 +232,11 @@ class LoggedClient:
                 setattr(cls, name, classmethod(wrapped))
             elif isinstance(value, staticmethod):
                 method_event = f"{self.container.event}{const.EVENT_SEPARATOR}{name}"
-                method_client = LoggedClient.for_event(method_event)
+                method_client = LoggedClient.for_event(
+                    method_event,
+                    payload_from_result=self.payload_from_result,
+                    payload_from_exc=self.payload_from_exc,
+                )
                 wrapped = method_client._wrap_callable(  # type: ignore[arg-type, type-var]
                     value.__func__,
                     for_static_or_class=True,
@@ -219,7 +246,11 @@ class LoggedClient:
                 setattr(cls, name, staticmethod(wrapped))
             elif callable(value):
                 method_event = f"{self.container.event}{const.EVENT_SEPARATOR}{name}"
-                method_client = LoggedClient.for_event(method_event)
+                method_client = LoggedClient.for_event(
+                    method_event,
+                    payload_from_result=self.payload_from_result,
+                    payload_from_exc=self.payload_from_exc,
+                )
                 wrapped = method_client._wrap_callable(value)
                 setattr(cls, name, wrapped)
 
