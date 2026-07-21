@@ -100,4 +100,4 @@ Second dispatch (same fingerprint within window):
 
 ## Documentation
 
-- [Flow Trace](architecture/flow-trace.md) — Dispatch flow and architecture diagram
+- [Flow Trace](architecture/flow-trace.md): Dispatch flow and architecture diagram
