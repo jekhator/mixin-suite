@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from mixin_notifications import CollectingBackend
-from mixin_notifications import DeliveryResult
-from mixin_notifications import LoggingBackend
-from mixin_notifications import NotificationEvent
-from mixin_notifications import NullBackend
-from mixin_notifications import Severity
+from mixin_notifications import (
+    CollectingBackend,
+    LoggingBackend,
+    NotificationEvent,
+    NullBackend,
+    Severity,
+)
 
 
 class TestNullBackend:

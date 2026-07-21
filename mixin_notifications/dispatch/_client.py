@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 
-from mixin_notifications.backends._objects import DeliveryResult
-from mixin_notifications.backends._objects import NotificationBackend
+from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
 from mixin_notifications.dispatch._objects import DispatchResult
 from mixin_notifications.events._objects import NotificationEvent
-from mixin_notifications.suppression._objects import SuppressionPolicy
-from mixin_notifications.suppression._objects import SuppressionTracker
+from mixin_notifications.suppression._objects import (
+    SuppressionPolicy,
+    SuppressionTracker,
+)
 
 
 @dataclass(slots=True)

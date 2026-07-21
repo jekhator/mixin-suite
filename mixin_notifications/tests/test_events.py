@@ -4,11 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from mixin_logging import clear_correlation_id
-from mixin_logging import set_correlation_id
-from mixin_notifications import NotificationEvent
-from mixin_notifications import NotificationEventClient
-from mixin_notifications import Severity
+from mixin_logging import clear_correlation_id, set_correlation_id
+from mixin_notifications import NotificationEvent, NotificationEventClient, Severity
 
 
 class TestNotificationEvent:

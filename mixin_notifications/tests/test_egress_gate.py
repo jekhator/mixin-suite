@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-
-from mixin_notifications import Dispatcher
-from mixin_notifications import NotificationEvent
-from mixin_notifications import Severity
+from mixin_notifications import Dispatcher, NotificationEvent, Severity
 
 
 class TestEgressGate:

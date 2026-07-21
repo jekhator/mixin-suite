@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import field
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from mixin_notifications.backends._objects import DeliveryResult
 from mixin_notifications.events._objects import NotificationEvent

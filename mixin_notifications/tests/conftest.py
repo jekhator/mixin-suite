@@ -7,8 +7,7 @@ from collections.abc import Iterator
 import pytest
 
 from mixin_logging import clear_correlation_id
-from mixin_notifications import NotificationEvent
-from mixin_notifications import Severity
+from mixin_notifications import NotificationEvent, Severity
 
 
 @pytest.fixture(autouse=True)

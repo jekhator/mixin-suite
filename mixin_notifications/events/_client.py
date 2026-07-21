@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
-from mixin_notifications.events._objects import NotificationEvent
-from mixin_notifications.events._objects import Severity
+from mixin_notifications.events._objects import NotificationEvent, Severity
 
 
 class NotificationEventClient:

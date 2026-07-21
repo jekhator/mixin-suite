@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from mixin_notifications import CollectingBackend
-from mixin_notifications import Dispatcher
-from mixin_notifications import NotificationEvent
-from mixin_notifications import NullBackend
-from mixin_notifications import Severity
-from mixin_notifications import SuppressionPolicy
+from mixin_notifications import (
+    CollectingBackend,
+    Dispatcher,
+    NotificationEvent,
+    NullBackend,
+    Severity,
+    SuppressionPolicy,
+)
 
 
 class TestDispatcher:
