@@ -57,9 +57,11 @@ iii NOTIFY   dispatcher.notify(event)
         │     ├─ egress_event = _apply_egress_gate(event, backend)
         │     │     ├─ backend.external_egress → False (CollectingBackend) ──▶ return event (unmasked)
         │     │     ├─ [or] backend.external_egress → True (WebhookBackend)
-        │     │     │     ├─ classify(event.body) ← mixin_sensitivity.classify
-        │     │     │     │     └─ body="SSN: 123-45-6789" → "SSN: ***-**-****"
-        │     │     │     ├─ metadata masked to counts: (("sensitive_count_pii", "1"), ...)
+        │     │     │     ├─ title = EGRESS_TITLE_TEMPLATE.format(category, severity)
+        │     │     │     │     └─ original "Secret payment issue" → "payment: CRITICAL notification"
+        │     │     │     ├─ body masked to redacted: "[content redacted for external delivery]"
+        │     │     │     ├─ metadata reduced to counts: (("sensitive_count_metadata", "2"), ...)
+        │     │     │     ├─ category, fingerprint, correlation_id, occurred_at unchanged (routing/dedup)
         │     │     │     └─ return masked event
         │     │
         │     ├─ try: result = backend.send(egress_event)
@@ -169,6 +171,10 @@ Key observations:
 - NotificationEventClient.create() auto-captures correlation_id from mixin_logging context and current UTC time
 - Suppression window is (category, fingerprint) keyed; duplicates within window are discarded server-side
 - Guarded dispatch catches backend exceptions, logs warnings, and continues (never raises into caller)
-- Egress gate inspects backend.external_egress; for external backends, mixin_sensitivity.classify() masks content
+- Egress gate inspects backend.external_egress; for external backends:
+  - Title is REPLACED with derived label from EGRESS_TITLE_TEMPLATE (category + severity, no original content)
+  - Body is redacted to "[content redacted for external delivery]"
+  - Metadata reduced to counts only
+  - Category, fingerprint, correlation_id, occurred_at remain unmasked (operational routing/dedup contract)
 - DeliveryResult provides per-backend outcome and retryability hint
 - All classes are frozen dataclasses or slots to prevent mutation

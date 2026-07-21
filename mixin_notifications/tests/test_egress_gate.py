@@ -104,3 +104,74 @@ class TestEgressGate:
         key, value = received.metadata[0]
         assert key == "sensitive_count_metadata"
         assert value == "2"
+
+    def test_external_backend_title_derived_from_category_severity(
+        self,
+        capturing_external_backend,
+    ) -> None:
+        """External backends receive derived title from category+severity, not original."""
+        event = NotificationEvent(
+            category="payment",
+            severity=Severity.CRITICAL,
+            title="Secret payment gateway down - internal issue code PCI-2847",
+            body="Database connection failed",
+            fingerprint="payment-gw-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+        )
+
+        dispatcher = Dispatcher(backends=(capturing_external_backend,))
+        dispatcher.notify(event)
+
+        received = capturing_external_backend.events[0]
+        assert received.title == "payment: CRITICAL notification"
+        assert "Secret payment gateway down" not in received.title
+        assert "PCI-2847" not in received.title
+
+    def test_internal_backend_title_unchanged(
+        self,
+        capturing_internal_backend,
+    ) -> None:
+        """Internal backends receive original title unchanged."""
+        event = NotificationEvent(
+            category="payment",
+            severity=Severity.CRITICAL,
+            title="Secret payment gateway down - internal issue code PCI-2847",
+            body="Database connection failed",
+            fingerprint="payment-gw-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+        )
+
+        dispatcher = Dispatcher(backends=(capturing_internal_backend,))
+        dispatcher.notify(event)
+
+        received = capturing_internal_backend.events[0]
+        assert (
+            received.title
+            == "Secret payment gateway down - internal issue code PCI-2847"
+        )
+
+    def test_egress_category_fingerprint_correlation_id_unchanged(
+        self,
+        capturing_external_backend,
+    ) -> None:
+        """Egress gate does not mask category, fingerprint, or correlation_id."""
+        event = NotificationEvent(
+            category="budget_audit",
+            severity=Severity.WARNING,
+            title="Sensitive title content",
+            body="Sensitive body",
+            fingerprint="budget-anomaly-2847",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id="trace-12345",
+        )
+
+        dispatcher = Dispatcher(backends=(capturing_external_backend,))
+        dispatcher.notify(event)
+
+        received = capturing_external_backend.events[0]
+        assert received.category == "budget_audit"
+        assert received.fingerprint == "budget-anomaly-2847"
+        assert received.correlation_id == "trace-12345"
+        assert received.occurred_at == "2026-07-21T10:00:00+00:00"

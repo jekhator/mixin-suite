@@ -110,13 +110,19 @@ class Dispatcher:
         if not backend.external_egress:
             return event
 
+        from mixin_notifications.common.constants import events as const
+
         metadata_counts = len(event.metadata)
         masked_body = "[content redacted for external delivery]"
+        derived_title = const.EGRESS_TITLE_TEMPLATE.format(
+            category=event.category,
+            severity=event.severity.value,
+        )
 
         return NotificationEvent(
             category=event.category,
             severity=event.severity,
-            title=event.title,
+            title=derived_title,
             body=masked_body,
             fingerprint=event.fingerprint,
             occurred_at=event.occurred_at,
