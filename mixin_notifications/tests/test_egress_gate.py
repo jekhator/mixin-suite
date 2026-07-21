@@ -68,7 +68,9 @@ class TestEgressGate:
             correlation_id=None,
         )
 
-        dispatcher = Dispatcher(backends=(capturing_internal_backend, capturing_external_backend))
+        dispatcher = Dispatcher(
+            backends=(capturing_internal_backend, capturing_external_backend)
+        )
         dispatcher.notify(event)
 
         internal_event = capturing_internal_backend.events[0]

@@ -20,7 +20,9 @@ class SuppressionTracker:
     max_capacity: int = 10000
     _seen: dict[tuple[str, str], float] = field(default_factory=dict)
 
-    def is_suppressed(self, category: str, fingerprint: str, current_time: float) -> bool:
+    def is_suppressed(
+        self, category: str, fingerprint: str, current_time: float
+    ) -> bool:
         """Check if (category, fingerprint) is within suppression window.
 
         Args:

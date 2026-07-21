@@ -23,7 +23,9 @@ class TestDispatcher:
         dispatcher = Dispatcher(backends=(null_backend,))
         assert dispatcher.backends == (null_backend,)
 
-    def test_notify_dispatches_to_all_backends(self, test_event: NotificationEvent) -> None:
+    def test_notify_dispatches_to_all_backends(
+        self, test_event: NotificationEvent
+    ) -> None:
         """Dispatcher sends event to all backends."""
         backend1 = CollectingBackend()
         backend2 = CollectingBackend()
@@ -53,7 +55,9 @@ class TestDispatcher:
 class TestDispatcherGuardedDispatch:
     """Test Dispatcher guarded dispatch (exception handling)."""
 
-    def test_backend_exception_does_not_raise(self, test_event: NotificationEvent, caplog: pytest.LogCaptureFixture) -> None:
+    def test_backend_exception_does_not_raise(
+        self, test_event: NotificationEvent, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Backend exception logs warning but does not raise."""
 
         class FailingBackend:

@@ -34,7 +34,9 @@ class NotificationEventClient:
         """
         from mixin_logging import get_correlation_id
 
-        resolved_severity = Severity(severity) if isinstance(severity, str) else severity
+        resolved_severity = (
+            Severity(severity) if isinstance(severity, str) else severity
+        )
 
         now_utc = datetime.now(timezone.utc).isoformat()
 

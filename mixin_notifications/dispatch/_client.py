@@ -22,7 +22,9 @@ class Dispatcher:
     backends: tuple[NotificationBackend, ...]
     suppression_policy: SuppressionPolicy | None = None
     _suppression_tracker: SuppressionTracker | None = field(default=None, init=False)
-    _logger: logging.Logger = field(default_factory=lambda: logging.getLogger("mixin_notifications"), init=False)
+    _logger: logging.Logger = field(
+        default_factory=lambda: logging.getLogger("mixin_notifications"), init=False
+    )
 
     def __post_init__(self) -> None:
         """Initialize suppression tracker if policy provided."""
@@ -30,7 +32,9 @@ class Dispatcher:
             object.__setattr__(
                 self,
                 "_suppression_tracker",
-                SuppressionTracker(window_seconds=self.suppression_policy.window_seconds),
+                SuppressionTracker(
+                    window_seconds=self.suppression_policy.window_seconds
+                ),
             )
 
     def notify(self, event: NotificationEvent) -> DispatchResult:
@@ -119,4 +123,3 @@ class Dispatcher:
             correlation_id=event.correlation_id,
             metadata=(("sensitive_count_metadata", str(metadata_counts)),),
         )
-

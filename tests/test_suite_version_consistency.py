@@ -18,5 +18,10 @@ class TestSuiteVersionConsistency:
         sensitivity_version = mixin_sensitivity.__version__
         retry_version = mixin_retry.__version__
 
-        assert logging_version == notifications_version == sensitivity_version == retry_version
+        assert (
+            logging_version
+            == notifications_version
+            == sensitivity_version
+            == retry_version
+        )
         assert logging_version == "0.3.0"

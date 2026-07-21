@@ -80,7 +80,9 @@ class TestLoggingBackend:
         backend = LoggingBackend()
         assert backend.external_egress is False
 
-    def test_send_logs_event(self, test_event: NotificationEvent, caplog: pytest.LogCaptureFixture) -> None:
+    def test_send_logs_event(
+        self, test_event: NotificationEvent, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """LoggingBackend logs the event."""
         import logging
 
