@@ -21,7 +21,7 @@ Params = ParamSpec("Params")
 Result = TypeVar("Result")
 
 
-def wrap_callable(
+def handle_wrap_callable(
     container: LoggedContainer,
     method: Callable[Concatenate[Service, Params], Result],
     payload_from_result: Callable[[Any], dict[str, object]] | None,

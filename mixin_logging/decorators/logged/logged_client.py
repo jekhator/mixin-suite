@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from mixin_logging.decorators.constants import decorators as const
 from mixin_logging.decorators.logged import logged_objects as objs
-from mixin_logging.decorators.logged._wrapper_factory import wrap_callable
+from mixin_logging.decorators.logged._wrapper_factory import handle_wrap_callable
 from mixin_logging.mixin.mixin import LoggingMixin
 
 if TYPE_CHECKING:
@@ -66,7 +66,7 @@ class LoggedClient:
         class_name: str | None = None,
     ) -> Callable[Concatenate[Service, Params], Result]:
         """Wrap a single callable with start/error logging envelope."""
-        return wrap_callable(
+        return handle_wrap_callable(
             self.container,
             method,
             self.payload_from_result,

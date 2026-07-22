@@ -17,7 +17,7 @@ class Loggable(Protocol):
         """Log a warning."""
 
 
-def extract_request(
+def handle_extract_request(
     logger: Loggable,
     extractor: Callable[..., dict[str, object]] | None,
     *args: Any,
@@ -31,11 +31,13 @@ def extract_request(
         extracted = extractor(*args, **kwargs)
         return extracted if isinstance(extracted, dict) else {}
     except Exception as err:
-        logger.warning("extraction.failure", extra={const.LOG_FIELD_ERROR_TYPE: type(err).__name__})
+        logger.warning(
+            "extraction.failure", extra={const.LOG_FIELD_ERROR_TYPE: type(err).__name__}
+        )
         return {}
 
 
-def extract_result(
+def handle_extract_result(
     logger: Loggable,
     extractor: Callable[[Any], dict[str, object]] | None,
     result: Any,
@@ -48,5 +50,7 @@ def extract_result(
         extracted = extractor(result)
         return extracted if isinstance(extracted, dict) else {}
     except Exception as err:
-        logger.warning("extraction.failure", extra={const.LOG_FIELD_ERROR_TYPE: type(err).__name__})
+        logger.warning(
+            "extraction.failure", extra={const.LOG_FIELD_ERROR_TYPE: type(err).__name__}
+        )
         return {}
