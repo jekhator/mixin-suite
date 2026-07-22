@@ -100,7 +100,7 @@ class TestWrapperStaticSync:
             method,
             None,
             None,
-            extract,
+            extract,  # type: ignore
             False,
             for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper",
@@ -126,7 +126,7 @@ class TestWrapperStaticSync:
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container,
-            method,
+            method,  # type: ignore
             None,
             None,
             None,
@@ -235,7 +235,7 @@ class TestWrapperStaticAsync:
             method,
             None,
             None,
-            extract,
+            extract,  # type: ignore
             False,
             for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper",
@@ -262,7 +262,7 @@ class TestWrapperStaticAsync:
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container,
-            method,
+            method,  # type: ignore
             None,
             None,
             None,
@@ -354,7 +354,7 @@ class TestWrapperInstanceSyncWithRequest:
             Svc.process,
             None,
             None,
-            extract_req,
+            extract_req,  # type: ignore
             False,  # type: ignore[arg-type]
         )
 
@@ -434,7 +434,7 @@ class TestWrapperInstanceSync:
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container,
             Svc.process,
-            extract,
+            extract,  # type: ignore
             None,
             None,
             False,  # type: ignore[arg-type]
@@ -596,7 +596,7 @@ class TestWrapperInstanceAsyncWithRequest:
             Svc.process,
             None,
             None,
-            extract_req,
+            extract_req,  # type: ignore
             False,  # type: ignore[arg-type]
         )
 
@@ -679,7 +679,7 @@ class TestWrapperInstanceAsync:
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container,
             Svc.process,
-            extract,
+            extract,  # type: ignore
             None,
             None,
             False,  # type: ignore[arg-type]
