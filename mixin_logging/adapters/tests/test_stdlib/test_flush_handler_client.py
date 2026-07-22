@@ -4,16 +4,14 @@ from __future__ import annotations
 
 import logging
 import time
-from collections import deque
-from typing import Any
 
 import pytest
 
-from mixin_logging import set_correlation_id, clear_correlation_id
+from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_logging.adapters.constants import stdlib as const
 from mixin_logging.adapters.stdlib.flush_handler_client import (
-    FlushOnWarningHandler,
     NULL_CORRELATION_ID,
+    FlushOnWarningHandler,
 )
 from mixin_logging.adapters.stdlib.flush_handler_objects import (
     FlushOnWarningConfig,
