@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **FlushOnWarningHandler for mixin_logging**: New correlation-aware buffering handler in `mixin_logging.adapters.stdlib` that buffers log records per correlation ID and flushes buffered records when a WARNING+ severity record arrives for that correlation. Suppresses verbose DEBUG/INFO logs during successful operations while materializing full context trails on failure. Improves signal-to-noise in log aggregation for multi-step workflows (Celery tasks, batch processors, multi-minute flows). Features per-correlation FIFO buffering with configurable TTL eviction (lazy, no background threads), per-correlation capacity constraints via `deque(maxlen)`, global max-correlations cap, and thread-safe operation via stdlib handler lock discipline. Includes frozen-slots config dataclass with comprehensive validation, 15 tests (100% coverage), detailed documentation with lifecycle diagrams, security audit, and run-verified README example demonstrating multi-correlation isolation.
+
 ## [0.3.0] - 2026-07-17
 
 ### Added
