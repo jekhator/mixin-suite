@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
-import functools
 import inspect
-import logging
-import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from mixin_logging.decorators.constants import decorators as const
 from mixin_logging.decorators.logged import logged_objects as objs
+from mixin_logging.decorators.logged._wrapper_factory import wrap_callable
 from mixin_logging.mixin.mixin import LoggingMixin
 
 if TYPE_CHECKING:
@@ -68,249 +65,18 @@ class LoggedClient:
         class_module_name: str | None = None,
         class_name: str | None = None,
     ) -> Callable[Concatenate[Service, Params], Result]:
-        """Wrap a single callable with start/error logging envelope.
-
-        Args:
-            method: The callable to wrap.
-            for_static_or_class: If True, use module-level logger fallback.
-            class_module_name: Module of the decorated class (for fallback logger).
-            class_name: Name of the decorated class (for fallback logger).
-        """
-
-        if for_static_or_class:
-            if class_module_name and class_name:
-                module_logger = logging.getLogger(class_module_name).getChild(
-                    class_name,
-                )
-
-                if asyncio.iscoroutinefunction(method):
-
-                    @functools.wraps(method)
-                    async def async_static_or_class_wrapper(
-                        *args: Params.args, **kwargs: Params.kwargs
-                    ) -> Result:
-                        start_time = time.perf_counter() if self.timed else None
-                        start_payload = {}
-                        if self.payload_from_request is not None:
-                            try:
-                                extracted = self.payload_from_request(*args, **kwargs)
-                                if isinstance(extracted, dict):
-                                    start_payload = extracted
-                                else:
-                                    err_type = "return_type_not_dict"
-                                    module_logger.warning(
-                                        "extraction.failure",
-                                        extra={const.LOG_FIELD_ERROR_TYPE: err_type},
-                                    )
-                            except Exception as error_in_extraction:
-                                err_type = type(error_in_extraction).__name__
-                                module_logger.warning(
-                                    "extraction.failure",
-                                    extra={const.LOG_FIELD_ERROR_TYPE: err_type},
-                                )
-                        module_logger.info(self.container.start, extra=start_payload)
-                        try:
-                            return await method(*args, **kwargs)  # type: ignore[arg-type, return-value]
-                        except Exception as error:
-                            error_extra = {
-                                const.LOG_FIELD_ERROR_TYPE: type(
-                                    error,
-                                ).__name__,
-                                const.LOG_FIELD_ERROR_CODE: getattr(
-                                    error,
-                                    const.ATTRIBUTE_CODE,
-                                    None,
-                                ),
-                            }
-                            if self.timed and start_time is not None:
-                                latency_ms = (time.perf_counter() - start_time) * 1000
-                                error_extra["latency_ms"] = latency_ms
-                            module_logger.error(
-                                self.container.error,
-                                extra=error_extra,
-                            )
-                            raise
-
-                    setattr(
-                        async_static_or_class_wrapper,
-                        const.ATTRIBUTE_LOGGED_MARKER,
-                        True,
-                    )
-                    return async_static_or_class_wrapper  # type: ignore[return-value]
-
-                @functools.wraps(method)
-                def static_or_class_wrapper(
-                    *args: Params.args, **kwargs: Params.kwargs
-                ) -> Result:
-                    start_time = time.perf_counter() if self.timed else None
-                    start_payload = {}
-                    if self.payload_from_request is not None:
-                        try:
-                            extracted = self.payload_from_request(*args, **kwargs)
-                            if isinstance(extracted, dict):
-                                start_payload = extracted
-                            else:
-                                err_type = "return_type_not_dict"
-                                module_logger.warning(
-                                    "extraction.failure",
-                                    extra={const.LOG_FIELD_ERROR_TYPE: err_type},
-                                )
-                        except Exception as error_in_extraction:
-                            err_type = type(error_in_extraction).__name__
-                            module_logger.warning(
-                                "extraction.failure",
-                                extra={const.LOG_FIELD_ERROR_TYPE: err_type},
-                            )
-                    module_logger.info(self.container.start, extra=start_payload)
-                    try:
-                        return method(*args, **kwargs)  # type: ignore[arg-type, return-value]
-                    except Exception as error:
-                        error_extra = {
-                            const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
-                            const.LOG_FIELD_ERROR_CODE: getattr(
-                                error,
-                                const.ATTRIBUTE_CODE,
-                                None,
-                            ),
-                        }
-                        if self.timed and start_time is not None:
-                            latency_ms = (time.perf_counter() - start_time) * 1000
-                            error_extra["latency_ms"] = latency_ms
-                        module_logger.error(
-                            self.container.error,
-                            extra=error_extra,
-                        )
-                        raise
-
-                setattr(static_or_class_wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
-                return static_or_class_wrapper  # type: ignore[return-value]
-
-            @functools.wraps(method)  # pragma: no cover
-            def static_or_class_wrapper_no_logging(  # pragma: no cover
-                *args: Params.args, **kwargs: Params.kwargs
-            ) -> Result:  # pragma: no cover
-                return method(*args, **kwargs)  # type: ignore[arg-type, return-value] # pragma: no cover
-
-            setattr(  # pragma: no cover
-                static_or_class_wrapper_no_logging,
-                const.ATTRIBUTE_LOGGED_MARKER,
-                True,
-            )
-            return static_or_class_wrapper_no_logging  # type: ignore[return-value] # pragma: no cover
-
-        if asyncio.iscoroutinefunction(method):
-
-            @functools.wraps(method)
-            async def async_wrapper(
-                instance: Service,
-                *args: Params.args,
-                **kwargs: Params.kwargs,
-            ) -> Result:
-                start_time = time.perf_counter() if self.timed else None
-                start_payload = {}
-                if self.payload_from_request is not None:
-                    try:
-                        extracted = self.payload_from_request(*args, **kwargs)
-                        if isinstance(extracted, dict):
-                            start_payload = extracted
-                        else:
-                            instance.log_warning(
-                                "extraction.failure",
-                                error="return_type_not_dict",
-                            )
-                    except Exception as error_in_extraction:
-                        instance.log_warning(
-                            "extraction.failure",
-                            error=type(error_in_extraction).__name__,
-                        )
-                instance.log_info(self.container.start, **start_payload)
-                try:
-                    result = await method(instance, *args, **kwargs)  # type: ignore[arg-type, return-value]
-                    if self.payload_from_result is not None or self.timed:
-                        end_payload = {}
-                        if self.payload_from_result is not None:
-                            end_payload = self.payload_from_result(result)
-                        if self.timed and start_time is not None:
-                            latency_ms = (time.perf_counter() - start_time) * 1000
-                            end_payload["latency_ms"] = latency_ms
-                        instance.log_info(self.container.end, **end_payload)
-                    return result
-                except Exception as error:
-                    error_payload = {
-                        const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
-                        const.LOG_FIELD_ERROR_CODE: getattr(
-                            error,
-                            const.ATTRIBUTE_CODE,
-                            None,
-                        ),
-                    }
-                    if self.timed and start_time is not None:
-                        latency_ms = (time.perf_counter() - start_time) * 1000
-                        error_payload["latency_ms"] = latency_ms
-                    instance.log_error(
-                        self.container.error,
-                        **error_payload,
-                    )
-                    raise
-
-            setattr(async_wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
-            return async_wrapper  # type: ignore[return-value]
-
-        @functools.wraps(method)
-        def wrapper(
-            instance: Service,
-            *args: Params.args,
-            **kwargs: Params.kwargs,
-        ) -> Result:
-            start_time = time.perf_counter() if self.timed else None
-            start_payload = {}
-            if self.payload_from_request is not None:
-                try:
-                    extracted = self.payload_from_request(*args, **kwargs)
-                    if isinstance(extracted, dict):
-                        start_payload = extracted
-                    else:
-                        instance.log_warning(
-                            "extraction.failure",
-                            error="return_type_not_dict",
-                        )
-                except Exception as error_in_extraction:
-                    instance.log_warning(
-                        "extraction.failure",
-                        error=type(error_in_extraction).__name__,
-                    )
-            instance.log_info(self.container.start, **start_payload)
-            try:
-                result = method(instance, *args, **kwargs)
-                if self.payload_from_result is not None or self.timed:
-                    end_payload = {}
-                    if self.payload_from_result is not None:
-                        end_payload = self.payload_from_result(result)
-                    if self.timed and start_time is not None:
-                        latency_ms = (time.perf_counter() - start_time) * 1000
-                        end_payload["latency_ms"] = latency_ms
-                    instance.log_info(self.container.end, **end_payload)
-                return result
-            except Exception as error:
-                error_payload = {
-                    const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
-                    const.LOG_FIELD_ERROR_CODE: getattr(
-                        error,
-                        const.ATTRIBUTE_CODE,
-                        None,
-                    ),
-                }
-                if self.timed and start_time is not None:
-                    latency_ms = (time.perf_counter() - start_time) * 1000
-                    error_payload["latency_ms"] = latency_ms
-                instance.log_error(
-                    self.container.error,
-                    **error_payload,
-                )
-                raise
-
-        setattr(wrapper, const.ATTRIBUTE_LOGGED_MARKER, True)
-        return wrapper
+        """Wrap a single callable with start/error logging envelope."""
+        return wrap_callable(
+            self.container,
+            method,
+            self.payload_from_result,
+            self.payload_from_exc,
+            self.payload_from_request,
+            self.timed,
+            for_static_or_class,
+            class_module_name,
+            class_name,
+        )
 
     def _decorate_class(self, cls: type) -> type:
         """Fan out decorator to all public methods of a class."""
