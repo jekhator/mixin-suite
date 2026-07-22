@@ -4,7 +4,7 @@ A pure-stdlib `logging.Handler` that buffers records per correlation ID and flus
 
 ## Why?
 
-When debugging multi-step workflows (Celery tasks, batch processors, multi-minute flows), successful operations produce verbose DEBUG/INFO logs that clutter the output. Failures generate WARNING/ERROR records. This handler buffers the verbose trail per correlation and only materializes it when a failure occurs—combining the clarity of minimal logging with the debuggability of full context on error.
+When debugging multi-step workflows (Celery tasks, batch processors, multi-minute flows), successful operations produce verbose DEBUG/INFO logs that clutter the output. Failures generate WARNING/ERROR records. This handler buffers the verbose trail per correlation and only materializes it when a failure occurs - combining the clarity of minimal logging with the debuggability of full context on error.
 
 ## How?
 
@@ -168,7 +168,7 @@ demo - WARNING - [request-B] - Timeout: request took too long
 2. **Scenario 2:** Request-B's records remain buffered (no output) because no WARNING occurred for Request-B during this phase.
 3. **Scenario 3:** Request-B's buffered DEBUG, INFO, DEBUG, INFO records all flush when its WARNING arrives, preserving the order.
 
-**Key difference from stdlib `MemoryHandler`:** Request-A's warning does NOT affect Request-B's buffer—each correlation is isolated.
+**Key difference from stdlib `MemoryHandler`:** Request-A's warning does NOT affect Request-B's buffer - each correlation is isolated.
 
 ## Design Notes
 

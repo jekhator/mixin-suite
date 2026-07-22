@@ -106,7 +106,7 @@ Audit of the `FlushOnWarningHandler` (correlation-aware buffering logging handle
 **Risk:** If `target_handler.emit()` raises, buffered records are lost and handler state corrupted.
 
 **Mitigation:**
-- ✅ Handler.emit() is not wrapped in try/except (by design—exceptions bubble to logger)
+- ✅ Handler.emit() is not wrapped in try/except (by design - exceptions bubble to logger)
 - ✅ If target handler fails, the record is lost but handler state (buffers) remains consistent
 - ✅ Application should handle handler exceptions at logging config level
 
