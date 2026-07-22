@@ -1061,3 +1061,537 @@ class TestLoggedPayloadCallback:
 
         assert len(captured_results) == 1
         assert captured_results[0] == {"test": 123}
+
+
+class TestLoggedPayloadFromRequest:
+    """Tests for @logged payload_from_request extraction feature."""
+
+    def test_logged_payload_from_request_sync_instance_method(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged extracts fields from sync instance method request into .start event."""
+
+        def extract_request(user_id: str) -> dict[str, object]:
+            return {"user_id": user_id}
+
+        class Svc(LoggingMixin):
+            """Test service with payload_from_request on sync method."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_request=extract_request,
+            )
+            def process_user(self, user_id: str) -> str:
+                return f"processed-{user_id}"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.process_user("user-42")
+
+        assert result == "processed-user-42"
+        start_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_START
+        ]
+        assert len(start_records) == 1
+        assert start_records[0].__dict__["user_id"] == "user-42"
+
+    def test_logged_payload_from_request_async_instance_method(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged extracts fields from async instance method request into .start event."""
+        import asyncio
+
+        def extract_request(request_id: str) -> dict[str, object]:
+            return {"request_id": request_id}
+
+        class Svc(LoggingMixin):
+            """Test service with payload_from_request on async method."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_request=extract_request,
+            )
+            async def process_async(self, request_id: str) -> str:
+                await asyncio.sleep(0)
+                return f"done-{request_id}"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = asyncio.run(svc.process_async("req-123"))
+
+        assert result == "done-req-123"
+        start_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_START
+        ]
+        assert len(start_records) == 1
+        assert start_records[0].__dict__["request_id"] == "req-123"
+
+    def test_logged_payload_from_request_class_level_decoration(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged at class level inherits payload_from_request to public methods."""
+        import asyncio
+
+        def extract_request(action: str) -> dict[str, object]:
+            return {"action": action}
+
+        @logged(
+            test_const.EVENT_PROCESS,
+            payload_from_request=extract_request,
+        )
+        class Svc(LoggingMixin):
+            """Test service with class-level payload_from_request."""
+
+            __slots__ = ()
+
+            def sync_method(self, action: str) -> str:
+                return f"sync-{action}"
+
+            async def async_method(self, action: str) -> str:
+                await asyncio.sleep(0)
+                return f"async-{action}"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+
+        result1 = svc.sync_method("create")
+        assert result1 == "sync-create"
+
+        result2 = asyncio.run(svc.async_method("delete"))
+        assert result2 == "async-delete"
+
+        start_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() in (
+                f"{test_const.EVENT_PROCESS}.sync_method.start",
+                f"{test_const.EVENT_PROCESS}.async_method.start",
+            )
+        ]
+        assert len(start_records) == 2
+        assert any(rec.__dict__["action"] == "create" for rec in start_records)
+        assert any(rec.__dict__["action"] == "delete" for rec in start_records)
+
+    def test_logged_payload_from_request_extractor_raises_exception(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged proceeds when payload_from_request raises; logs WARNING."""
+
+        def bad_extractor(user_id: str) -> dict[str, object]:
+            msg = "extraction failed"
+            raise ValueError(msg)
+
+        class Svc(LoggingMixin):
+            """Test service with failing payload_from_request extractor."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_request=bad_extractor,
+            )
+            def process(self, user_id: str) -> str:
+                return f"ok-{user_id}"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.process("user-123")
+
+        assert result == "ok-user-123"
+        start_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_START
+        ]
+        assert len(start_records) == 1
+        warning_records = [
+            rec
+            for rec in collector.records
+            if rec.levelname == "WARNING" and "extraction.failure" in rec.getMessage()
+        ]
+        assert len(warning_records) == 1
+
+    def test_logged_payload_from_request_extractor_returns_non_dict(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged handles non-dict return from payload_from_request; logs WARNING."""
+
+        def bad_extractor(value: str) -> object:
+            return f"string-{value}"
+
+        class Svc(LoggingMixin):
+            """Test service with non-dict payload_from_request return."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_request=bad_extractor,
+            )
+            def process(self, value: str) -> str:
+                return f"result-{value}"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.process("test")
+
+        assert result == "result-test"
+        warning_records = [
+            rec
+            for rec in collector.records
+            if rec.levelname == "WARNING"
+        ]
+        assert len(warning_records) >= 1
+
+    def test_logged_payload_from_request_none_default(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged with payload_from_request=None (default) skips extraction."""
+
+        class Svc(LoggingMixin):
+            """Test service without payload_from_request."""
+
+            __slots__ = ()
+
+            @logged(event=test_const.EVENT_PROCESS)
+            def process(self, user_id: str) -> str:
+                return f"ok-{user_id}"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.process("user-99")
+
+        assert result == "ok-user-99"
+        start_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_START
+        ]
+        assert len(start_records) == 1
+        assert "user_id" not in start_records[0].__dict__
+
+
+class TestLoggedTimed:
+    """Tests for @logged timed feature (latency_ms tracking)."""
+
+    def test_logged_timed_adds_latency_to_end_event(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged with timed=True adds latency_ms to .end event."""
+        import time
+
+        def extract_payload(result: int) -> dict[str, object]:
+            return {"result": result}
+
+        class Svc(LoggingMixin):
+            """Test service with timed=True."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=extract_payload,
+                timed=True,
+            )
+            def slow_compute(self) -> int:
+                time.sleep(0.01)
+                return 42
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.slow_compute()
+
+        assert result == 42
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert "latency_ms" in end_records[0].__dict__
+        latency = end_records[0].__dict__["latency_ms"]
+        assert isinstance(latency, float)
+        assert latency > 0
+
+    def test_logged_timed_adds_latency_to_error_event(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged with timed=True adds latency_ms to .error event."""
+        import time
+
+        class Svc(LoggingMixin):
+            """Test service with timed=True on failing method."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                timed=True,
+            )
+            def failing_compute(self) -> None:
+                time.sleep(0.01)
+                msg = test_const.ERROR_MSG_CUSTOM_WORK_FAILED
+                raise ValueError(msg)
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+
+        with pytest.raises(ValueError):
+            svc.failing_compute()
+
+        error_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_ERROR
+        ]
+        assert len(error_records) == 1
+        assert "latency_ms" in error_records[0].__dict__
+        latency = error_records[0].__dict__["latency_ms"]
+        assert isinstance(latency, float)
+        assert latency > 0
+
+    def test_logged_timed_false_default(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged with timed=False (default) omits latency_ms from events."""
+
+        def extract_payload(result: int) -> dict[str, object]:
+            return {"result": result}
+
+        class Svc(LoggingMixin):
+            """Test service without timed."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=extract_payload,
+            )
+            def compute(self) -> int:
+                return 99
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.compute()
+
+        assert result == 99
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert "latency_ms" not in end_records[0].__dict__
+
+    def test_logged_timed_async_method(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged with timed=True on async method includes latency_ms."""
+        import asyncio
+        import time
+
+        def extract_payload(result: str) -> dict[str, object]:
+            return {"length": len(result)}
+
+        class Svc(LoggingMixin):
+            """Test service with timed=True on async method."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=extract_payload,
+                timed=True,
+            )
+            async def async_compute(self) -> str:
+                await asyncio.sleep(0.01)
+                return "result"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = asyncio.run(svc.async_compute())
+
+        assert result == "result"
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert "latency_ms" in end_records[0].__dict__
+        latency = end_records[0].__dict__["latency_ms"]
+        assert isinstance(latency, float)
+        assert latency > 0
+
+
+class TestLoggedCombinedEnrichment:
+    """Tests for combined payload_from_request + timed + payload_from_result."""
+
+    def test_logged_combined_all_enrichment_features(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """@logged with all three enrichment features emits complete event data."""
+        import time
+
+        def extract_request(user_id: str) -> dict[str, object]:
+            return {"user_id": user_id}
+
+        def extract_result(result: dict[str, int]) -> dict[str, object]:
+            return {"result_sum": result["sum"]}
+
+        class Svc(LoggingMixin):
+            """Test service with all enrichment features."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_request=extract_request,
+                payload_from_result=extract_result,
+                timed=True,
+            )
+            def compute_with_user(self, user_id: str) -> dict[str, int]:
+                time.sleep(0.005)
+                return {"sum": 100}
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.compute_with_user("user-77")
+
+        assert result == {"sum": 100}
+
+        start_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_START
+        ]
+        assert len(start_records) == 1
+        assert start_records[0].__dict__["user_id"] == "user-77"
+
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert end_records[0].__dict__["result_sum"] == 100
+        assert "latency_ms" in end_records[0].__dict__
+
+
+class TestLoggedBackwardCompatibility:
+    """Tests for backward compatibility with existing @logged behavior."""
+
+    def test_logged_existing_no_new_params_still_works(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """Existing @logged usage without new params works unchanged."""
+
+        class Svc(LoggingMixin):
+            """Test service with traditional @logged usage."""
+
+            __slots__ = ()
+
+            @logged(event=test_const.EVENT_PROCESS)
+            def traditional_method(self, value: int) -> int:
+                return value * 2
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.traditional_method(21)
+
+        assert result == 42
+        assert len(collector.records) >= 1
+        assert any(
+            rec.getMessage() == test_const.EVENT_PROCESS_START
+            for rec in collector.records
+        )
+
+    def test_logged_existing_with_payload_from_result_still_works(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """Existing @logged with payload_from_result still works."""
+
+        def extract_payload(result: int) -> dict[str, object]:
+            return {"value": result}
+
+        class Svc(LoggingMixin):
+            """Test service with traditional payload_from_result."""
+
+            __slots__ = ()
+
+            @logged(
+                test_const.EVENT_PROCESS,
+                payload_from_result=extract_payload,
+            )
+            def compute(self, x: int) -> int:
+                return x * 3
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+        result = svc.compute(14)
+
+        assert result == 42
+        end_records = [
+            rec
+            for rec in collector.records
+            if rec.getMessage() == test_const.EVENT_PROCESS_END
+        ]
+        assert len(end_records) == 1
+        assert end_records[0].__dict__["value"] == 42
+
+    def test_logged_class_level_existing_behavior_unchanged(
+        self,
+        log_capture_factory,
+    ) -> None:
+        """Existing class-level @logged without new params works unchanged."""
+
+        @logged(event=test_const.EVENT_PROCESS)
+        class Svc(LoggingMixin):
+            """Test service with traditional class-level @logged."""
+
+            __slots__ = ()
+
+            def method1(self) -> str:
+                return "one"
+
+            def method2(self) -> str:
+                return "two"
+
+        svc = Svc()
+        collector = log_capture_factory(svc)
+
+        result1 = svc.method1()
+        result2 = svc.method2()
+
+        assert result1 == "one"
+        assert result2 == "two"
+        assert len(collector.records) >= 2
+        assert any(
+            rec.getMessage() == f"{test_const.EVENT_PROCESS}.method1.start"
+            for rec in collector.records
+        )
+        assert any(
+            rec.getMessage() == f"{test_const.EVENT_PROCESS}.method2.start"
+            for rec in collector.records
+        )
