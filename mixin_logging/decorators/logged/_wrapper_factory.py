@@ -38,9 +38,7 @@ class WrapperFactory:
     ) -> Callable[Concatenate[Service, Params], Result]:
         """Create wrapped callable with start/error logging envelope."""
         if for_static_or_class and class_module_name and class_name:
-            module_logger = logging.getLogger(class_module_name).getChild(
-                class_name
-            )
+            module_logger = logging.getLogger(class_module_name).getChild(class_name)
 
             if inspect.iscoroutinefunction(method):
 
@@ -101,7 +99,9 @@ class WrapperFactory:
                         else:
                             module_logger.warning(
                                 "extraction.failure",
-                                extra={const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"},
+                                extra={
+                                    const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"
+                                },
                             )
                     except Exception as err:
                         module_logger.warning(
