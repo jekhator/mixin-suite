@@ -1174,7 +1174,8 @@ class TestLoggedPayloadFromRequest:
         start_records = [
             rec
             for rec in collector.records
-            if rec.getMessage() in (
+            if rec.getMessage()
+            in (
                 f"{test_const.EVENT_PROCESS}.sync_method.start",
                 f"{test_const.EVENT_PROCESS}.async_method.start",
             )
@@ -1250,9 +1251,7 @@ class TestLoggedPayloadFromRequest:
 
         assert result == "result-test"
         warning_records = [
-            rec
-            for rec in collector.records
-            if rec.levelname == "WARNING"
+            rec for rec in collector.records if rec.levelname == "WARNING"
         ]
         assert len(warning_records) >= 1
 
