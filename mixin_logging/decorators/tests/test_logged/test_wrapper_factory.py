@@ -30,7 +30,7 @@ class TestWrapperStaticSync:
             return x * 2
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticSyncClass"
         )
@@ -56,7 +56,7 @@ class TestWrapperStaticSync:
             return x * 2
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticSyncClass"
         )
@@ -81,7 +81,7 @@ class TestWrapperStaticSync:
             return x * 2
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticSyncClass"
         )
@@ -103,7 +103,7 @@ class TestWrapperStaticSync:
             raise ValueError("test")
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, None, True, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticSyncClass"
         )
@@ -135,7 +135,7 @@ class TestWrapperStaticAsync:
             return x * 2
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticAsyncClass"
         )
@@ -162,7 +162,7 @@ class TestWrapperStaticAsync:
             return x * 2
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticAsyncClass"
         )
@@ -188,7 +188,7 @@ class TestWrapperStaticAsync:
             return x * 2
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticAsyncClass"
         )
@@ -211,7 +211,7 @@ class TestWrapperStaticAsync:
             raise ValueError("test")
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, method, None, None, None, True, for_static_or_class=True,  # type: ignore[arg-type]
             class_module_name="test_wrapper", class_name="StaticAsyncClass"
         )
@@ -241,7 +241,7 @@ class TestWrapperInstanceSyncWithRequest:
             return {"input": x}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
         )
 
@@ -262,7 +262,7 @@ class TestWrapperInstanceSyncWithRequest:
             return 1 / 0  # type: ignore
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
         )
 
@@ -283,7 +283,7 @@ class TestWrapperInstanceSyncWithRequest:
             return "not-dict"
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
         )
 
@@ -308,7 +308,7 @@ class TestWrapperInstanceSync:
             return {"result": r}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
         )
 
@@ -329,7 +329,7 @@ class TestWrapperInstanceSync:
             return 1 / 0  # type: ignore
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
         )
 
@@ -350,7 +350,7 @@ class TestWrapperInstanceSync:
             return "not-dict"
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
         )
 
@@ -371,7 +371,7 @@ class TestWrapperInstanceSync:
             return {"result": r}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
         )
 
@@ -392,7 +392,7 @@ class TestWrapperInstanceSync:
             return {"result": r}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
         )
 
@@ -418,7 +418,7 @@ class TestWrapperInstanceAsyncWithRequest:
             return {"input": x}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
         )
 
@@ -440,7 +440,7 @@ class TestWrapperInstanceAsyncWithRequest:
             return 1 / 0  # type: ignore
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
         )
 
@@ -462,7 +462,7 @@ class TestWrapperInstanceAsyncWithRequest:
             return "not-dict"
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
         )
 
@@ -488,7 +488,7 @@ class TestWrapperInstanceAsync:
             return {"result": r}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
         )
 
@@ -510,7 +510,7 @@ class TestWrapperInstanceAsync:
             return 1 / 0  # type: ignore
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
         )
 
@@ -532,7 +532,7 @@ class TestWrapperInstanceAsync:
             return "not-dict"
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
         )
 
@@ -554,7 +554,7 @@ class TestWrapperInstanceAsync:
             return {"result": r}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
         )
 
@@ -576,7 +576,7 @@ class TestWrapperInstanceAsync:
             return {"result": r}
 
         container = LoggedContainer("op")
-        wrapped = WrapperFactory.wrap_callable(
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
             container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
         )
 
