@@ -42,5 +42,5 @@ jobs:
       - name: Sync dependencies
         run: uv sync --all-extras
       - name: Type-check
-        run: uv run mypy mixin_logging/ mixin_sensitivity/ mixin_retry/
+        run: uv run mypy mixin_logging/ mixin_sensitivity/ mixin_retry/ mixin_notifications/
 

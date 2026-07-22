@@ -67,7 +67,7 @@ dev = [
 path = "mixin_logging/config/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["mixin_logging", "mixin_sensitivity", "mixin_retry"]
+packages = ["mixin_logging", "mixin_sensitivity", "mixin_retry", "mixin_notifications"]
 exclude = [
     "mixin_logging/**/tests",
     "mixin_logging/conftest.py",
@@ -75,18 +75,20 @@ exclude = [
     "mixin_sensitivity/conftest.py",
     "mixin_retry/**/tests",
     "mixin_retry/conftest.py",
+    "mixin_notifications/**/tests",
+    "mixin_notifications/conftest.py",
     "conftest.py"
 ]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-testpaths = ["mixin_logging", "mixin_sensitivity", "mixin_retry"]
+testpaths = ["mixin_logging", "mixin_sensitivity", "mixin_retry", "mixin_notifications"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
 asyncio_mode = "strict"
 
 [tool.coverage.run]
-source = ["mixin_logging", "mixin_sensitivity", "mixin_retry"]
+source = ["mixin_logging", "mixin_sensitivity", "mixin_retry", "mixin_notifications"]
 branch = true
 omit = [
     "mixin_logging/**/tests/*",
@@ -96,6 +98,8 @@ omit = [
     "mixin_sensitivity/conftest.py",
     "mixin_retry/**/tests/*",
     "mixin_retry/conftest.py",
+    "mixin_notifications/**/tests/*",
+    "mixin_notifications/conftest.py",
     "conftest.py"
 ]
 
@@ -122,13 +126,13 @@ extend-select = ["I", "TID252", "PLC0414"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["mixin_logging", "mixin_sensitivity"]
+known-first-party = ["mixin_logging", "mixin_sensitivity", "mixin_notifications"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
 [tool.strict-module]
-paths = ["mixin_logging/", "mixin_sensitivity/", "mixin_retry/"]
+paths = ["mixin_logging/", "mixin_sensitivity/", "mixin_retry/", "mixin_notifications/"]
 exception_tags = ["fixture"]
 
 [tool.strict-module.loc-cap]
