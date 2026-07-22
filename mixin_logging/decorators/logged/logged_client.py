@@ -97,14 +97,16 @@ class LoggedClient:
                                 if isinstance(extracted, dict):
                                     start_payload = extracted
                                 else:
+                                    err_type = "return_type_not_dict"
                                     module_logger.warning(
                                         "extraction.failure",
-                                        extra={const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"},
+                                        extra={const.LOG_FIELD_ERROR_TYPE: err_type},
                                     )
                             except Exception as error_in_extraction:
+                                err_type = type(error_in_extraction).__name__
                                 module_logger.warning(
                                     "extraction.failure",
-                                    extra={const.LOG_FIELD_ERROR_TYPE: type(error_in_extraction).__name__},
+                                    extra={const.LOG_FIELD_ERROR_TYPE: err_type},
                                 )
                         module_logger.info(self.container.start, extra=start_payload)
                         try:
@@ -148,14 +150,16 @@ class LoggedClient:
                             if isinstance(extracted, dict):
                                 start_payload = extracted
                             else:
+                                err_type = "return_type_not_dict"
                                 module_logger.warning(
                                     "extraction.failure",
-                                    extra={const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"},
+                                    extra={const.LOG_FIELD_ERROR_TYPE: err_type},
                                 )
                         except Exception as error_in_extraction:
+                            err_type = type(error_in_extraction).__name__
                             module_logger.warning(
                                 "extraction.failure",
-                                extra={const.LOG_FIELD_ERROR_TYPE: type(error_in_extraction).__name__},
+                                extra={const.LOG_FIELD_ERROR_TYPE: err_type},
                             )
                     module_logger.info(self.container.start, extra=start_payload)
                     try:

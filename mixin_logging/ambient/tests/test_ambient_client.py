@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import logging
 
-import pytest
-
 from mixin_logging import set_correlation_id, clear_correlation_id
 from mixin_logging.ambient.ambient_client import AmbientLogger
 
