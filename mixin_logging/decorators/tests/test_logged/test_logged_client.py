@@ -1239,7 +1239,7 @@ class TestLoggedPayloadFromRequest:
 
             @logged(
                 test_const.EVENT_PROCESS,
-                payload_from_request=bad_extractor,
+                payload_from_request=bad_extractor,  # type: ignore[arg-type]
             )
             def process(self, value: str) -> str:
                 return f"result-{value}"
