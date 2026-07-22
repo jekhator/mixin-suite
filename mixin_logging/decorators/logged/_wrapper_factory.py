@@ -55,14 +55,14 @@ class WrapperFactory:
                                 start_payload = extracted
                             else:
                                 module_logger.warning(
-                                    "extraction.failure",
+                                    const.LOG_EVENT_EXTRACTION_FAILURE,
                                     extra={
-                                        const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"
+                                        const.LOG_FIELD_ERROR_TYPE: const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT
                                     },
                                 )
                         except Exception as err:
                             module_logger.warning(
-                                "extraction.failure",
+                                const.LOG_EVENT_EXTRACTION_FAILURE,
                                 extra={const.LOG_FIELD_ERROR_TYPE: type(err).__name__},
                             )
                     module_logger.info(container.start, extra=start_payload)
@@ -76,7 +76,7 @@ class WrapperFactory:
                             ),
                         }
                         if timed and start_time is not None:
-                            error_extra["latency_ms"] = (
+                            error_extra[const.LOG_FIELD_LATENCY_MS] = (
                                 time.perf_counter() - start_time
                             ) * 1000
                         module_logger.error(container.error, extra=error_extra)
@@ -98,14 +98,14 @@ class WrapperFactory:
                             start_payload = extracted
                         else:
                             module_logger.warning(
-                                "extraction.failure",
+                                const.LOG_EVENT_EXTRACTION_FAILURE,
                                 extra={
-                                    const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"
+                                    const.LOG_FIELD_ERROR_TYPE: const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT
                                 },
                             )
                     except Exception as err:
                         module_logger.warning(
-                            "extraction.failure",
+                            const.LOG_EVENT_EXTRACTION_FAILURE,
                             extra={const.LOG_FIELD_ERROR_TYPE: type(err).__name__},
                         )
                 module_logger.info(container.start, extra=start_payload)
@@ -119,7 +119,7 @@ class WrapperFactory:
                         ),
                     }
                     if timed and start_time is not None:
-                        error_extra["latency_ms"] = (
+                        error_extra[const.LOG_FIELD_LATENCY_MS] = (
                             time.perf_counter() - start_time
                         ) * 1000
                     module_logger.error(container.error, extra=error_extra)
@@ -143,11 +143,11 @@ class WrapperFactory:
                             start_payload = extracted
                         else:
                             instance.log_warning(
-                                "extraction.failure", error_type="return_type_not_dict"
+                                const.LOG_EVENT_EXTRACTION_FAILURE, error_type=const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT
                             )
                     except Exception as err:
                         instance.log_warning(
-                            "extraction.failure", error_type=type(err).__name__
+                            const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
                         )
                 instance.log_info(container.start, **start_payload)
                 try:
@@ -161,10 +161,10 @@ class WrapperFactory:
                                     end_payload = extracted
                             except Exception as err:
                                 instance.log_warning(
-                                    "extraction.failure", error_type=type(err).__name__
+                                    const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
                                 )
                         if timed and start_time is not None:
-                            end_payload["latency_ms"] = (
+                            end_payload[const.LOG_FIELD_LATENCY_MS] = (
                                 time.perf_counter() - start_time
                             ) * 1000
                         instance.log_info(container.end, **end_payload)
@@ -177,7 +177,7 @@ class WrapperFactory:
                         ),
                     }
                     if timed and start_time is not None:
-                        error_payload["latency_ms"] = (
+                        error_payload[const.LOG_FIELD_LATENCY_MS] = (
                             time.perf_counter() - start_time
                         ) * 1000
                     instance.log_error(container.error, **error_payload)
@@ -199,11 +199,11 @@ class WrapperFactory:
                         start_payload = extracted
                     else:
                         instance.log_warning(
-                            "extraction.failure", error_type="return_type_not_dict"
+                            const.LOG_EVENT_EXTRACTION_FAILURE, error_type=const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT
                         )
                 except Exception as err:
                     instance.log_warning(
-                        "extraction.failure", error_type=type(err).__name__
+                        const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
                     )
             instance.log_info(container.start, **start_payload)
             try:
@@ -217,10 +217,10 @@ class WrapperFactory:
                                 end_payload = extracted
                         except Exception as err:
                             instance.log_warning(
-                                "extraction.failure", error_type=type(err).__name__
+                                const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
                             )
                     if timed and start_time is not None:
-                        end_payload["latency_ms"] = (
+                        end_payload[const.LOG_FIELD_LATENCY_MS] = (
                             time.perf_counter() - start_time
                         ) * 1000
                     instance.log_info(container.end, **end_payload)
@@ -233,7 +233,7 @@ class WrapperFactory:
                     ),
                 }
                 if timed and start_time is not None:
-                    error_payload["latency_ms"] = (
+                    error_payload[const.LOG_FIELD_LATENCY_MS] = (
                         time.perf_counter() - start_time
                     ) * 1000
                 instance.log_error(container.error, **error_payload)

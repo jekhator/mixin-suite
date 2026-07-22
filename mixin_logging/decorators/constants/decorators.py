@@ -13,8 +13,11 @@ __all__ = [
     "EVENT_SUFFIX_END",
     "EVENT_SUFFIX_ERROR",
     "EVENT_SUFFIX_START",
+    "LOG_EVENT_EXTRACTION_FAILURE",
     "LOG_FIELD_ERROR_CODE",
     "LOG_FIELD_ERROR_TYPE",
+    "LOG_FIELD_LATENCY_MS",
+    "PAYLOAD_EXTRACTION_FAILURE_NON_DICT",
 ]
 
 
@@ -37,6 +40,16 @@ LOG_FIELD_ERROR_TYPE: Final = "error_type"
 """Log record field key for exception type name."""
 LOG_FIELD_ERROR_CODE: Final = "code"
 """Log record field key for exception code attribute."""
+LOG_FIELD_LATENCY_MS: Final = "latency_ms"
+"""Log record field key for method execution latency in milliseconds."""
+
+
+"""Extraction and payload event/error messages."""
+
+LOG_EVENT_EXTRACTION_FAILURE: Final = "extraction.failure"
+"""Log event name for payload extraction failures."""
+PAYLOAD_EXTRACTION_FAILURE_NON_DICT: Final = "return_type_not_dict"
+"""Extraction error type when extractor returns non-dict value."""
 
 
 """Exception and decorator attribute names."""
