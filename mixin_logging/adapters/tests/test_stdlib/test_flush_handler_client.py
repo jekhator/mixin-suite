@@ -217,63 +217,86 @@ class TestFlushOnWarningHandlerBuffering:
         ]
 
     def test_other_correlations_not_affected_by_flush(self) -> None:
-        """Flushing one correlation does not affect another's buffer."""
+        """Interleaved correlations: only failing correlation's buffer flushes.
+
+        Reproduces exact scenario: flow-A and flow-B interleaved; when A warns,
+        only A's trail flushes (not B's); B's buffer remains intact for later warning.
+        """
         target = _RecordCapturingHandler()
         config = FlushOnWarningConfig(target_handler=target)
         handler = FlushOnWarningHandler(config)
 
-        # Emit DEBUG for correlation 1
         set_correlation_id(test_const.CORRELATION_ID_VALID_ID_123)
-        debug_1 = logging.LogRecord(
+        record_a1 = logging.LogRecord(
             name="test",
             level=logging.DEBUG,
             pathname="test.py",
             lineno=42,
-            msg="debug 1",
+            msg="A step 1",
             args=(),
             exc_info=None,
         )
-        debug_1.correlation_id = test_const.CORRELATION_ID_VALID_ID_123
-        handler.emit(debug_1)
+        handler.emit(record_a1)
 
-        # Emit DEBUG for correlation 2
-        set_correlation_id(test_const.CORRELATION_ID_TRACE)
-        debug_2 = logging.LogRecord(
+        record_a2 = logging.LogRecord(
             name="test",
             level=logging.DEBUG,
             pathname="test.py",
             lineno=43,
-            msg="debug 2",
+            msg="A step 2",
             args=(),
             exc_info=None,
         )
-        debug_2.correlation_id = test_const.CORRELATION_ID_TRACE
-        handler.emit(debug_2)
+        handler.emit(record_a2)
 
-        assert len(target.records) == 0
+        set_correlation_id(test_const.CORRELATION_ID_TRACE)
+        record_b1 = logging.LogRecord(
+            name="test",
+            level=logging.DEBUG,
+            pathname="test.py",
+            lineno=44,
+            msg="B step 1",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(record_b1)
 
-        # Flush correlation 1
         set_correlation_id(test_const.CORRELATION_ID_VALID_ID_123)
-        warning = logging.LogRecord(
+        warning_a = logging.LogRecord(
             name="test",
             level=logging.WARNING,
             pathname="test.py",
-            lineno=44,
-            msg="warning",
+            lineno=45,
+            msg="A failed",
             args=(),
             exc_info=None,
         )
-        warning.correlation_id = test_const.CORRELATION_ID_VALID_ID_123
-        handler.emit(warning)
+        handler.emit(warning_a)
 
-        # Only correlation 1's buffer should be flushed
-        assert len(target.records) == 2
-        assert target.records[0] is debug_1
-        assert target.records[1] is warning
+        assert len(target.records) == 3
+        assert target.records[0].getMessage() == "A step 1"
+        assert target.records[1].getMessage() == "A step 2"
+        assert target.records[2].getMessage() == "A failed"
+        assert all(r.getMessage() != "B step 1" for r in target.records)
 
-        # Correlation 2's buffer should still exist
         assert test_const.CORRELATION_ID_TRACE in handler._buffers
         assert len(handler._buffers[test_const.CORRELATION_ID_TRACE]) == 1
+
+        set_correlation_id(test_const.CORRELATION_ID_TRACE)
+        warning_b = logging.LogRecord(
+            name="test",
+            level=logging.WARNING,
+            pathname="test.py",
+            lineno=46,
+            msg="B timeout",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(warning_b)
+
+        assert len(target.records) == 5
+        assert target.records[3].getMessage() == "B step 1"
+        assert target.records[4].getMessage() == "B timeout"
 
 
 class TestFlushOnWarningHandlerTTL:

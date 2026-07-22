@@ -7,10 +7,10 @@ import time
 from collections import deque
 from typing import Final
 
-from mixin_logging.adapters.constants import stdlib as const
 from mixin_logging.adapters.stdlib.flush_handler_objects import (
     FlushOnWarningConfig,
 )
+from mixin_logging.context.correlation.correlation_client import get_correlation_id
 
 # Null correlation ID for records with no correlation_id set
 NULL_CORRELATION_ID: Final = "-buffered-"
@@ -50,15 +50,11 @@ class FlushOnWarningHandler(logging.Handler):
             self._evict_oldest_correlation_if_exceeded()
 
     def _get_correlation_id(self, record: logging.LogRecord) -> str:
-        """Resolve correlation_id from record or context; return null sentinel if unset."""
-        recorded_id = getattr(
-            record,
-            const.CORRELATION_RECORD_ATTR,
-            const.UNSET_CORRELATION_ID,
-        )
-        if recorded_id == const.UNSET_CORRELATION_ID:
+        """Resolve correlation_id from ContextVar at emit time."""
+        current_id = get_correlation_id()
+        if current_id is None:
             return NULL_CORRELATION_ID
-        return recorded_id or NULL_CORRELATION_ID
+        return current_id
 
     def _evict_expired_buffers(self, current_time: float) -> None:
         """Remove buffers older than ttl_seconds."""
