@@ -31,8 +31,15 @@ class TestWrapperStaticSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticSyncClass"
+            container,
+            method,
+            None,
+            None,
+            extract,
+            False,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticSyncClass",
         )
 
         result = wrapped(5)  # type: ignore
@@ -57,8 +64,15 @@ class TestWrapperStaticSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticSyncClass"
+            container,
+            method,
+            None,
+            None,
+            extract,
+            False,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticSyncClass",
         )
 
         result = wrapped(5)  # type: ignore
@@ -82,8 +96,15 @@ class TestWrapperStaticSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticSyncClass"
+            container,
+            method,
+            None,
+            None,
+            extract,
+            False,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticSyncClass",
         )
 
         result = wrapped(5)  # type: ignore
@@ -104,8 +125,15 @@ class TestWrapperStaticSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, None, True, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticSyncClass"
+            container,
+            method,
+            None,
+            None,
+            None,
+            True,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticSyncClass",
         )
 
         with pytest.raises(ValueError):
@@ -136,8 +164,15 @@ class TestWrapperStaticAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticAsyncClass"
+            container,
+            method,
+            None,
+            None,
+            extract,
+            False,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticAsyncClass",
         )
 
         result = asyncio.run(wrapped(5))  # type: ignore
@@ -163,8 +198,15 @@ class TestWrapperStaticAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticAsyncClass"
+            container,
+            method,
+            None,
+            None,
+            extract,
+            False,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticAsyncClass",
         )
 
         result = asyncio.run(wrapped(5))  # type: ignore
@@ -189,8 +231,15 @@ class TestWrapperStaticAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, extract, False, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticAsyncClass"
+            container,
+            method,
+            None,
+            None,
+            extract,
+            False,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticAsyncClass",
         )
 
         result = asyncio.run(wrapped(5))  # type: ignore
@@ -212,8 +261,15 @@ class TestWrapperStaticAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, method, None, None, None, True, for_static_or_class=True,  # type: ignore[arg-type]
-            class_module_name="test_wrapper", class_name="StaticAsyncClass"
+            container,
+            method,
+            None,
+            None,
+            None,
+            True,
+            for_static_or_class=True,  # type: ignore[arg-type]
+            class_module_name="test_wrapper",
+            class_name="StaticAsyncClass",
         )
 
         with pytest.raises(ValueError):
@@ -242,7 +298,12 @@ class TestWrapperInstanceSyncWithRequest:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            None,
+            None,
+            extract_req,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -263,7 +324,12 @@ class TestWrapperInstanceSyncWithRequest:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            None,
+            None,
+            extract_req,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -284,7 +350,12 @@ class TestWrapperInstanceSyncWithRequest:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            None,
+            None,
+            extract_req,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -309,7 +380,12 @@ class TestWrapperInstanceSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -330,7 +406,12 @@ class TestWrapperInstanceSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -351,7 +432,12 @@ class TestWrapperInstanceSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -372,7 +458,12 @@ class TestWrapperInstanceSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            True,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -393,12 +484,40 @@ class TestWrapperInstanceSync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            True,  # type: ignore[arg-type]
         )
 
         svc = Svc()
         with pytest.raises(ValueError):
             wrapped(svc)  # type: ignore
+
+    def test_instance_sync_timed_only_no_result_extraction(self) -> None:
+        """Sync instance: timed=True with NO result extraction -> .end with latency_ms only."""
+
+        class Svc(LoggingMixin):
+            __slots__ = ()
+
+            def process(self) -> int:
+                return 42
+
+        container = LoggedContainer("op")
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
+            container,
+            Svc.process,
+            None,
+            None,
+            None,
+            True,  # type: ignore[arg-type]
+        )
+
+        svc = Svc()
+        result = wrapped(svc)  # type: ignore
+        assert result == 42
 
 
 class TestWrapperInstanceAsyncWithRequest:
@@ -419,7 +538,12 @@ class TestWrapperInstanceAsyncWithRequest:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            None,
+            None,
+            extract_req,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -441,7 +565,12 @@ class TestWrapperInstanceAsyncWithRequest:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            None,
+            None,
+            extract_req,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -463,7 +592,12 @@ class TestWrapperInstanceAsyncWithRequest:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, None, None, extract_req, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            None,
+            None,
+            extract_req,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -489,7 +623,12 @@ class TestWrapperInstanceAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -511,7 +650,12 @@ class TestWrapperInstanceAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -533,7 +677,12 @@ class TestWrapperInstanceAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, False  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            False,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -555,7 +704,12 @@ class TestWrapperInstanceAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            True,  # type: ignore[arg-type]
         )
 
         svc = Svc()
@@ -577,9 +731,38 @@ class TestWrapperInstanceAsync:
 
         container = LoggedContainer("op")
         wrapped = WrapperFactory.wrap_callable(  # type: ignore
-            container, Svc.process, extract, None, None, True  # type: ignore[arg-type]
+            container,
+            Svc.process,
+            extract,
+            None,
+            None,
+            True,  # type: ignore[arg-type]
         )
 
         svc = Svc()
         with pytest.raises(ValueError):
             asyncio.run(wrapped(svc))  # type: ignore
+
+    def test_instance_async_timed_only_no_result_extraction(self) -> None:
+        """Async instance: timed=True with NO result extraction -> .end with latency_ms only."""
+
+        class Svc(LoggingMixin):
+            __slots__ = ()
+
+            async def process(self) -> int:
+                await asyncio.sleep(0)
+                return 42
+
+        container = LoggedContainer("op")
+        wrapped = WrapperFactory.wrap_callable(  # type: ignore
+            container,
+            Svc.process,
+            None,
+            None,
+            None,
+            True,  # type: ignore[arg-type]
+        )
+
+        svc = Svc()
+        result = asyncio.run(wrapped(svc))  # type: ignore
+        assert result == 42

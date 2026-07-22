@@ -143,11 +143,13 @@ class WrapperFactory:
                             start_payload = extracted
                         else:
                             instance.log_warning(
-                                const.LOG_EVENT_EXTRACTION_FAILURE, error_type=const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT
+                                const.LOG_EVENT_EXTRACTION_FAILURE,
+                                error_type=const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT,
                             )
                     except Exception as err:
                         instance.log_warning(
-                            const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
+                            const.LOG_EVENT_EXTRACTION_FAILURE,
+                            error_type=type(err).__name__,
                         )
                 instance.log_info(container.start, **start_payload)
                 try:
@@ -161,7 +163,8 @@ class WrapperFactory:
                                     end_payload = extracted
                             except Exception as err:
                                 instance.log_warning(
-                                    const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
+                                    const.LOG_EVENT_EXTRACTION_FAILURE,
+                                    error_type=type(err).__name__,
                                 )
                         if timed and start_time is not None:
                             end_payload[const.LOG_FIELD_LATENCY_MS] = (
@@ -199,11 +202,13 @@ class WrapperFactory:
                         start_payload = extracted
                     else:
                         instance.log_warning(
-                            const.LOG_EVENT_EXTRACTION_FAILURE, error_type=const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT
+                            const.LOG_EVENT_EXTRACTION_FAILURE,
+                            error_type=const.PAYLOAD_EXTRACTION_FAILURE_NON_DICT,
                         )
                 except Exception as err:
                     instance.log_warning(
-                        const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
+                        const.LOG_EVENT_EXTRACTION_FAILURE,
+                        error_type=type(err).__name__,
                     )
             instance.log_info(container.start, **start_payload)
             try:
@@ -217,7 +222,8 @@ class WrapperFactory:
                                 end_payload = extracted
                         except Exception as err:
                             instance.log_warning(
-                                const.LOG_EVENT_EXTRACTION_FAILURE, error_type=type(err).__name__
+                                const.LOG_EVENT_EXTRACTION_FAILURE,
+                                error_type=type(err).__name__,
                             )
                     if timed and start_time is not None:
                         end_payload[const.LOG_FIELD_LATENCY_MS] = (
