@@ -203,7 +203,7 @@ The handler respects the standard `logging.Handler` lock discipline via `self.ac
 
 ## See Also
 
-- **CorrelationLogFilter:** `mixin_logging/adapters/stdlib/stdlib_client.py` – Stamps correlation_id onto every record.
-- **Correlation Context:** `mixin_logging/context/correlation/` – ContextVar machinery for managing correlation IDs.
-- **Audit/Review:** `docs/mixin_logging/audits/` – Security and design audits.
+- **CorrelationLogFilter:** `mixin_logging/adapters/stdlib/stdlib_client.py` - Stamps correlation_id onto every record.
+- **Correlation Context:** `mixin_logging/context/correlation/` - ContextVar machinery for managing correlation IDs.
+- **Audit/Review:** `docs/mixin_logging/audits/` - Security and design audits.
 - **Full documentation:** `docs/mixin_logging/apps/adapters/flush-handler.md`.

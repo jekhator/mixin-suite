@@ -38,8 +38,8 @@ Handler Wrapper (buffers and transforms records per correlation; sits in the log
 
 `FlushOnWarningHandler` (logging.Handler):
 
-- `__init__(config: FlushOnWarningConfig)` – Initialize with config.
-- `emit(record: logging.LogRecord)` – Core handler entry point; buffers, flushes, or evicts as needed.
+- `__init__(config: FlushOnWarningConfig)` - Initialize with config.
+- `emit(record: logging.LogRecord)` - Core handler entry point; buffers, flushes, or evicts as needed.
 
 ## Constants
 

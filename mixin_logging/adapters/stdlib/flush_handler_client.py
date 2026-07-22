@@ -7,7 +7,6 @@ import time
 from collections import deque
 from typing import Final
 
-from mixin_logging import get_correlation_id
 from mixin_logging.adapters.constants import stdlib as const
 from mixin_logging.adapters.stdlib.flush_handler_objects import (
     FlushOnWarningConfig,

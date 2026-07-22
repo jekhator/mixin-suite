@@ -97,13 +97,13 @@ A `logging.Handler` subclass that buffers log records on a per-correlation basis
 ### 1. Method Structure
 
 **Methods:**
-- `emit()` – Entry point; dispatches to buffer/flush/evict logic
-- `_get_correlation_id()` – Extract correlation from record or context
-- `_evict_expired_buffers()` – TTL-based cleanup
-- `_evict_oldest_correlation_if_exceeded()` – Capacity-based cleanup
-- `_evict_correlation()` – Remove a specific correlation's buffer
-- `_buffer_record()` – Add to buffer with lazy initialization
-- `_flush_correlation()` – Drain buffer and emit to target
+- `emit()` - Entry point; dispatches to buffer/flush/evict logic
+- `_get_correlation_id()` - Extract correlation from record or context
+- `_evict_expired_buffers()` - TTL-based cleanup
+- `_evict_oldest_correlation_if_exceeded()` - Capacity-based cleanup
+- `_evict_correlation()` - Remove a specific correlation's buffer
+- `_buffer_record()` - Add to buffer with lazy initialization
+- `_flush_correlation()` - Drain buffer and emit to target
 
 **Analysis:**
 - ✅ Single responsibility: each method has one clear purpose
@@ -120,7 +120,7 @@ A `logging.Handler` subclass that buffers log records on a per-correlation basis
 - `NULL_CORRELATION_ID` sentinel
 
 **Naming:**
-- ✅ `_buffers`, `_timestamps`, `_correlation_order` – Clear intent (private slot)
+- ✅ `_buffers`, `_timestamps`, `_correlation_order` - Clear intent (private slot)
 - ✅ Method names are descriptive (`_evict_expired_buffers`, not `cleanup`)
 - ✅ No magic strings or numbers
 
@@ -138,12 +138,12 @@ A `logging.Handler` subclass that buffers log records on a per-correlation basis
 ## Test Coverage Review
 
 **Test classes:**
-1. `TestFlushOnWarningConfigValidation` – Config validation (6 tests)
-2. `TestFlushOnWarningHandlerBuffering` – Core flush behavior (4 tests)
-3. `TestFlushOnWarningHandlerTTL` – TTL eviction (1 test)
-4. `TestFlushOnWarningHandlerCapacity` – Capacity constraints (2 tests)
-5. `TestFlushOnWarningHandlerNullCorrelation` – Null correlation (1 test)
-6. `TestFlushOnWarningHandlerThreadSafety` – Thread safety smoke test (1 test)
+1. `TestFlushOnWarningConfigValidation` - Config validation (6 tests)
+2. `TestFlushOnWarningHandlerBuffering` - Core flush behavior (4 tests)
+3. `TestFlushOnWarningHandlerTTL` - TTL eviction (1 test)
+4. `TestFlushOnWarningHandlerCapacity` - Capacity constraints (2 tests)
+5. `TestFlushOnWarningHandlerNullCorrelation` - Null correlation (1 test)
+6. `TestFlushOnWarningHandlerThreadSafety` - Thread safety smoke test (1 test)
 
 **Coverage:**
 - ✅ Config validation: all error paths
@@ -161,10 +161,10 @@ A `logging.Handler` subclass that buffers log records on a per-correlation basis
 ## Documentation Review
 
 **Doc files:**
-1. `docs/mixin_logging/apps/adapters/flush-handler.md` – Full specification and lifecycle diagram
-2. `mixin_logging/adapters/stdlib/README_FLUSH_HANDLER.md` – Usage guide with verified example
-3. `docs/mixin_logging/audits/2026-07-21-flush-handler-security-audit.md` – Security analysis
-4. `docs/mixin_logging/reviews/2026-07-21-flush-handler-review.md` – This design review
+1. `docs/mixin_logging/apps/adapters/flush-handler.md` - Full specification and lifecycle diagram
+2. `mixin_logging/adapters/stdlib/README_FLUSH_HANDLER.md` - Usage guide with verified example
+3. `docs/mixin_logging/audits/2026-07-21-flush-handler-security-audit.md` - Security analysis
+4. `docs/mixin_logging/reviews/2026-07-21-flush-handler-review.md` - This design review
 
 **Verdict:** ✅ COMPREHENSIVE DOCUMENTATION
 

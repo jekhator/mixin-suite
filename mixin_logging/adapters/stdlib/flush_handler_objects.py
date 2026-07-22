@@ -6,8 +6,6 @@ import logging
 from dataclasses import dataclass
 from typing import Final
 
-from mixin_logging.adapters.constants import stdlib as const
-
 # Error message constants
 ERR_TARGET_HANDLER_REQUIRED: Final = "target_handler must not be None"
 ERR_FLUSH_LEVEL_INVALID: Final = "flush_level must be >= logging.WARNING"
