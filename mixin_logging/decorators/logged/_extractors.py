@@ -17,7 +17,7 @@ class Loggable(Protocol):
         """Log a warning."""
 
 
-def extract_request(
+def handle_extract_request(
     logger: Loggable,
     extractor: Callable[..., dict[str, object]] | None,
     *args: Any,
@@ -37,7 +37,7 @@ def extract_request(
         return {}
 
 
-def extract_result(
+def handle_extract_result(
     logger: Loggable,
     extractor: Callable[[Any], dict[str, object]] | None,
     result: Any,
