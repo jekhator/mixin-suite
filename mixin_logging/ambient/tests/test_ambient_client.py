@@ -38,7 +38,7 @@ class TestAmbientLoggerCorrelationInjection:
         ambient.log_debug("test event")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "flow-123"
+        assert handler.records[0].correlation_id == "flow-123"
 
     def test_log_info_injects_correlation_id(self) -> None:
         """log_info() auto-injects correlation_id from ContextVar."""
@@ -52,7 +52,7 @@ class TestAmbientLoggerCorrelationInjection:
         ambient.log_info("test event")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "flow-456"
+        assert handler.records[0].correlation_id == "flow-456"
 
     def test_log_warning_injects_correlation_id(self) -> None:
         """log_warning() auto-injects correlation_id from ContextVar."""
@@ -66,7 +66,7 @@ class TestAmbientLoggerCorrelationInjection:
         ambient.log_warning("test event")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "flow-789"
+        assert handler.records[0].correlation_id == "flow-789"
 
     def test_log_error_injects_correlation_id(self) -> None:
         """log_error() auto-injects correlation_id from ContextVar."""
@@ -80,7 +80,7 @@ class TestAmbientLoggerCorrelationInjection:
         ambient.log_error("test event")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "flow-abc"
+        assert handler.records[0].correlation_id == "flow-abc"
 
     def test_log_exception_injects_correlation_id(self) -> None:
         """log_exception() auto-injects correlation_id from ContextVar."""
@@ -98,7 +98,7 @@ class TestAmbientLoggerCorrelationInjection:
             ambient.log_exception("exception event")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "flow-xyz"
+        assert handler.records[0].correlation_id == "flow-xyz"
         assert handler.records[0].exc_info is not None
 
     def test_unset_correlation_id_defaults_to_dash(self) -> None:
@@ -113,7 +113,7 @@ class TestAmbientLoggerCorrelationInjection:
         ambient.log_debug("test event")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "-"
+        assert handler.records[0].correlation_id == "-"
 
 
 class TestAmbientLoggerFieldsPassthrough:
@@ -131,9 +131,9 @@ class TestAmbientLoggerFieldsPassthrough:
         ambient.log_info("test event", user_id="user-1", action="login")
 
         assert len(handler.records) == 1
-        assert handler.records[0].extra.get("correlation_id") == "flow-123"
-        assert handler.records[0].extra.get("user_id") == "user-1"
-        assert handler.records[0].extra.get("action") == "login"
+        assert handler.records[0].correlation_id == "flow-123"
+        assert handler.records[0].user_id == "user-1"
+        assert handler.records[0].action == "login"
 
     def test_fields_work_with_all_levels(self) -> None:
         """Fields pass through at all log levels."""
@@ -150,10 +150,10 @@ class TestAmbientLoggerFieldsPassthrough:
         ambient.log_error("error event", level="error")
 
         assert len(handler.records) == 4
-        assert handler.records[0].extra.get("level") == "debug"
-        assert handler.records[1].extra.get("level") == "info"
-        assert handler.records[2].extra.get("level") == "warning"
-        assert handler.records[3].extra.get("level") == "error"
+        assert handler.records[0].level == "debug"
+        assert handler.records[1].level == "info"
+        assert handler.records[2].level == "warning"
+        assert handler.records[3].level == "error"
 
 
 class TestAmbientLoggerLevels:
