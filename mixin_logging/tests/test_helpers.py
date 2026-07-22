@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from mixin_logging.common.constants import tests as test_const
-from mixin_logging.common.utils.record_collector import _RecordCollector
+from mixin_logging.tests.helpers import _RecordCollector
 
 
 class TestRecordCollectorInit:
