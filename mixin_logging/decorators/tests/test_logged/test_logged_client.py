@@ -1406,7 +1406,6 @@ class TestLoggedTimed:
     ) -> None:
         """@logged with timed=True on async method includes latency_ms."""
         import asyncio
-        import time
 
         def extract_payload(result: str) -> dict[str, object]:
             return {"length": len(result)}
