@@ -6,6 +6,7 @@ import asyncio
 import functools
 import inspect
 import logging
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
@@ -28,6 +29,8 @@ class LoggedClient:
     container: objs.LoggedContainer
     payload_from_result: Callable[[Any], dict[str, object]] | None = None
     payload_from_exc: Callable[[BaseException], dict[str, object]] | None = None
+    payload_from_request: Callable[..., dict[str, object]] | None = None
+    timed: bool = False
 
     @classmethod
     def for_event(
@@ -35,12 +38,16 @@ class LoggedClient:
         event: str,
         payload_from_result: Callable[[Any], dict[str, object]] | None = None,
         payload_from_exc: Callable[[BaseException], dict[str, object]] | None = None,
+        payload_from_request: Callable[..., dict[str, object]] | None = None,
+        timed: bool = False,
     ) -> LoggedClient:
         """Create a LoggedClient from a base event name and optional callbacks."""
         return cls(
             objs.LoggedContainer(event),
             payload_from_result=payload_from_result,
             payload_from_exc=payload_from_exc,
+            payload_from_request=payload_from_request,
+            timed=timed,
         )
 
     def __call__(self, target: Any) -> Any:
@@ -82,22 +89,43 @@ class LoggedClient:
                     async def async_static_or_class_wrapper(
                         *args: Params.args, **kwargs: Params.kwargs
                     ) -> Result:
-                        module_logger.info(self.container.start)
+                        start_time = time.perf_counter() if self.timed else None
+                        start_payload = {}
+                        if self.payload_from_request is not None:
+                            try:
+                                extracted = self.payload_from_request(*args, **kwargs)
+                                if isinstance(extracted, dict):
+                                    start_payload = extracted
+                                else:
+                                    module_logger.warning(
+                                        "extraction.failure",
+                                        extra={const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"},
+                                    )
+                            except Exception as error_in_extraction:
+                                module_logger.warning(
+                                    "extraction.failure",
+                                    extra={const.LOG_FIELD_ERROR_TYPE: type(error_in_extraction).__name__},
+                                )
+                        module_logger.info(self.container.start, extra=start_payload)
                         try:
                             return await method(*args, **kwargs)  # type: ignore[arg-type, return-value]
                         except Exception as error:
+                            error_extra = {
+                                const.LOG_FIELD_ERROR_TYPE: type(
+                                    error,
+                                ).__name__,
+                                const.LOG_FIELD_ERROR_CODE: getattr(
+                                    error,
+                                    const.ATTRIBUTE_CODE,
+                                    None,
+                                ),
+                            }
+                            if self.timed and start_time is not None:
+                                latency_ms = (time.perf_counter() - start_time) * 1000
+                                error_extra["latency_ms"] = latency_ms
                             module_logger.error(
                                 self.container.error,
-                                extra={
-                                    const.LOG_FIELD_ERROR_TYPE: type(
-                                        error,
-                                    ).__name__,
-                                    const.LOG_FIELD_ERROR_CODE: getattr(
-                                        error,
-                                        const.ATTRIBUTE_CODE,
-                                        None,
-                                    ),
-                                },
+                                extra=error_extra,
                             )
                             raise
 
@@ -112,20 +140,41 @@ class LoggedClient:
                 def static_or_class_wrapper(
                     *args: Params.args, **kwargs: Params.kwargs
                 ) -> Result:
-                    module_logger.info(self.container.start)
+                    start_time = time.perf_counter() if self.timed else None
+                    start_payload = {}
+                    if self.payload_from_request is not None:
+                        try:
+                            extracted = self.payload_from_request(*args, **kwargs)
+                            if isinstance(extracted, dict):
+                                start_payload = extracted
+                            else:
+                                module_logger.warning(
+                                    "extraction.failure",
+                                    extra={const.LOG_FIELD_ERROR_TYPE: "return_type_not_dict"},
+                                )
+                        except Exception as error_in_extraction:
+                            module_logger.warning(
+                                "extraction.failure",
+                                extra={const.LOG_FIELD_ERROR_TYPE: type(error_in_extraction).__name__},
+                            )
+                    module_logger.info(self.container.start, extra=start_payload)
                     try:
                         return method(*args, **kwargs)  # type: ignore[arg-type, return-value]
                     except Exception as error:
+                        error_extra = {
+                            const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
+                            const.LOG_FIELD_ERROR_CODE: getattr(
+                                error,
+                                const.ATTRIBUTE_CODE,
+                                None,
+                            ),
+                        }
+                        if self.timed and start_time is not None:
+                            latency_ms = (time.perf_counter() - start_time) * 1000
+                            error_extra["latency_ms"] = latency_ms
                         module_logger.error(
                             self.container.error,
-                            extra={
-                                const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
-                                const.LOG_FIELD_ERROR_CODE: getattr(
-                                    error,
-                                    const.ATTRIBUTE_CODE,
-                                    None,
-                                ),
-                            },
+                            extra=error_extra,
                         )
                         raise
 
@@ -153,24 +202,50 @@ class LoggedClient:
                 *args: Params.args,
                 **kwargs: Params.kwargs,
             ) -> Result:
-                instance.log_info(self.container.start)
+                start_time = time.perf_counter() if self.timed else None
+                start_payload = {}
+                if self.payload_from_request is not None:
+                    try:
+                        extracted = self.payload_from_request(*args, **kwargs)
+                        if isinstance(extracted, dict):
+                            start_payload = extracted
+                        else:
+                            instance.log_warning(
+                                "extraction.failure",
+                                error="return_type_not_dict",
+                            )
+                    except Exception as error_in_extraction:
+                        instance.log_warning(
+                            "extraction.failure",
+                            error=type(error_in_extraction).__name__,
+                        )
+                instance.log_info(self.container.start, **start_payload)
                 try:
                     result = await method(instance, *args, **kwargs)  # type: ignore[arg-type, return-value]
-                    if self.payload_from_result is not None:
-                        payload = self.payload_from_result(result)
-                        instance.log_info(self.container.end, **payload)
+                    if self.payload_from_result is not None or self.timed:
+                        end_payload = {}
+                        if self.payload_from_result is not None:
+                            end_payload = self.payload_from_result(result)
+                        if self.timed and start_time is not None:
+                            latency_ms = (time.perf_counter() - start_time) * 1000
+                            end_payload["latency_ms"] = latency_ms
+                        instance.log_info(self.container.end, **end_payload)
                     return result
                 except Exception as error:
+                    error_payload = {
+                        const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
+                        const.LOG_FIELD_ERROR_CODE: getattr(
+                            error,
+                            const.ATTRIBUTE_CODE,
+                            None,
+                        ),
+                    }
+                    if self.timed and start_time is not None:
+                        latency_ms = (time.perf_counter() - start_time) * 1000
+                        error_payload["latency_ms"] = latency_ms
                     instance.log_error(
                         self.container.error,
-                        **{
-                            const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
-                            const.LOG_FIELD_ERROR_CODE: getattr(
-                                error,
-                                const.ATTRIBUTE_CODE,
-                                None,
-                            ),
-                        },
+                        **error_payload,
                     )
                     raise
 
@@ -183,24 +258,50 @@ class LoggedClient:
             *args: Params.args,
             **kwargs: Params.kwargs,
         ) -> Result:
-            instance.log_info(self.container.start)
+            start_time = time.perf_counter() if self.timed else None
+            start_payload = {}
+            if self.payload_from_request is not None:
+                try:
+                    extracted = self.payload_from_request(*args, **kwargs)
+                    if isinstance(extracted, dict):
+                        start_payload = extracted
+                    else:
+                        instance.log_warning(
+                            "extraction.failure",
+                            error="return_type_not_dict",
+                        )
+                except Exception as error_in_extraction:
+                    instance.log_warning(
+                        "extraction.failure",
+                        error=type(error_in_extraction).__name__,
+                    )
+            instance.log_info(self.container.start, **start_payload)
             try:
                 result = method(instance, *args, **kwargs)
-                if self.payload_from_result is not None:
-                    payload = self.payload_from_result(result)
-                    instance.log_info(self.container.end, **payload)
+                if self.payload_from_result is not None or self.timed:
+                    end_payload = {}
+                    if self.payload_from_result is not None:
+                        end_payload = self.payload_from_result(result)
+                    if self.timed and start_time is not None:
+                        latency_ms = (time.perf_counter() - start_time) * 1000
+                        end_payload["latency_ms"] = latency_ms
+                    instance.log_info(self.container.end, **end_payload)
                 return result
             except Exception as error:
+                error_payload = {
+                    const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
+                    const.LOG_FIELD_ERROR_CODE: getattr(
+                        error,
+                        const.ATTRIBUTE_CODE,
+                        None,
+                    ),
+                }
+                if self.timed and start_time is not None:
+                    latency_ms = (time.perf_counter() - start_time) * 1000
+                    error_payload["latency_ms"] = latency_ms
                 instance.log_error(
                     self.container.error,
-                    **{
-                        const.LOG_FIELD_ERROR_TYPE: type(error).__name__,
-                        const.LOG_FIELD_ERROR_CODE: getattr(
-                            error,
-                            const.ATTRIBUTE_CODE,
-                            None,
-                        ),
-                    },
+                    **error_payload,
                 )
                 raise
 
@@ -222,6 +323,8 @@ class LoggedClient:
                     method_event,
                     payload_from_result=self.payload_from_result,
                     payload_from_exc=self.payload_from_exc,
+                    payload_from_request=self.payload_from_request,
+                    timed=self.timed,
                 )
                 wrapped = method_client._wrap_callable(  # type: ignore[arg-type, type-var]
                     value.__func__,
@@ -236,6 +339,8 @@ class LoggedClient:
                     method_event,
                     payload_from_result=self.payload_from_result,
                     payload_from_exc=self.payload_from_exc,
+                    payload_from_request=self.payload_from_request,
+                    timed=self.timed,
                 )
                 wrapped = method_client._wrap_callable(  # type: ignore[arg-type, type-var]
                     value.__func__,
@@ -250,6 +355,8 @@ class LoggedClient:
                     method_event,
                     payload_from_result=self.payload_from_result,
                     payload_from_exc=self.payload_from_exc,
+                    payload_from_request=self.payload_from_request,
+                    timed=self.timed,
                 )
                 wrapped = method_client._wrap_callable(value)
                 setattr(cls, name, wrapped)
