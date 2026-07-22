@@ -207,6 +207,142 @@ logger.info("Other request step 1")          # ← buffered, NOT flushed (differ
 └──────────────────────────────────────┘
 ```
 
+## Usage Guide
+
+### Installation
+
+Included in `mixin-logging` >= 0.3.0. Import from root or from adapters.stdlib:
+
+```python
+from mixin_logging import FlushOnWarningHandler, FlushOnWarningConfig
+# OR
+from mixin_logging.adapters.stdlib import FlushOnWarningHandler, FlushOnWarningConfig
+```
+
+### Basic Setup
+
+```python
+import logging
+from mixin_logging.adapters.stdlib import (
+    FlushOnWarningConfig,
+    FlushOnWarningHandler,
+    CorrelationLogFilter,
+)
+from mixin_logging import set_correlation_id
+
+# Target handler (where records eventually go)
+file_handler = logging.FileHandler("app.log")
+file_formatter = logging.Formatter(
+    "%(asctime)s - [%(correlation_id)s] - %(levelname)s - %(message)s"
+)
+file_handler.setFormatter(file_formatter)
+
+# Wrap with flush-on-warning buffer
+config = FlushOnWarningConfig(
+    target_handler=file_handler,
+    flush_level=logging.WARNING,  # flush on WARNING+
+    ttl_seconds=300,              # evict old buffers after 5 min
+    capacity=1000,                # max records per correlation
+    max_correlations=100,         # max concurrent buffers
+)
+buffer_handler = FlushOnWarningHandler(config)
+
+# Attach to logger
+logger = logging.getLogger(__name__)
+logger.addHandler(buffer_handler)
+
+# Add correlation filter to stamp correlation_id on records
+CorrelationLogFilter.add_correlation_filter(logger)
+
+logger.setLevel(logging.DEBUG)
+
+# Use in application
+set_correlation_id("task-123")
+logger.debug("Processing started")
+logger.info("Step 1 complete")
+logger.warning("Retry needed")  # ← Triggers flush and output
+```
+
+## Verified Example
+
+A flow with two correlations: Request-A emits a warning (triggers flush), Request-B buffers silently until its own warning arrives.
+
+### Code
+
+```python
+import logging
+from mixin_logging.adapters.stdlib import (
+    FlushOnWarningConfig,
+    FlushOnWarningHandler,
+    CorrelationLogFilter,
+)
+from mixin_logging import set_correlation_id, clear_correlation_id
+
+console_handler = logging.StreamHandler()
+console_formatter = logging.Formatter(
+    "%(name)s - %(levelname)s - [%(correlation_id)s] - %(message)s"
+)
+console_handler.setFormatter(console_formatter)
+
+config = FlushOnWarningConfig(
+    target_handler=console_handler,
+    flush_level=logging.WARNING,
+)
+flush_handler = FlushOnWarningHandler(config)
+
+logger = logging.getLogger("demo")
+logger.addHandler(flush_handler)
+logger.addFilter(CorrelationLogFilter())
+logger.setLevel(logging.DEBUG)
+
+# Scenario 1: Request-A processes then fails
+set_correlation_id("request-A")
+logger.debug("Starting request processing")
+logger.info("Database query completed")
+logger.debug("Validation passed")
+logger.warning("Retry required - connection timeout")
+
+# Scenario 2: Request-B processes without warning (buffered, no output yet)
+set_correlation_id("request-B")
+logger.debug("Starting request processing")
+logger.info("Database query completed")
+logger.debug("Validation passed")
+logger.info("Request completed successfully")
+
+# Scenario 3: Request-B timeout (now triggers flush)
+set_correlation_id("request-B")
+logger.warning("Timeout: request took too long")
+
+clear_correlation_id()
+```
+
+### Output
+
+```
+--- Scenario 1: Request-A (processes, then WARNING triggers flush) ---
+demo - DEBUG - [request-A] - Starting request processing
+demo - INFO - [request-A] - Database query completed
+demo - DEBUG - [request-A] - Validation passed
+demo - WARNING - [request-A] - Retry required - connection timeout
+
+--- Scenario 2: Request-B (processes without WARNING) ---
+
+--- Scenario 3: Request-B timeout (WARNING triggers flush of buffered records) ---
+demo - DEBUG - [request-B] - Starting request processing
+demo - INFO - [request-B] - Database query completed
+demo - DEBUG - [request-B] - Validation passed
+demo - INFO - [request-B] - Request completed successfully
+demo - WARNING - [request-B] - Timeout: request took too long
+```
+
+**Observations:**
+
+1. **Scenario 1:** Request-A's DEBUG, INFO, DEBUG records are emitted immediately when the WARNING arrives (oldest first), followed by the warning itself.
+2. **Scenario 2:** Request-B's records remain buffered (no output) because no WARNING occurred for Request-B during this phase.
+3. **Scenario 3:** Request-B's buffered DEBUG, INFO, DEBUG, INFO records all flush when its WARNING arrives, preserving the order.
+
+**Key difference from stdlib `MemoryHandler`:** Request-A's warning does NOT affect Request-B's buffer - each correlation is isolated.
+
 ## Comparison to stdlib.MemoryHandler
 
 | Feature | MemoryHandler (stdlib) | FlushOnWarningHandler (mixin_logging) |

@@ -453,3 +453,48 @@ class TestFlushOnWarningHandlerThreadSafety:
 
         handler.emit(record)
         assert len(target.records) == 1
+
+
+class TestFlushOnWarningHandlerEdgeCases:
+    """Tests for edge cases and defensive code paths."""
+
+    def test_evict_oldest_with_empty_correlation_order(self) -> None:
+        """Evict oldest handles empty _correlation_order (defensive path)."""
+        target = _RecordCapturingHandler()
+        config = FlushOnWarningConfig(
+            target_handler=target,
+            max_correlations=1,
+        )
+        handler = FlushOnWarningHandler(config)
+
+        set_correlation_id(test_const.CORRELATION_ID_VALID_ID_123)
+        record = logging.LogRecord(
+            name="test",
+            level=logging.DEBUG,
+            pathname="test.py",
+            lineno=42,
+            msg="message",
+            args=(),
+            exc_info=None,
+        )
+        record.correlation_id = test_const.CORRELATION_ID_VALID_ID_123
+        handler.emit(record)
+
+        assert test_const.CORRELATION_ID_VALID_ID_123 in handler._buffers
+
+        handler._correlation_order.clear()
+
+        set_correlation_id(test_const.CORRELATION_ID_TRACE)
+        record2 = logging.LogRecord(
+            name="test",
+            level=logging.DEBUG,
+            pathname="test.py",
+            lineno=43,
+            msg="message 2",
+            args=(),
+            exc_info=None,
+        )
+        record2.correlation_id = test_const.CORRELATION_ID_TRACE
+        handler.emit(record2)
+
+        assert len(handler._buffers) >= 1

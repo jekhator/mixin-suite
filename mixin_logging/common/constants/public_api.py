@@ -11,6 +11,8 @@ PUBLIC_API: Final = frozenset(
     {
         "ContextVarClient",
         "CorrelationContext",
+        "FlushOnWarningConfig",
+        "FlushOnWarningHandler",
         "LoggedClient",
         "LoggedContainer",
         "LoggingMixin",

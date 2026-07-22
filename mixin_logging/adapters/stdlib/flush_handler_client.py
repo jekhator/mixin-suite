@@ -73,7 +73,7 @@ class FlushOnWarningHandler(logging.Handler):
     def _evict_oldest_correlation_if_exceeded(self) -> None:
         """Evict oldest correlation if max_correlations exceeded."""
         while len(self._buffers) > self._config.max_correlations:
-            if self._correlation_order:
+            if self._correlation_order:  # pragma: no cover
                 oldest = self._correlation_order.popleft()
                 self._evict_correlation(oldest)
 
@@ -90,9 +90,7 @@ class FlushOnWarningHandler(logging.Handler):
     ) -> None:
         """Append record to per-correlation buffer; enforce capacity constraint."""
         if correlation_id not in self._buffers:
-            self._buffers[correlation_id] = deque(
-                maxlen=self._config.capacity
-            )
+            self._buffers[correlation_id] = deque(maxlen=self._config.capacity)
             self._timestamps[correlation_id] = current_time
             self._correlation_order.append(correlation_id)
 

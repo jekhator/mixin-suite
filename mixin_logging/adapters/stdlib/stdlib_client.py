@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from mixin_logging import get_correlation_id
 from mixin_logging.adapters.constants import stdlib as const
+from mixin_logging.context.correlation.correlation_client import get_correlation_id
 
 
 class CorrelationLogFilter(logging.Filter):
