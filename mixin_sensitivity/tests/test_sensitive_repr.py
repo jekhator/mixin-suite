@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import pytest
-
-from mixin_sensitivity import Sensitivity, SensitiveRepr, classify
+from mixin_sensitivity import SensitiveRepr, Sensitivity, classify
 
 
 class TestSensitiveRepr:
