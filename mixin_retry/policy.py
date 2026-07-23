@@ -37,9 +37,9 @@ class RetryPolicy:
         """Validate policy constraints."""
         if self.max_attempts < 1:
             raise ValueError(const.ERR_RETRY_MAX_ATTEMPTS)
-        if self.backoff_base_seconds <= 0:
+        if self.backoff_base_seconds < 0:
             raise ValueError(const.ERR_RETRY_BACKOFF_BASE)
         if self.backoff_multiplier <= 0:
             raise ValueError(const.ERR_RETRY_BACKOFF_MULTIPLIER)
-        if self.backoff_max_seconds <= 0:
+        if self.backoff_max_seconds < 0:
             raise ValueError(const.ERR_RETRY_BACKOFF_MAX)

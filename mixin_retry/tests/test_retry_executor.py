@@ -38,12 +38,12 @@ class TestRetryPolicy:
                 jitter=False,
             )
 
-    def test_policy_invalid_backoff_base_zero(self) -> None:
-        """RetryPolicy rejects backoff_base_seconds <= 0."""
+    def test_policy_invalid_backoff_base_negative(self) -> None:
+        """RetryPolicy rejects backoff_base_seconds < 0."""
         with pytest.raises(ValueError, match=const.ERR_RETRY_BACKOFF_BASE):
             RetryPolicy(
                 max_attempts=3,
-                backoff_base_seconds=0.0,
+                backoff_base_seconds=-0.1,
                 backoff_multiplier=2.0,
                 backoff_max_seconds=10.0,
                 jitter=False,
@@ -60,16 +60,29 @@ class TestRetryPolicy:
                 jitter=False,
             )
 
-    def test_policy_invalid_backoff_max_zero(self) -> None:
-        """RetryPolicy rejects backoff_max_seconds <= 0."""
+    def test_policy_invalid_backoff_max_negative(self) -> None:
+        """RetryPolicy rejects backoff_max_seconds < 0."""
         with pytest.raises(ValueError, match=const.ERR_RETRY_BACKOFF_MAX):
             RetryPolicy(
                 max_attempts=3,
                 backoff_base_seconds=0.1,
                 backoff_multiplier=2.0,
-                backoff_max_seconds=0.0,
+                backoff_max_seconds=-0.1,
                 jitter=False,
             )
+
+    def test_policy_zero_backoff_construction(self) -> None:
+        """RetryPolicy accepts zero backoff (immediate retry, no sleep)."""
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.0,
+            backoff_multiplier=1.0,
+            backoff_max_seconds=0.0,
+            jitter=False,
+            should_retry=lambda exc: isinstance(exc, ValueError),
+        )
+        assert policy.backoff_base_seconds == 0.0
+        assert policy.backoff_max_seconds == 0.0
 
 
 class TestRetryExecutor:
@@ -319,6 +332,38 @@ class TestRetryExecutor:
             asyncio.run(wrapped())
 
         assert call_count == 2
+
+    def test_wrap_sync_zero_backoff_retries_immediately(self) -> None:
+        """Wrap with zero backoff retries immediately (no sleep delay)."""
+        import time as time_module
+
+        executor = RetryExecutor()
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.0,
+            backoff_multiplier=1.0,
+            backoff_max_seconds=0.0,
+            jitter=False,
+            should_retry=lambda exc: isinstance(exc, ValueError),
+        )
+
+        call_count = 0
+        start_time = time_module.perf_counter()
+
+        def fails_twice() -> str:
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise ValueError("fail")
+            return "ok"
+
+        wrapped = executor.wrap(fails_twice, policy=policy)
+        result = wrapped()
+        elapsed = time_module.perf_counter() - start_time
+
+        assert result == "ok"
+        assert call_count == 3
+        assert elapsed < 0.5, f"Expected sub-500ms, got {elapsed:.3f}s"
 
     def test_call_requires_policy(self) -> None:
         """call() method requires policy argument."""
