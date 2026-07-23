@@ -1,1 +1,0 @@
-"""Logged decorator tests."""

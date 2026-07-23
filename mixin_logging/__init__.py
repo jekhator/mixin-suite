@@ -23,13 +23,6 @@ from mixin_logging.context.correlation.correlation_client import (
 from mixin_logging.context.correlation.correlation_objects import (
     CorrelationContext,
 )
-from mixin_logging.decorators.logged.logged_client import (
-    LoggedClient,
-    logged,
-)
-from mixin_logging.decorators.logged.logged_objects import (
-    LoggedContainer,
-)
 from mixin_logging.mixin.mixin import LoggingMixin
 
 __all__ = [
@@ -38,8 +31,6 @@ __all__ = [
     "CorrelationContext",
     "FlushOnWarningConfig",
     "FlushOnWarningHandler",
-    "LoggedClient",
-    "LoggedContainer",
     "LoggingMixin",
     "PUBLIC_API",
     "__version__",
@@ -50,6 +41,5 @@ __all__ = [
     "log_exception",
     "log_info",
     "log_warning",
-    "logged",
     "set_correlation_id",
 ]

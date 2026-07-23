@@ -19,7 +19,6 @@ Key features:
 """
 
 from mixin_sensitivity.config._version import __version__
-from mixin_sensitivity.decorators.sensitive.sensitive_client import sensitive
 from mixin_sensitivity.services.classify import (
     Sensitivity,
     SensitivityProfile,
@@ -31,5 +30,4 @@ __all__ = [
     "SensitivityProfile",
     "__version__",
     "classify",
-    "sensitive",
 ]
