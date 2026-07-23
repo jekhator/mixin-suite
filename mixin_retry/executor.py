@@ -61,6 +61,7 @@ class RetryExecutor:
                         attempt, policy
                     )
                     time.sleep(backoff)
+            assert last_exc is not None  # pragma: no cover
             raise last_exc  # pragma: no cover
 
         return wrapper
@@ -88,6 +89,7 @@ class RetryExecutor:
                         attempt, policy
                     )
                     await asyncio.sleep(backoff)
+            assert last_exc is not None  # pragma: no cover
             raise last_exc  # pragma: no cover
 
         return wrapper

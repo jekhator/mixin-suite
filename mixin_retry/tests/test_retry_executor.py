@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from mixin_retry.executor import RetryExecutor
 from mixin_retry.policy import (
@@ -177,7 +178,7 @@ class TestRetryExecutor:
 
         call_count = 0
 
-        def fails_with_connection_error() -> None:
+        def fails_with_connection_error() -> str | None:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -210,7 +211,7 @@ class TestRetryExecutor:
 
         call_count = 0
 
-        def fails_with_chain() -> None:
+        def fails_with_chain() -> str | None:
             nonlocal call_count
             call_count += 1
             if call_count == 1:

@@ -56,7 +56,7 @@ class TestLatencyClock:
         measurement = clock.stop()
 
         with pytest.raises(AttributeError):
-            measurement.duration_ms = 999
+            measurement.duration_ms = 999  # type: ignore[misc]
 
     def test_measurement_has_slots(self) -> None:
         """LatencyMeasurement uses slots."""
