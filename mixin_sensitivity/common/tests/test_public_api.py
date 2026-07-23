@@ -20,6 +20,4 @@ class TestPublicAPI:
         from mixin_sensitivity.common.constants import public_api as pa
 
         for name in mixin_sensitivity.__all__:
-            assert name in pa.PUBLIC_API, (
-                f"{name} exported but not in PUBLIC_API"
-            )
+            assert name in pa.PUBLIC_API, f"{name} exported but not in PUBLIC_API"

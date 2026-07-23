@@ -57,9 +57,7 @@ class RetryExecutor:
                         raise
                     if not self._should_retry(exc, policy):
                         raise
-                    backoff = self._calculate_backoff(
-                        attempt, policy
-                    )
+                    backoff = self._calculate_backoff(attempt, policy)
                     time.sleep(backoff)
             assert last_exc is not None  # pragma: no cover
             raise last_exc  # pragma: no cover
@@ -85,9 +83,7 @@ class RetryExecutor:
                         raise
                     if not self._should_retry(exc, policy):
                         raise
-                    backoff = self._calculate_backoff(
-                        attempt, policy
-                    )
+                    backoff = self._calculate_backoff(attempt, policy)
                     await asyncio.sleep(backoff)
             assert last_exc is not None  # pragma: no cover
             raise last_exc  # pragma: no cover
@@ -151,8 +147,7 @@ class RetryExecutor:
     ) -> float:
         """Calculate backoff delay with optional jitter."""
         backoff = min(
-            policy.backoff_base_seconds
-            * (policy.backoff_multiplier ** attempt),
+            policy.backoff_base_seconds * (policy.backoff_multiplier**attempt),
             policy.backoff_max_seconds,
         )
         if policy.jitter:

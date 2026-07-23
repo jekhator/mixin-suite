@@ -31,16 +31,10 @@ class TestSensitiveRepr:
         @dataclass(frozen=True, slots=True, repr=False)
         class Account(SensitiveRepr):
             username: str
-            password: str = field(
-                metadata={"sensitivity": Sensitivity.SECRET}
-            )
-            api_key: str = field(
-                metadata={"sensitivity": Sensitivity.SECRET}
-            )
+            password: str = field(metadata={"sensitivity": Sensitivity.SECRET})
+            api_key: str = field(metadata={"sensitivity": Sensitivity.SECRET})
 
-        a = Account(
-            username="alice", password="secret123", api_key="key456"
-        )
+        a = Account(username="alice", password="secret123", api_key="key456")
         repr_str = repr(a)
 
         assert "username='alice'" in repr_str
@@ -69,15 +63,9 @@ class TestSensitiveRepr:
         @dataclass(frozen=True, slots=True, repr=False)
         class MixedData(SensitiveRepr):
             public_field: str
-            pii_field: str = field(
-                metadata={"sensitivity": Sensitivity.PII}
-            )
-            phi_field: str = field(
-                metadata={"sensitivity": Sensitivity.PHI}
-            )
-            secret_field: str = field(
-                metadata={"sensitivity": Sensitivity.SECRET}
-            )
+            pii_field: str = field(metadata={"sensitivity": Sensitivity.PII})
+            phi_field: str = field(metadata={"sensitivity": Sensitivity.PHI})
+            secret_field: str = field(metadata={"sensitivity": Sensitivity.SECRET})
 
         m = MixedData(
             public_field="public",
@@ -133,9 +121,7 @@ class TestSensitiveRepr:
         @dataclass(frozen=True, slots=True, repr=False)
         class NumberData(SensitiveRepr):
             id: int
-            card_number: int = field(
-                metadata={"sensitivity": Sensitivity.PCI}
-            )
+            card_number: int = field(metadata={"sensitivity": Sensitivity.PCI})
 
         n = NumberData(id=1, card_number=4111111111111111)
         repr_str = repr(n)

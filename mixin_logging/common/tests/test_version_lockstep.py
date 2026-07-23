@@ -32,8 +32,7 @@ class TestVersionLockstep:
 
         for name, version in versions.items():
             assert version == logging_version, (
-                f"{name} version {version} != "
-                f"mixin_logging version {logging_version}"
+                f"{name} version {version} != mixin_logging version {logging_version}"
             )
 
     def test_package_versions_match_dist_version(self) -> None:

@@ -43,9 +43,7 @@ class SensitiveRepr:
             metadata = field_obj.metadata or {}
             sensitivity = metadata.get("sensitivity")
 
-            if sensitivity is not None and isinstance(
-                sensitivity, Sensitivity
-            ):
+            if sensitivity is not None and isinstance(sensitivity, Sensitivity):
                 display_value = ERR_SENSITIVE_MASKED_REPR
             else:
                 display_value = repr(value)

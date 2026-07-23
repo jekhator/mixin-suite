@@ -171,9 +171,7 @@ class TestRetryExecutor:
             backoff_multiplier=2.0,
             backoff_max_seconds=0.01,
             jitter=False,
-            should_retry=lambda exc: isinstance(
-                exc, ConnectionError
-            ),
+            should_retry=lambda exc: isinstance(exc, ConnectionError),
         )
 
         call_count = 0
