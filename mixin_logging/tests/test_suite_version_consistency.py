@@ -7,21 +7,24 @@ class TestSuiteVersionConsistency:
     """Verify all mixin roots report consistent versions."""
 
     def test_all_mixin_roots_report_same_version(self) -> None:
-        """All four mixin roots (__version__) report identical version string."""
+        """All five mixin roots (__version__) report identical version string."""
+        import mixin_latency
         import mixin_logging
         import mixin_notifications
         import mixin_retry
         import mixin_sensitivity
 
+        latency_version = mixin_latency.__version__
         logging_version = mixin_logging.__version__
         notifications_version = mixin_notifications.__version__
         sensitivity_version = mixin_sensitivity.__version__
         retry_version = mixin_retry.__version__
 
         assert (
-            logging_version
+            latency_version
+            == logging_version
             == notifications_version
             == sensitivity_version
             == retry_version
         )
-        assert logging_version == "0.4.0"
+        assert logging_version == "0.5.0"

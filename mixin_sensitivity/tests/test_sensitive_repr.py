@@ -15,7 +15,7 @@ class TestSensitiveRepr:
     def test_repr_with_single_sensitive_field(self) -> None:
         """SensitiveRepr masks single sensitive field."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class Patient(SensitiveRepr):
             name: str
             ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
@@ -30,7 +30,7 @@ class TestSensitiveRepr:
     def test_repr_with_multiple_sensitive_fields(self) -> None:
         """SensitiveRepr masks multiple sensitive fields."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class Account(SensitiveRepr):
             username: str
             password: str = field(
@@ -53,7 +53,7 @@ class TestSensitiveRepr:
     def test_repr_with_no_sensitive_fields(self) -> None:
         """SensitiveRepr on dataclass with no sensitive fields."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class PublicData(SensitiveRepr):
             name: str
             email: str
@@ -68,7 +68,7 @@ class TestSensitiveRepr:
     def test_repr_mixed_sensitivity_levels(self) -> None:
         """SensitiveRepr handles mixed sensitivity levels."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class MixedData(SensitiveRepr):
             public_field: str
             pii_field: str = field(
@@ -98,7 +98,7 @@ class TestSensitiveRepr:
     def test_metadata_introspection_unchanged(self) -> None:
         """Field metadata remains introspectable after repr()."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class Patient(SensitiveRepr):
             name: str
             ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
@@ -114,7 +114,7 @@ class TestSensitiveRepr:
     def test_sensitive_repr_preserves_order(self) -> None:
         """SensitiveRepr preserves field order in repr."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class OrderedData(SensitiveRepr):
             first: str
             second: str = field(metadata={"sensitivity": Sensitivity.PHI})
@@ -132,7 +132,7 @@ class TestSensitiveRepr:
     def test_sensitive_repr_with_non_string_types(self) -> None:
         """SensitiveRepr masks sensitive non-string types."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class NumberData(SensitiveRepr):
             id: int
             card_number: int = field(
@@ -149,7 +149,7 @@ class TestSensitiveRepr:
     def test_repr_class_name_correct(self) -> None:
         """SensitiveRepr includes correct class name in repr."""
 
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class CustomClass(SensitiveRepr):
             value: str
 

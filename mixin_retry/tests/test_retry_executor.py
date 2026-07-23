@@ -4,10 +4,76 @@ from __future__ import annotations
 
 import asyncio
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from mixin_retry.executor import RetryExecutor
-from mixin_retry.policy import RetryPolicy
+from mixin_retry.policy import (
+    ERR_RETRY_BACKOFF_BASE,
+    ERR_RETRY_BACKOFF_MAX,
+    ERR_RETRY_BACKOFF_MULTIPLIER,
+    ERR_RETRY_MAX_ATTEMPTS,
+    RetryPolicy,
+)
+
+
+class TestRetryPolicy:
+    """Test RetryPolicy validation."""
+
+    def test_policy_valid_construction(self) -> None:
+        """RetryPolicy constructs with valid parameters."""
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.1,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=10.0,
+            jitter=True,
+        )
+        assert policy.max_attempts == 3
+        assert policy.backoff_base_seconds == 0.1
+
+    def test_policy_invalid_max_attempts_zero(self) -> None:
+        """RetryPolicy rejects max_attempts < 1."""
+        with pytest.raises(ValueError, match=ERR_RETRY_MAX_ATTEMPTS):
+            RetryPolicy(
+                max_attempts=0,
+                backoff_base_seconds=0.1,
+                backoff_multiplier=2.0,
+                backoff_max_seconds=10.0,
+                jitter=False,
+            )
+
+    def test_policy_invalid_backoff_base_zero(self) -> None:
+        """RetryPolicy rejects backoff_base_seconds <= 0."""
+        with pytest.raises(ValueError, match=ERR_RETRY_BACKOFF_BASE):
+            RetryPolicy(
+                max_attempts=3,
+                backoff_base_seconds=0.0,
+                backoff_multiplier=2.0,
+                backoff_max_seconds=10.0,
+                jitter=False,
+            )
+
+    def test_policy_invalid_backoff_multiplier_zero(self) -> None:
+        """RetryPolicy rejects backoff_multiplier <= 0."""
+        with pytest.raises(ValueError, match=ERR_RETRY_BACKOFF_MULTIPLIER):
+            RetryPolicy(
+                max_attempts=3,
+                backoff_base_seconds=0.1,
+                backoff_multiplier=0.0,
+                backoff_max_seconds=10.0,
+                jitter=False,
+            )
+
+    def test_policy_invalid_backoff_max_zero(self) -> None:
+        """RetryPolicy rejects backoff_max_seconds <= 0."""
+        with pytest.raises(ValueError, match=ERR_RETRY_BACKOFF_MAX):
+            RetryPolicy(
+                max_attempts=3,
+                backoff_base_seconds=0.1,
+                backoff_multiplier=2.0,
+                backoff_max_seconds=0.0,
+                jitter=False,
+            )
 
 
 class TestRetryExecutor:
@@ -212,9 +278,9 @@ class TestRetryExecutor:
         executor = RetryExecutor()
         policy = RetryPolicy(
             max_attempts=3,
-            backoff_base_seconds=0.001,
+            backoff_base_seconds=0.0001,
             backoff_multiplier=2.0,
-            backoff_max_seconds=0.01,
+            backoff_max_seconds=0.0001,
             jitter=False,
             retry_on=(ValueError,),
         )
@@ -229,10 +295,7 @@ class TestRetryExecutor:
             return "ok"
 
         wrapped = executor.wrap(flaky_fn, policy=policy)
-
-        with patch("asyncio.sleep", new_callable=MagicMock) as mock_sleep:
-            mock_sleep.return_value = asyncio.sleep(0)
-            result = asyncio.run(wrapped())
+        result = asyncio.run(wrapped())
 
         assert result == "ok"
         assert call_count == 2
@@ -242,9 +305,9 @@ class TestRetryExecutor:
         executor = RetryExecutor()
         policy = RetryPolicy(
             max_attempts=2,
-            backoff_base_seconds=0.001,
+            backoff_base_seconds=0.0001,
             backoff_multiplier=2.0,
-            backoff_max_seconds=0.01,
+            backoff_max_seconds=0.0001,
             jitter=False,
             retry_on=(ValueError,),
         )
@@ -258,10 +321,8 @@ class TestRetryExecutor:
 
         wrapped = executor.wrap(always_fail, policy=policy)
 
-        with patch("asyncio.sleep", new_callable=MagicMock) as mock_sleep:
-            mock_sleep.return_value = asyncio.sleep(0)
-            with pytest.raises(ValueError, match="fail"):
-                asyncio.run(wrapped())
+        with pytest.raises(ValueError, match="fail"):
+            asyncio.run(wrapped())
 
         assert call_count == 2
 
@@ -341,6 +402,45 @@ class TestRetryExecutor:
             backoff = executor._calculate_backoff(0, policy)
             assert 0.9 <= backoff <= 1.1
 
+    def test_wrap_async_no_retry_on_excluded_exception(self) -> None:
+        """Wrap async that raises non-retryable exception."""
+        executor = RetryExecutor()
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.0001,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=0.0001,
+            jitter=False,
+            retry_on=(ConnectionError,),
+        )
+
+        async def fails_with_value_error() -> None:
+            raise ValueError("not retryable")
+
+        wrapped = executor.wrap(fails_with_value_error, policy=policy)
+
+        with pytest.raises(ValueError, match="not retryable"):
+            asyncio.run(wrapped())
+
+    def test_no_retry_when_neither_predicate_nor_retry_on_set(self) -> None:
+        """_should_retry returns False when no retry condition is set."""
+        executor = RetryExecutor()
+        policy = RetryPolicy(
+            max_attempts=2,
+            backoff_base_seconds=0.001,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=0.01,
+            jitter=False,
+        )
+
+        def always_fails() -> None:
+            raise ValueError("fail")
+
+        wrapped = executor.wrap(always_fails, policy=policy)
+
+        with pytest.raises(ValueError, match="fail"):
+            wrapped()
+
     def test_wrap_preserves_function_metadata(self) -> None:
         """Wrap preserves original function metadata."""
         executor = RetryExecutor()
@@ -360,3 +460,22 @@ class TestRetryExecutor:
 
         assert wrapped.__name__ == "my_function"
         assert wrapped.__doc__ == "Original docstring."
+
+    def test_no_retry_on_no_should_retry_raises_immediately(self) -> None:
+        """Policy with no retry_on and no should_retry raises immediately."""
+        executor = RetryExecutor()
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.001,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=0.01,
+            jitter=False,
+        )
+
+        def fails() -> None:
+            raise ValueError("fail")
+
+        wrapped = executor.wrap(fails, policy=policy)
+
+        with pytest.raises(ValueError, match="fail"):
+            wrapped()
