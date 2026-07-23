@@ -1,8 +1,8 @@
 """Public API export names for the logging-mixin top-level package.
 
-Names exported from mixin_logging.__init__: ContextVarClient, LoggedClient,
-LoggingMixin, correlation-id helpers. PUBLIC_API itself is exported and
-self-included in this frozenset.
+Names exported from mixin_logging.__init__: ContextVarClient, LoggingMixin,
+correlation-id helpers, ambient functions, FlushOnWarningHandler. PUBLIC_API
+itself is exported and self-included in this frozenset.
 """
 
 from typing import Final
@@ -14,8 +14,6 @@ PUBLIC_API: Final = frozenset(
         "CorrelationContext",
         "FlushOnWarningConfig",
         "FlushOnWarningHandler",
-        "LoggedClient",
-        "LoggedContainer",
         "LoggingMixin",
         "PUBLIC_API",
         "__version__",
@@ -26,7 +24,6 @@ PUBLIC_API: Final = frozenset(
         "log_exception",
         "log_info",
         "log_warning",
-        "logged",
         "set_correlation_id",
     },
 )

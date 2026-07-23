@@ -1,9 +1,5 @@
-"""Common constants."""
+"""Constants for retry operations."""
 
-from mixin_retry.common.constants.public_api import (
-    PUBLIC_API,
-)
+from mixin_retry.common.constants import errors
 
-__all__ = [
-    "PUBLIC_API",
-]
+__all__ = ["errors"]

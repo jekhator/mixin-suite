@@ -1,19 +1,21 @@
 # mixin-suite
 
-**Composable Python mixins for production services:** structured logging with automatic correlation-ID propagation, and sensitive-data classification and masking for frozen dataclasses.
+**Composable Python mixins for production services:** structured logging with automatic correlation-ID propagation, sensitive-data masking, retry logic, and latency measurement.
 
 [![PyPI version](https://img.shields.io/pypi/v/mixin-suite.svg)](https://pypi.org/project/mixin-suite/)
 [![CI](https://github.com/jekhator/mixin-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/jekhator/mixin-suite/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python Versions](https://img.shields.io/pypi/pyversions/mixin-suite.svg)](https://pypi.org/project/mixin-suite/)
 
-This distribution consolidates two concern-specific packages and adds composable retry logic:
+This distribution includes five composable roots:
 
-- **mixin-logging** (v0.6.0): End-to-end correlation-ID propagation across 14 adapters for distributed systems
-- **mixin-sensitivity** (v0.4.0): Decorator-based sensitivity classification and masking for frozen dataclasses
-- **mixin-retry**: Class-capable retry decorator with full-jitter backoff and predicate-based retry conditions
+- **mixin_logging**: End-to-end correlation-ID propagation, LoggingMixin, ambient logging, FlushOnWarningHandler
+- **mixin_sensitivity**: Sensitivity classification and dataclass repr-masking via SensitiveRepr
+- **mixin_retry**: Exponential backoff retry logic via RetryPolicy/RetryExecutor (capability contracts)
+- **mixin_latency**: High-precision elapsed-time measurement via LatencyClock
+- **mixin_notifications**: Event dispatch and suppression across multi-step workflows
 
-All packages retain their original import roots (`mixin_logging`, `mixin_sensitivity`, `mixin_retry`) and can be used independently or together.
+All packages retain their original import roots and can be used independently or together.
 
 ## What They Do
 
@@ -44,7 +46,7 @@ class OrderService(LoggingMixin):
 
 ### Sensitivity: Prevent Accidental Secret Leaks
 
-Mark sensitive fields in dataclasses once, and they auto-mask in logs, reprs, and tracebacks.
+Mark sensitive fields in dataclasses via field metadata, and adopt SensitiveRepr to auto-mask in repr output.
 
 **Before:**
 ```python
@@ -62,16 +64,59 @@ logger.info("Creds: %s", creds)  # LEAKED: api_token exposed
 **After:**
 ```python
 from dataclasses import dataclass, field
-from mixin_sensitivity import sensitive, classify
+from mixin_sensitivity import Sensitivity, SensitiveRepr
 
-@sensitive
-@dataclass(frozen=True, slots=True)
-class APICredentials:
+@dataclass(frozen=True, slots=True, repr=False)
+class APICredentials(SensitiveRepr):
     user_id: int
-    api_token: str = field(metadata={"sensitivity": "secret"})
+    api_token: str = field(metadata={"sensitivity": Sensitivity.SECRET})
 
 creds = APICredentials(user_id=1, api_token="sk-abc123xyz")
-logger.info("Creds: %s", creds)  # SAFE: repr shows "api_token=***"
+logger.info("Creds: %s", creds)  # SAFE: repr shows "api_token=***MASKED***"
+```
+
+### Retry: Exponential Backoff with Predicates
+
+Resilient function execution with configurable backoff and predicate-based retry decisions.
+
+```python
+from mixin_retry import RetryPolicy, RetryExecutor
+
+policy = RetryPolicy(
+    max_attempts=3,
+    backoff_base_seconds=0.1,
+    backoff_multiplier=2.0,
+    backoff_max_seconds=1.0,
+    jitter=True,
+    should_retry=lambda exc: isinstance(exc, ConnectionError)
+)
+
+executor = RetryExecutor()
+
+def flaky_api_call(url):
+    # Retries on ConnectionError, exponential backoff
+    pass
+
+wrapped_call = executor.wrap(flaky_api_call, policy=policy)
+result = wrapped_call("https://api.example.com")
+```
+
+### Latency: High-Precision Measurement
+
+Measure elapsed time with perf_counter precision and automatic rounding.
+
+```python
+from mixin_latency import LatencyClock
+
+clock = LatencyClock.start()
+# ... do work ...
+measurement = clock.stop()
+print(f"Elapsed: {measurement.duration_ms} ms")
+
+# Or context-manager form:
+with LatencyClock.measure() as clock:
+    # ... do work ...
+    pass  # Duration auto-measured on exit
 ```
 
 ## Installation

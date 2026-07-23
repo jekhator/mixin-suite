@@ -30,16 +30,18 @@ jobs:
         run: uv python install 3.14
       - name: Run strict-module
         run: |
+          echo "=== strict-module: mixin_latency ===" && \
+          uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_latency/ --format github && \
           echo "=== strict-module: mixin_logging ===" && \
           uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_logging/ --format github && \
-          echo "=== strict-module: mixin_sensitivity ===" && \
-          uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_sensitivity/ --format github && \
+          echo "=== strict-module: mixin_notifications ===" && \
+          uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_notifications/ --format github && \
           echo "=== strict-module: mixin_retry ===" && \
           uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_retry/ --format github && \
-          echo "=== strict-module: mixin_notifications ===" && \
-          uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_notifications/ --format github
+          echo "=== strict-module: mixin_sensitivity ===" && \
+          uvx --python 3.14 --from strict-suite==0.4.0 strict-module mixin_sensitivity/ --format github
       - name: Check LOC cap
         run: |
-          for dir in mixin_logging/adapters/{aiohttp,asgi,botocore,celery,cloud,constants,graphql,grpc,httpx,requests,stdlib,urllib3,websocket,wsgi} mixin_logging/common/{constants,utils} mixin_logging/config mixin_logging/context/{constants,correlation} mixin_logging/decorators/{constants,logged} mixin_logging/mixin mixin_logging/redaction/{constants} mixin_sensitivity/common/{constants,utils} mixin_sensitivity/config mixin_sensitivity/decorators/{constants,phi_aware,pci_aware,pii_aware,secret_aware,sensitive} mixin_sensitivity/services/{classify,mask} mixin_retry/common/{constants} mixin_retry/decorators/{constants,retried} mixin_notifications/common/{constants} mixin_notifications/config mixin_notifications/events mixin_notifications/backends mixin_notifications/dispatch mixin_notifications/suppression; do
+          for dir in mixin_latency/clock mixin_latency/common/{constants} mixin_latency/config mixin_logging/adapters/{aiohttp,asgi,botocore,celery,cloud,constants,graphql,grpc,httpx,requests,stdlib,urllib3,websocket,wsgi} mixin_logging/common/{constants} mixin_logging/config mixin_logging/context/{constants,correlation} mixin_logging/mixin mixin_logging/redaction/{constants} mixin_sensitivity/common/{constants} mixin_sensitivity/config mixin_sensitivity/repr mixin_sensitivity/services/{classify} mixin_retry/config mixin_notifications/common/{constants} mixin_notifications/config mixin_notifications/events mixin_notifications/backends mixin_notifications/dispatch mixin_notifications/suppression; do
             uvx --python 3.14 --from strict-suite==0.4.0 strict-module loc-cap "$dir"
           done

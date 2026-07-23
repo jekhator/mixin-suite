@@ -1,17 +1,11 @@
-"""Composable retry decorator for exponential backoff with jitter."""
+"""Retry capability: exponential backoff with jitter and predicates."""
 
 from mixin_retry.config._version import __version__
-from mixin_retry.decorators.retried import (
-    RetryClient,
-    retried,
-)
-from mixin_retry.decorators.retried.retried_objects import (
-    RetryContainer,
-)
+from mixin_retry.executor import RetryExecutor
+from mixin_retry.policy import RetryPolicy
 
 __all__ = [
-    "RetryClient",
-    "RetryContainer",
+    "RetryExecutor",
+    "RetryPolicy",
     "__version__",
-    "retried",
 ]

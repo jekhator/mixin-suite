@@ -1,1 +1,1 @@
-"""Common utilities for retry mixin."""
+"""Common utilities for retry operations."""
