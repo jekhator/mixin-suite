@@ -72,6 +72,7 @@ exclude = [
     "mixin_latency/**/tests",
     "mixin_latency/conftest.py",
     "mixin_logging/**/tests",
+    "mixin_logging/common/constants/tests.py",
     "mixin_logging/conftest.py",
     "mixin_sensitivity/**/tests",
     "mixin_sensitivity/conftest.py",

@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **All five roots versioned to 0.5.0** (mixin_latency joins mixin_logging, mixin_notifications, mixin_retry, mixin_sensitivity). Suite-wide lockstep versioning enforced by CI gate (test_all_mixin_roots_report_same_version).
 
+### Fixed
+
+- Wheel no longer ships conftest/test-constants files.
+
 ## [0.4.0] - 2026-07-21
 
 ### Added
