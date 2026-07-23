@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.5.0] - 2026-07-22
+
+### Removed
+
+- **`@logged` decorator and `LoggedClient` class (mixin_logging)**: Decorator surface removed in favor of capability-contract patterns. Retained LoggingMixin, ambient log_* functions, FlushOnWarningHandler, and correlation-ID context. Consumers migrate by adopting LoggingMixin directly into service classes.
+- **`@sensitive` decorator (mixin_sensitivity)**: Sensitive field marking now via field metadata only. Removed decorator surface; kept Sensitivity enum, SensitivityProfile, and classify() function. Repr-masking now available through SensitiveRepr adoption mixin (new).
+- **`@retried` decorator and `RetryClient` class (mixin_retry)**: Replaced with capability-contract RetryPolicy and RetryExecutor (new). Consumers use wrap(fn, policy) or call(fn, *args, policy=..., **kwargs).
+
+### Added
+
+- **RetryPolicy + RetryExecutor capability** (mixin_retry): Exponential backoff retry strategy as a first-class DTO contract. `RetryPolicy` frozen+slots dataclass with fields: max_attempts, backoff_base_seconds, backoff_multiplier, backoff_max_seconds, jitter, should_retry (predicate, unwraps __cause__), retry_on (exception types). `RetryExecutor` client class with `wrap(fn, policy)` (primary form, rebind once, call many) and `call(fn, *args, policy=..., **kwargs)` (per-call convenience). Supports sync and async functions. Backoff calculated as min(base * (multiplier^attempt), max); jitter adds ±10% when enabled. Full test coverage with async/sync branches, predicate unwrapping, max-attempts exhaustion, backoff bounds validation.
+- **SensitiveRepr adoption mixin** (mixin_sensitivity): Inherited by frozen+slots dataclasses to mask sensitive fields in `__repr__`. Reads existing field(metadata={"sensitivity": Sensitivity.X}) markers, replaces marked values with `***MASKED***` token in repr output. Field metadata remains introspectable (classify() unaffected). Zero impact on dataclass behavior beyond repr; no instance state (slots-safe).
+- **mixin_latency (NEW root)**: High-precision elapsed-time measurement. `LatencyClock` client class with classmethod `start()` -> running clock; bound method `stop()` -> `LatencyMeasurement` DTO (duration_ms with LATENCY_ROUNDING_DECIMALS rounding rule). Context-manager form: `with LatencyClock.measure() as clock:` (classmethod returning CM, bound-method idiom). Zero dependencies; no decorator surface. Measurement backed by perf_counter(); LatencyMeasurement frozen+slots with named constants for rounding and field names.
+
+### Changed
+
+- **All five roots versioned to 0.5.0** (mixin_latency joins mixin_logging, mixin_notifications, mixin_retry, mixin_sensitivity). Suite-wide lockstep versioning enforced by CI gate (test_all_mixin_roots_report_same_version).
+
 ## [0.4.0] - 2026-07-21
 
 ### Added
