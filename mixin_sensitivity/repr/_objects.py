@@ -8,16 +8,35 @@ from typing import Final
 from mixin_sensitivity.services.classify import Sensitivity
 
 ERR_SENSITIVE_MASKED_REPR: Final = "***MASKED***"
+ERR_SENSITIVE_REPR_NOT_OVERRIDDEN: Final = (
+    "SensitiveRepr adopter must use @dataclass(..., repr=False) "
+    "to avoid silent repr shadowing. "
+    "If the adopter has __post_init__, call super().__post_init__()."
+)
+
+
+class SensitiveDeclarationError(Exception):
+    """Raised when SensitiveRepr is adopted without proper repr=False setting."""
+
+    pass
 
 
 class SensitiveRepr:
     """Adoption mixin: masks sensitive fields in dataclass __repr__.
 
-    Inheriting dataclasses must be frozen+slots dataclasses with fields
-    optionally marked via field(metadata={"sensitivity": Sensitivity.X}).
+    Inheriting dataclasses MUST use @dataclass(frozen=True, slots=True, repr=False)
+    to avoid silent shadowing of the masking __repr__. A __post_init__ guard
+    raises SensitiveDeclarationError if repr=False is omitted.
+
+    If an adopting class has its own __post_init__, it must call super().__post_init__()
+    to trigger the guard (works with frozen+slots inheritance chains).
+
+    Attributes:
+        Inheriting dataclasses may mark fields via
+        field(metadata={"sensitivity": Sensitivity.X}).
 
     Example:
-        @dataclass(frozen=True, slots=True)
+        @dataclass(frozen=True, slots=True, repr=False)
         class Patient(SensitiveRepr):
             name: str
             ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
@@ -26,6 +45,15 @@ class SensitiveRepr:
         print(repr(p))
         # Patient(name='Alice', ssn='***MASKED***')
     """
+
+    def __post_init__(self) -> None:
+        """Guard against silent repr shadowing.
+
+        Raises SensitiveDeclarationError if the adopter's @dataclass
+        generated its own __repr__ instead of using SensitiveRepr's.
+        """
+        if type(self).__repr__ is not SensitiveRepr.__repr__:
+            raise SensitiveDeclarationError(ERR_SENSITIVE_REPR_NOT_OVERRIDDEN)
 
     def __repr__(self) -> str:
         """Repr with sensitive fields masked.

@@ -4,11 +4,38 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from mixin_sensitivity import SensitiveRepr, Sensitivity, classify
+import pytest
+
+from mixin_sensitivity import (
+    SensitiveDeclarationError,
+    SensitiveRepr,
+    Sensitivity,
+    classify,
+)
 
 
 class TestSensitiveRepr:
     """Test SensitiveRepr adoption mixin masking behavior."""
+
+    def test_repr_without_repr_false_raises_error(self) -> None:
+        """Adopter without repr=False raises SensitiveDeclarationError.
+
+        Silent shadowing is prevented: dataclass-generated __repr__
+        cannot be used without being detected.
+        """
+        with pytest.raises(
+            SensitiveDeclarationError,
+            match="must use @dataclass.*repr=False",
+        ):
+
+            @dataclass(frozen=True, slots=True)
+            class PatientBad(SensitiveRepr):
+                name: str
+                ssn: str = field(
+                    metadata={"sensitivity": Sensitivity.PHI}
+                )
+
+            PatientBad(name="Alice", ssn="123-45-6789")
 
     def test_repr_with_single_sensitive_field(self) -> None:
         """SensitiveRepr masks single sensitive field."""
@@ -142,3 +169,41 @@ class TestSensitiveRepr:
 
         assert repr_str.startswith("CustomClass(")
         assert repr_str.endswith(")")
+
+    def test_adopter_with_own_post_init_and_super_call(self) -> None:
+        """Adopter with __post_init__ calling super() still guards correctly."""
+
+        @dataclass(frozen=True, slots=True, repr=False)
+        class PatientWithInit(SensitiveRepr):
+            name: str
+            ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
+            _initialized: bool = field(init=False, default=False)
+
+            def __post_init__(self) -> None:
+                super().__post_init__()
+                object.__setattr__(self, "_initialized", True)
+
+        p = PatientWithInit(name="Alice", ssn="123-45-6789")
+        repr_str = repr(p)
+
+        assert "name='Alice'" in repr_str
+        assert "***MASKED***" in repr_str
+        assert "123-45-6789" not in repr_str
+        assert p._initialized is True
+
+    def test_adopter_with_own_post_init_without_repr_false_raises(self) -> None:
+        """Adopter with __post_init__ still guarded when repr=False omitted."""
+
+        with pytest.raises(
+            SensitiveDeclarationError,
+            match="must use @dataclass.*repr=False",
+        ):
+
+            @dataclass(frozen=True, slots=True)
+            class PatientWithInitBad(SensitiveRepr):
+                name: str
+
+                def __post_init__(self) -> None:
+                    super().__post_init__()
+
+            PatientWithInitBad(name="Alice")
