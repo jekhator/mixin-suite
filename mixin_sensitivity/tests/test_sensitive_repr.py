@@ -31,9 +31,7 @@ class TestSensitiveRepr:
             @dataclass(frozen=True, slots=True)
             class PatientBad(SensitiveRepr):
                 name: str
-                ssn: str = field(
-                    metadata={"sensitivity": Sensitivity.PHI}
-                )
+                ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
 
             PatientBad(name="Alice", ssn="123-45-6789")
 
@@ -180,7 +178,7 @@ class TestSensitiveRepr:
             _initialized: bool = field(init=False, default=False)
 
             def __post_init__(self) -> None:
-                super().__post_init__()
+                SensitiveRepr.__post_init__(self)
                 object.__setattr__(self, "_initialized", True)
 
         p = PatientWithInit(name="Alice", ssn="123-45-6789")
@@ -204,6 +202,6 @@ class TestSensitiveRepr:
                 name: str
 
                 def __post_init__(self) -> None:
-                    super().__post_init__()
+                    SensitiveRepr.__post_init__(self)
 
             PatientWithInitBad(name="Alice")

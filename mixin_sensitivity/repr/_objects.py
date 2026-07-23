@@ -11,7 +11,8 @@ ERR_SENSITIVE_MASKED_REPR: Final = "***MASKED***"
 ERR_SENSITIVE_REPR_NOT_OVERRIDDEN: Final = (
     "SensitiveRepr adopter must use @dataclass(..., repr=False) "
     "to avoid silent repr shadowing. "
-    "If the adopter has __post_init__, call super().__post_init__()."
+    "If the adopter has __post_init__, call SensitiveRepr.__post_init__(self) "
+    "(explicit call required: slots dataclass re-creation breaks zero-arg super on 3.11)."
 )
 
 
@@ -28,8 +29,9 @@ class SensitiveRepr:
     to avoid silent shadowing of the masking __repr__. A __post_init__ guard
     raises SensitiveDeclarationError if repr=False is omitted.
 
-    If an adopting class has its own __post_init__, it must call super().__post_init__()
-    to trigger the guard (works with frozen+slots inheritance chains).
+    If an adopting class has its own __post_init__, it must call
+    SensitiveRepr.__post_init__(self) to trigger the guard (explicit call required:
+    slots dataclass re-creation breaks zero-arg super() on Python 3.11).
 
     Attributes:
         Inheriting dataclasses may mark fields via
