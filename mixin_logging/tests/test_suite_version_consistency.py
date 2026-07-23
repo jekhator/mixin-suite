@@ -24,4 +24,4 @@ class TestSuiteVersionConsistency:
             == sensitivity_version
             == retry_version
         )
-        assert logging_version == "0.3.0"
+        assert logging_version == "0.4.0"

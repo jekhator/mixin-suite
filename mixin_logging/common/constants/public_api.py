@@ -9,8 +9,11 @@ from typing import Final
 
 PUBLIC_API: Final = frozenset(
     {
+        "AmbientLogger",
         "ContextVarClient",
         "CorrelationContext",
+        "FlushOnWarningConfig",
+        "FlushOnWarningHandler",
         "LoggedClient",
         "LoggedContainer",
         "LoggingMixin",
@@ -18,6 +21,11 @@ PUBLIC_API: Final = frozenset(
         "__version__",
         "clear_correlation_id",
         "get_correlation_id",
+        "log_debug",
+        "log_error",
+        "log_exception",
+        "log_info",
+        "log_warning",
         "logged",
         "set_correlation_id",
     },

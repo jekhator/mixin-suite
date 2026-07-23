@@ -1,4 +1,4 @@
-"""In-memory logging.Handler subclass for test capture-and-assert patterns."""
+"""Test helpers for mixin-logging test suite."""
 
 from __future__ import annotations
 

@@ -11,7 +11,7 @@ import pytest
 from mixin_logging import LoggingMixin, clear_correlation_id
 from mixin_logging.adapters.constants import asgi as const
 from mixin_logging.common.constants import tests as test_const
-from mixin_logging.common.utils.record_collector import _RecordCollector
+from mixin_logging.tests.helpers import _RecordCollector
 
 
 @pytest.fixture(autouse=True)

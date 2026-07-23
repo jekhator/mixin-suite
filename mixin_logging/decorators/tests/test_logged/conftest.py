@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from mixin_logging import LoggingMixin, clear_correlation_id
-from mixin_logging.common.utils.record_collector import _RecordCollector
+from mixin_logging.tests.helpers import _RecordCollector
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
