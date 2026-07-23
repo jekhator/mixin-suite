@@ -7,8 +7,10 @@ import functools
 import inspect
 import random
 import time
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
+from mixin_retry.common.constants import errors as const
 from mixin_retry.policy import RetryPolicy
 
 T = TypeVar("T")
@@ -113,7 +115,7 @@ class RetryExecutor:
             BaseException: Original exception if all retries exhausted.
         """
         if policy is None:
-            raise ValueError("policy is required for call()")
+            raise ValueError(const.ERR_RETRY_POLICY_REQUIRED)
         wrapped = self.wrap(fn, policy)
         return wrapped(*args, **kwargs)
 

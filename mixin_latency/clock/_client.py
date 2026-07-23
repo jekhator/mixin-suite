@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 from mixin_latency.clock._objects import LatencyMeasurement
 from mixin_latency.common.constants.clock import LATENCY_ROUNDING_DECIMALS

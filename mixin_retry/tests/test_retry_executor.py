@@ -7,14 +7,9 @@ from unittest.mock import patch
 
 import pytest
 
+from mixin_retry.common.constants import errors as const
 from mixin_retry.executor import RetryExecutor
-from mixin_retry.policy import (
-    ERR_RETRY_BACKOFF_BASE,
-    ERR_RETRY_BACKOFF_MAX,
-    ERR_RETRY_BACKOFF_MULTIPLIER,
-    ERR_RETRY_MAX_ATTEMPTS,
-    RetryPolicy,
-)
+from mixin_retry.policy import RetryPolicy
 
 
 class TestRetryPolicy:
@@ -34,7 +29,7 @@ class TestRetryPolicy:
 
     def test_policy_invalid_max_attempts_zero(self) -> None:
         """RetryPolicy rejects max_attempts < 1."""
-        with pytest.raises(ValueError, match=ERR_RETRY_MAX_ATTEMPTS):
+        with pytest.raises(ValueError, match=const.ERR_RETRY_MAX_ATTEMPTS):
             RetryPolicy(
                 max_attempts=0,
                 backoff_base_seconds=0.1,
@@ -45,7 +40,7 @@ class TestRetryPolicy:
 
     def test_policy_invalid_backoff_base_zero(self) -> None:
         """RetryPolicy rejects backoff_base_seconds <= 0."""
-        with pytest.raises(ValueError, match=ERR_RETRY_BACKOFF_BASE):
+        with pytest.raises(ValueError, match=const.ERR_RETRY_BACKOFF_BASE):
             RetryPolicy(
                 max_attempts=3,
                 backoff_base_seconds=0.0,
@@ -56,7 +51,7 @@ class TestRetryPolicy:
 
     def test_policy_invalid_backoff_multiplier_zero(self) -> None:
         """RetryPolicy rejects backoff_multiplier <= 0."""
-        with pytest.raises(ValueError, match=ERR_RETRY_BACKOFF_MULTIPLIER):
+        with pytest.raises(ValueError, match=const.ERR_RETRY_BACKOFF_MULTIPLIER):
             RetryPolicy(
                 max_attempts=3,
                 backoff_base_seconds=0.1,
@@ -67,7 +62,7 @@ class TestRetryPolicy:
 
     def test_policy_invalid_backoff_max_zero(self) -> None:
         """RetryPolicy rejects backoff_max_seconds <= 0."""
-        with pytest.raises(ValueError, match=ERR_RETRY_BACKOFF_MAX):
+        with pytest.raises(ValueError, match=const.ERR_RETRY_BACKOFF_MAX):
             RetryPolicy(
                 max_attempts=3,
                 backoff_base_seconds=0.1,

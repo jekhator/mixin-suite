@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Final
 
-ERR_RETRY_MAX_ATTEMPTS: Final = "max_attempts must be >= 1"
-ERR_RETRY_BACKOFF_BASE: Final = "backoff_base_seconds must be > 0"
-ERR_RETRY_BACKOFF_MULTIPLIER: Final = "backoff_multiplier must be > 0"
-ERR_RETRY_BACKOFF_MAX: Final = "backoff_max_seconds must be > 0"
+from mixin_retry.common.constants import errors as const
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,10 +36,10 @@ class RetryPolicy:
     def __post_init__(self) -> None:
         """Validate policy constraints."""
         if self.max_attempts < 1:
-            raise ValueError(ERR_RETRY_MAX_ATTEMPTS)
+            raise ValueError(const.ERR_RETRY_MAX_ATTEMPTS)
         if self.backoff_base_seconds <= 0:
-            raise ValueError(ERR_RETRY_BACKOFF_BASE)
+            raise ValueError(const.ERR_RETRY_BACKOFF_BASE)
         if self.backoff_multiplier <= 0:
-            raise ValueError(ERR_RETRY_BACKOFF_MULTIPLIER)
+            raise ValueError(const.ERR_RETRY_BACKOFF_MULTIPLIER)
         if self.backoff_max_seconds <= 0:
-            raise ValueError(ERR_RETRY_BACKOFF_MAX)
+            raise ValueError(const.ERR_RETRY_BACKOFF_MAX)
