@@ -19,8 +19,8 @@ class RetryPolicy:
         backoff_max_seconds: Maximum backoff delay.
         jitter: If True, add ±10% random jitter to each backoff.
         should_retry: Predicate function to determine if exception is retryable.
-            If provided, takes precedence over retry_on. Unwraps __cause__
-            to find the root exception in a chain.
+            Receives the caught exception as-is and owns any unwrapping of
+            __cause__ chains. If provided, takes precedence over retry_on.
         retry_on: Tuple of exception types to retry on (fallback if
             should_retry is None).
     """

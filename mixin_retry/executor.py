@@ -124,23 +124,16 @@ class RetryExecutor:
         exc: BaseException,
         policy: RetryPolicy,
     ) -> bool:
-        """Determine if exception is retryable."""
+        """Determine if exception is retryable.
+
+        The predicate receives the caught exception as-is and owns any
+        unwrapping of __cause__ chains.
+        """
         if policy.should_retry is not None:
-            root_exc = self._unwrap_cause(exc)
-            return policy.should_retry(root_exc)
+            return policy.should_retry(exc)
         if policy.retry_on:
             return isinstance(exc, policy.retry_on)
         return False
-
-    def _unwrap_cause(
-        self,
-        exc: BaseException,
-    ) -> BaseException:
-        """Unwrap __cause__ chain to find root exception."""
-        current = exc
-        while current.__cause__ is not None:
-            current = current.__cause__
-        return current
 
     def _calculate_backoff(
         self,

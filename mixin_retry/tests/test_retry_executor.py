@@ -170,8 +170,8 @@ class TestRetryExecutor:
 
         assert call_count == 2
 
-    def test_wrap_sync_should_retry_predicate(self) -> None:
-        """Wrap sync function with should_retry predicate."""
+    def test_wrap_sync_should_retry_predicate_direct_exception(self) -> None:
+        """Wrap sync with should_retry predicate on direct exception."""
         executor = RetryExecutor()
         policy = RetryPolicy(
             max_attempts=3,
@@ -184,7 +184,7 @@ class TestRetryExecutor:
 
         call_count = 0
 
-        def fails_with_connection_error() -> str | None:
+        def fails_with_connection_error() -> str:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -200,11 +200,16 @@ class TestRetryExecutor:
         assert call_count == 2
 
     def test_wrap_sync_should_retry_with_cause_chain(self) -> None:
-        """Wrap sync with should_retry unwrapping __cause__."""
+        """Wrap sync with should_retry predicate unwrapping __cause__.
+
+        Predicate receives the caught (outer) exception and owns unwrapping.
+        Probe: fn raises RuntimeError with __cause__=ValueError, predicate
+        checks e.__cause__ to detect ValueError for retry decision.
+        """
         executor = RetryExecutor()
 
-        def is_connection_error(exc: BaseException) -> bool:
-            return isinstance(exc, ConnectionError)
+        def check_cause_for_value_error(exc: BaseException) -> bool:
+            return isinstance(exc.__cause__, ValueError)
 
         policy = RetryPolicy(
             max_attempts=3,
@@ -212,22 +217,24 @@ class TestRetryExecutor:
             backoff_multiplier=2.0,
             backoff_max_seconds=0.01,
             jitter=False,
-            should_retry=is_connection_error,
+            should_retry=check_cause_for_value_error,
         )
 
         call_count = 0
 
-        def fails_with_chain() -> str | None:
+        def fails_with_runtime_error_caused_by_value_error() -> str:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
                 try:
-                    raise ConnectionError("root")
-                except ConnectionError as e:
-                    raise ValueError("wrapped") from e
+                    raise ValueError("root cause")
+                except ValueError as e:
+                    raise RuntimeError("outer error") from e
             return "ok"
 
-        wrapped = executor.wrap(fails_with_chain, policy=policy)
+        wrapped = executor.wrap(
+            fails_with_runtime_error_caused_by_value_error, policy=policy
+        )
 
         with patch("time.sleep"):
             result = wrapped()
@@ -476,6 +483,31 @@ class TestRetryExecutor:
             raise ValueError("fail")
 
         wrapped = executor.wrap(always_fails, policy=policy)
+
+        with pytest.raises(ValueError, match="fail"):
+            wrapped()
+
+    def test_should_retry_predicate_takes_precedence_over_retry_on(self) -> None:
+        """should_retry predicate takes precedence over retry_on."""
+        executor = RetryExecutor()
+
+        def predicate_rejects_all(exc: BaseException) -> bool:
+            return False
+
+        policy = RetryPolicy(
+            max_attempts=2,
+            backoff_base_seconds=0.001,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=0.01,
+            jitter=False,
+            should_retry=predicate_rejects_all,
+            retry_on=(ValueError,),
+        )
+
+        def fails_with_value_error() -> None:
+            raise ValueError("fail")
+
+        wrapped = executor.wrap(fails_with_value_error, policy=policy)
 
         with pytest.raises(ValueError, match="fail"):
             wrapped()
