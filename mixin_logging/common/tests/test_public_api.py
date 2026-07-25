@@ -12,7 +12,6 @@ import mixin_logging.adapters.requests
 import mixin_logging.adapters.stdlib
 import mixin_logging.adapters.wsgi
 import mixin_logging.context.correlation
-import mixin_logging.decorators.logged
 from mixin_logging.common.constants.public_api import PUBLIC_API
 
 
@@ -86,11 +85,4 @@ class TestSubPackagePublicApi:
         for name in mixin_logging.context.correlation.__all__:
             assert hasattr(mixin_logging.context.correlation, name), (
                 f"correlation: Missing {name}"
-            )  # noqa: S101
-
-    def test_logged_subpackage_all_exportable(self) -> None:
-        """Every name in decorators.logged.__all__ is importable from decorators.logged."""
-        for name in mixin_logging.decorators.logged.__all__:
-            assert hasattr(mixin_logging.decorators.logged, name), (
-                f"logged: Missing {name}"
             )  # noqa: S101

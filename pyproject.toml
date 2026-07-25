@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "mixin-suite"
 dynamic = ["version"]
-description = "Composable mixins for Python services: structured logging with correlation IDs and sensitive data classification."
+description = "Composable mixins for Python services: logging, sensitive data classification, retry logic, latency measurement, and notifications."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "C. James Ekhator" }]
@@ -67,9 +67,12 @@ dev = [
 path = "mixin_logging/config/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["mixin_logging", "mixin_sensitivity", "mixin_retry", "mixin_notifications"]
+packages = ["mixin_latency", "mixin_logging", "mixin_notifications", "mixin_retry", "mixin_sensitivity"]
 exclude = [
+    "mixin_latency/**/tests",
+    "mixin_latency/conftest.py",
     "mixin_logging/**/tests",
+    "mixin_logging/common/constants/tests.py",
     "mixin_logging/conftest.py",
     "mixin_sensitivity/**/tests",
     "mixin_sensitivity/conftest.py",
@@ -82,24 +85,26 @@ exclude = [
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-testpaths = ["mixin_logging", "mixin_sensitivity", "mixin_retry", "mixin_notifications"]
+testpaths = ["mixin_latency", "mixin_logging", "mixin_notifications", "mixin_retry", "mixin_sensitivity"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
 asyncio_mode = "strict"
 
 [tool.coverage.run]
-source = ["mixin_logging", "mixin_sensitivity", "mixin_retry", "mixin_notifications"]
+source = ["mixin_latency", "mixin_logging", "mixin_notifications", "mixin_retry", "mixin_sensitivity"]
 branch = true
 omit = [
+    "mixin_latency/**/tests/*",
+    "mixin_latency/conftest.py",
     "mixin_logging/**/tests/*",
     "mixin_logging/common/constants/tests.py",
     "mixin_logging/conftest.py",
-    "mixin_sensitivity/**/tests/*",
-    "mixin_sensitivity/conftest.py",
-    "mixin_retry/**/tests/*",
-    "mixin_retry/conftest.py",
     "mixin_notifications/**/tests/*",
     "mixin_notifications/conftest.py",
+    "mixin_retry/**/tests/*",
+    "mixin_retry/conftest.py",
+    "mixin_sensitivity/**/tests/*",
+    "mixin_sensitivity/conftest.py",
     "conftest.py"
 ]
 
@@ -126,13 +131,13 @@ extend-select = ["I", "TID252", "PLC0414"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["mixin_logging", "mixin_sensitivity", "mixin_notifications"]
+known-first-party = ["mixin_latency", "mixin_logging", "mixin_notifications", "mixin_retry", "mixin_sensitivity"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
 [tool.strict-module]
-paths = ["mixin_logging/", "mixin_sensitivity/", "mixin_retry/", "mixin_notifications/"]
+paths = ["mixin_latency/", "mixin_logging/", "mixin_notifications/", "mixin_retry/", "mixin_sensitivity/"]
 exception_tags = ["fixture"]
 
 [tool.strict-module.loc-cap]
