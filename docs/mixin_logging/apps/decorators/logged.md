@@ -1,7 +1,10 @@
 # logging-mixin, @logged Decorator
 
+> **⚠️ REMOVED IN 0.5.0**: The `@logged` decorator was removed in mixin-suite 0.5.0. Use `LoggingMixin` instead.
+> This document is archived for historical reference only.
+
 > **Location:** `logging-mixin/docs/apps/decorators/logged.md`
-> **Status:** Living reference. Updated 2026-06-04.
+> **Status:** Historical reference. Removed in 0.5.0.
 > **Code:** `mixin_logging/decorators/logged/` (two-file layout: `logged_objects.py` + `logged_client.py`)
 > **Diagrams:** `docs/apps/decorators/diagrams.md`
 > **Sibling docs:** `docs/architecture/architecture.md`, `docs/apps/context/correlation.md`.

@@ -205,19 +205,18 @@ class UserService(LoggingMixin):
 
 ### Sensitivity: Masking Sensitive Fields
 
-#### 1. Decorate and mark sensitive fields
+#### 1. Mark sensitive fields and inherit SensitiveRepr
 
 ```python
 from dataclasses import dataclass, field
-from mixin_sensitivity import sensitive, Sensitivity
+from mixin_sensitivity import SensitiveRepr, Sensitivity
 
-@sensitive
-@dataclass(frozen=True, slots=True)
-class User:
+@dataclass(frozen=True, slots=True, repr=False)
+class User(SensitiveRepr):
     id: int
-    api_token: str = field(metadata={"sensitivity": "secret"})
-    email: str = field(metadata={"sensitivity": "pii"})
-    ssn: str = field(metadata={"sensitivity": "phi"})
+    api_token: str = field(metadata={"sensitivity": Sensitivity.SECRET})
+    email: str = field(metadata={"sensitivity": Sensitivity.PII})
+    ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
     name: str
 ```
 
@@ -234,7 +233,7 @@ user = User(
 
 # Safe for logging
 logger.info("User created: %s", repr(user))
-# → "User created: User(id=1, api_token='***', email='***', ssn='***', name='Alice')"
+# → "User created: User(id=1, api_token=***MASKED***, email=***MASKED***, ssn=***MASKED***, name='Alice')"
 
 # Introspect sensitivity profile
 from mixin_sensitivity import classify
@@ -248,13 +247,13 @@ profile = classify(user)
 
 ## Run-Verified Examples
 
-These examples are executed against the published mixin-suite==0.2.0 distribution.
+These examples are executed against the published mixin-suite==0.5.0 distribution.
 
 ### Logging Example: Correlation-ID Propagation
 
 ```python
 import logging
-from mixin_logging import LoggingMixin, logged, set_correlation_id
+from mixin_logging import LoggingMixin, set_correlation_id
 
 logging.basicConfig(
     level=logging.INFO,
@@ -265,7 +264,6 @@ logging.basicConfig(
 class DocumentService(LoggingMixin):
     """Service that processes documents with correlation-ID tracking."""
 
-    @logged("document.upload")
     def upload(self, doc_name: str, size_bytes: int) -> dict:
         """Upload a document and return metadata."""
         self.log_info("upload.initiated", doc_name=doc_name, size_bytes=size_bytes)
@@ -273,7 +271,6 @@ class DocumentService(LoggingMixin):
         self.log_info("upload.complete", doc_id=result["id"])
         return result
 
-    @logged("document.process")
     def process(self, doc_id: str) -> str:
         """Process a document and return status."""
         self.log_info("process.started", doc_id=doc_id)
@@ -289,12 +286,10 @@ result = service.upload("report.pdf", 1024000)
 status = service.process("doc-123")
 ```
 
-**Output (Python 3.14, mixin-suite==0.2.0):**
+**Output (Python 3.14, mixin-suite==0.5.0):**
 ```
-2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - document.upload.start - correlation_id=req-2026-07-10-001
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-10-001
-2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - document.process.start - correlation_id=req-2026-07-10-001
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-10-001
 2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-10-001
 ```
@@ -303,15 +298,14 @@ status = service.process("doc-123")
 
 ```python
 from dataclasses import dataclass, field
-from mixin_sensitivity import sensitive, classify, Sensitivity
+from mixin_sensitivity import SensitiveRepr, classify, Sensitivity
 
-@sensitive
-@dataclass(frozen=True, slots=True)
-class HealthRecord:
+@dataclass(frozen=True, slots=True, repr=False)
+class HealthRecord(SensitiveRepr):
     patient_id: int
-    ssn: str = field(metadata={"sensitivity": "phi"})
-    diagnosis: str = field(metadata={"sensitivity": "phi"})
-    treatment_notes: str = field(metadata={"sensitivity": "phi"})
+    ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
+    diagnosis: str = field(metadata={"sensitivity": Sensitivity.PHI})
+    treatment_notes: str = field(metadata={"sensitivity": Sensitivity.PHI})
     attending_physician: str
 
 record = HealthRecord(
@@ -330,9 +324,9 @@ profile = classify(record)
 print(f"PHI fields: {[f for f, s in profile.classes if s == Sensitivity.PHI]}")
 ```
 
-**Output (Python 3.14, mixin-suite==0.2.0):**
+**Output (Python 3.14, mixin-suite==0.5.0):**
 ```
-HealthRecord(patient_id=42, ssn=***, diagnosis=***, treatment_notes=***, attending_physician='Dr. Smith')
+HealthRecord(patient_id=42, ssn=***MASKED***, diagnosis=***MASKED***, treatment_notes=***MASKED***, attending_physician='Dr. Smith')
 
 PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 ```
@@ -345,33 +339,34 @@ PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 
 ## Public API
 
-### mixin_logging (v0.6.0)
+### mixin_logging (v0.5.0)
 
 Core classes and functions:
-- `LoggingMixin`: Base class providing `log_info()`, `log_debug()`, and `@logged` support
-- `logged(event_name)`: Decorator for automatic event logging and error handling
+- `LoggingMixin`: Base class providing `log_info()`, `log_debug()`, `log_warning()`, `log_error()`, and `log_exception()` methods
 - `set_correlation_id(id)`: Set the correlation ID for the current context
 - `get_correlation_id()`: Retrieve the current correlation ID
 - `clear_correlation_id()`: Clear the correlation ID from context
 - `CorrelationContext`: Data class representing correlation metadata
 - `ContextVarClient`: Internal context-variable manager for correlation propagation
-- `LoggedClient`, `LoggedContainer`: Internal decorator implementation details
+- `FlushOnWarningHandler`: Logging handler that flushes on WARNING level or above
+- `FlushOnWarningConfig`: Configuration for the flush-on-warning handler
+- `AmbientLogger`: Namespace for ambient logging functions (log_info, log_debug, log_warning, log_error)
 - `PUBLIC_API`: Frozenset of all public names
 
-### mixin_sensitivity (v0.4.0)
+### mixin_sensitivity (v0.5.0)
 
 Core classes and functions:
-- `sensitive`: Class decorator enabling automatic masking of sensitive fields
+- `SensitiveRepr`: Base class for dataclasses that masks sensitive fields in repr output
 - `classify(dataclass_or_instance)`: Introspect sensitivity profile of a dataclass
 - `Sensitivity`: Enum taxonomy: PHI, PII, PCI, SECRET
 - `SensitivityProfile`: Data class containing field-to-sensitivity mappings
+- `SensitiveDeclarationError`: Exception raised for invalid sensitivity declarations
 
-### mixin_retry
+### mixin_retry (v0.5.0)
 
 Core classes and functions:
-- `retried(retry_on=None, max_retries=3, base_delay_ms=100)`: Class-capable decorator for automatic retry logic with exponential backoff
-- `RetryClient`: Client implementation for retry decorator logic
-- `RetryContainer`: Container for retry decorator metadata
+- `RetryPolicy`: Configuration object for retry behavior (max_attempts, backoff, jitter, predicates)
+- `RetryExecutor`: Client for wrapping functions with retry logic via the `wrap(func, policy)` method
 
 ## Imports
 
@@ -379,13 +374,19 @@ All packages maintain their original import roots:
 
 ```python
 # Logging
-from mixin_logging import LoggingMixin, logged, set_correlation_id, get_correlation_id
+from mixin_logging import LoggingMixin, set_correlation_id, get_correlation_id
 
 # Sensitivity
-from mixin_sensitivity import sensitive, classify, Sensitivity
+from mixin_sensitivity import SensitiveRepr, classify, Sensitivity
 
 # Retry
-from mixin_retry import retried
+from mixin_retry import RetryPolicy, RetryExecutor
+
+# Latency
+from mixin_latency import LatencyClock
+
+# Notifications
+from mixin_notifications import Dispatcher, SuppressionPolicy
 ```
 
 ## Contributing
