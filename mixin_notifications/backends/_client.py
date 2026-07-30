@@ -126,8 +126,14 @@ class RetryingBackend:
                 raise RetryableDeliveryError(result)
             return result
 
-        def should_retry(exc: BaseException) -> bool:
-            return isinstance(exc, RetryableDeliveryError)
+        def should_retry(error: BaseException) -> bool:
+            if isinstance(error, RetryableDeliveryError):
+                return True
+            if self.policy.should_retry is not None:
+                return self.policy.should_retry(error)
+            if self.policy.retry_on:
+                return isinstance(error, self.policy.retry_on)
+            return False
 
         policy_with_predicate = RetryPolicy(
             max_attempts=self.policy.max_attempts,
@@ -141,7 +147,7 @@ class RetryingBackend:
         try:
             result = executor.call(attempt_send, policy=policy_with_predicate)
             return result
-        except RetryableDeliveryError as exc:
+        except RetryableDeliveryError as error:
             if self.dead_letter is not None:
                 try:
                     dead_result = self.dead_letter.send(event)
@@ -151,10 +157,10 @@ class RetryingBackend:
                         detail=f"exhausted retries, dead_letter outcome: {dead_result.detail}",
                         retryable=False,
                     )
-                except Exception as dead_exc:
+                except Exception as dlq_error:
                     logger.warning(
                         "Dead-letter backend failed during exhaustion fallback",
-                        exc_info=dead_exc,
+                        exc_info=dlq_error,
                     )
                     return DeliveryResult(
                         delivered=False,
@@ -165,33 +171,41 @@ class RetryingBackend:
             return DeliveryResult(
                 delivered=False,
                 backend_name="RetryingBackend",
-                detail=f"exhausted retries: {exc.result.detail}",
+                detail=f"exhausted retries: {error.result.detail}",
                 retryable=False,
             )
         except Exception as error:
+            is_retryable_exception = should_retry(error)
+            detail_prefix = (
+                "exhausted retries"
+                if is_retryable_exception
+                else "non-retryable exception"
+            )
+
             if self.dead_letter is not None:
                 try:
                     dead_result = self.dead_letter.send(event)
                     return DeliveryResult(
                         delivered=dead_result.delivered,
                         backend_name=f"RetryingBackend(dead_letter={self.dead_letter.__class__.__name__})",
-                        detail=f"exception exhaustion, dead_letter outcome: {dead_result.detail}",
+                        detail=f"{detail_prefix}, dead_letter outcome: {dead_result.detail}",
                         retryable=False,
                     )
-                except Exception as dead_exc:
+                except Exception as dlq_error:
                     logger.warning(
-                        "Dead-letter backend failed during exception exhaustion fallback",
-                        exc_info=dead_exc,
+                        f"Dead-letter backend failed ({detail_prefix})",
+                        exc_info=dlq_error,
                     )
                     return DeliveryResult(
                         delivered=False,
                         backend_name="RetryingBackend",
-                        detail="exception exhaustion and dead_letter failed",
+                        detail=f"{detail_prefix} and dead_letter failed",
                         retryable=False,
                     )
+
             return DeliveryResult(
                 delivered=False,
                 backend_name="RetryingBackend",
-                detail=f"exception exhaustion: {error.__class__.__name__}",
+                detail=f"{detail_prefix}: {error.__class__.__name__}",
                 retryable=False,
             )

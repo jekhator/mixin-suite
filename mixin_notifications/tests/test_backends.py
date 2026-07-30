@@ -466,7 +466,7 @@ class TestRetryingBackend:
 
         assert result.delivered is True
         assert len(dead_letter.events) == 1
-        assert "exception exhaustion" in result.detail
+        assert "non-retryable exception" in result.detail
 
     def test_retrying_backend_inner_exception_dead_letter_exception(
         self, test_event: NotificationEvent
@@ -531,7 +531,115 @@ class TestRetryingBackend:
         result = backend.send(test_event)
 
         assert result.delivered is False
-        assert "exception exhaustion" in result.detail
+        assert "non-retryable exception" in result.detail
+
+    def test_retrying_backend_raised_exception_with_retry_on_policy(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend retries raised exceptions matching policy.retry_on."""
+        attempt_count = 0
+
+        class ConnectionErrorBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                nonlocal attempt_count
+                attempt_count += 1
+                raise ConnectionError("Network failed")
+
+        inner = ConnectionErrorBackend()
+        dlq = CollectingBackend()
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+            retry_on=(ConnectionError,),
+        )
+        backend = RetryingBackend(inner=inner, policy=policy, dead_letter=dlq)
+
+        result = backend.send(test_event)
+
+        # REGRESSION: Must attempt exactly max_attempts times before dead-letter
+        assert attempt_count == 3, f"Expected 3 attempts, got {attempt_count}"
+        assert result.delivered is True  # DLQ accepted
+        assert len(dlq.events) == 1
+
+    def test_retrying_backend_raised_exception_with_should_retry_predicate(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend retries raised exceptions matching policy.should_retry."""
+        attempt_count = 0
+
+        class TemporaryErrorBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                nonlocal attempt_count
+                attempt_count += 1
+                raise ValueError("Temporary value error")
+
+        inner = TemporaryErrorBackend()
+        dlq = CollectingBackend()
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+            should_retry=lambda error: isinstance(error, ValueError),
+        )
+        backend = RetryingBackend(inner=inner, policy=policy, dead_letter=dlq)
+
+        result = backend.send(test_event)
+
+        # REGRESSION: Must attempt exactly max_attempts times before dead-letter
+        assert attempt_count == 3, f"Expected 3 attempts, got {attempt_count}"
+        assert result.delivered is True  # DLQ accepted
+        assert len(dlq.events) == 1
+
+    def test_retrying_backend_raised_exception_non_retryable(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend does not retry raised exceptions policy deems non-retryable."""
+        attempt_count = 0
+
+        class PermanentErrorBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                nonlocal attempt_count
+                attempt_count += 1
+                raise PermissionError("Access denied")
+
+        inner = PermanentErrorBackend()
+        dlq = CollectingBackend()
+        policy = RetryPolicy(
+            max_attempts=3,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+            retry_on=(ConnectionError,),  # Does NOT include PermissionError
+        )
+        backend = RetryingBackend(inner=inner, policy=policy, dead_letter=dlq)
+
+        result = backend.send(test_event)
+
+        # REGRESSION: Non-retryable exceptions should attempt exactly once
+        assert attempt_count == 1, f"Expected 1 attempt, got {attempt_count}"
+        assert result.delivered is True  # DLQ accepted
+        assert (
+            "non-retryable exception" in result.detail
+            or "non-retryable" in result.detail
+        )
 
 
 class TestSNSBackend:
