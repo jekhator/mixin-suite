@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from typing import Any
 
 from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
 from mixin_notifications.events._objects import NotificationEvent
@@ -204,7 +205,7 @@ class SNSBackend:
     Requires: boto3>=1.28.0 (installed via [sns] extra).
     """
 
-    sns_client: object
+    sns_client: Any
     default_topic_arn: str
 
     @property
@@ -287,7 +288,7 @@ class SESBackend:
     Requires: boto3>=1.28.0 (installed via [ses] extra).
     """
 
-    ses_client: object
+    ses_client: Any
     to_addresses: tuple[str, ...]
     from_address: str
 

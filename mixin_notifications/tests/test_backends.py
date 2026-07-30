@@ -130,7 +130,7 @@ class TestAttachment:
             content=b"test data",
         )
         with pytest.raises(AttributeError):
-            att.filename = "other.txt"
+            att.filename = "other.txt"  # type: ignore
 
     def test_attachment_validation_empty_filename(self) -> None:
         """Attachment rejects empty filename."""
