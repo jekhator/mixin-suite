@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mixin_notifications import Dispatcher, NotificationEvent, Severity
+from mixin_notifications import Attachment, Dispatcher, NotificationEvent, Severity
 
 
 class TestEgressGate:
@@ -175,3 +175,103 @@ class TestEgressGate:
         assert received.fingerprint == "budget-anomaly-2847"
         assert received.correlation_id == "trace-12345"
         assert received.occurred_at == "2026-07-21T10:00:00+00:00"
+
+    def test_internal_backend_receives_all_attachments(
+        self,
+        capturing_internal_backend,
+    ) -> None:
+        """Internal backends receive all attachments regardless of egress_safe."""
+        event = NotificationEvent(
+            category="files",
+            severity=Severity.INFO,
+            title="File Event",
+            body="Contains files",
+            fingerprint="file-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+            attachments=(
+                Attachment(
+                    filename="safe.txt",
+                    content_type="text/plain",
+                    content=b"safe content",
+                    egress_safe=True,
+                ),
+                Attachment(
+                    filename="sensitive.txt",
+                    content_type="text/plain",
+                    content=b"sensitive content",
+                    egress_safe=False,
+                ),
+            ),
+        )
+
+        dispatcher = Dispatcher(backends=(capturing_internal_backend,))
+        dispatcher.notify(event)
+
+        received = capturing_internal_backend.events[0]
+        assert len(received.attachments) == 2
+
+    def test_external_backend_receives_only_egress_safe_attachments(
+        self,
+        capturing_external_backend,
+    ) -> None:
+        """External backends receive only attachments with egress_safe=True."""
+        event = NotificationEvent(
+            category="files",
+            severity=Severity.INFO,
+            title="File Event",
+            body="Contains files",
+            fingerprint="file-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+            attachments=(
+                Attachment(
+                    filename="safe.txt",
+                    content_type="text/plain",
+                    content=b"safe content",
+                    egress_safe=True,
+                ),
+                Attachment(
+                    filename="sensitive.txt",
+                    content_type="text/plain",
+                    content=b"sensitive content",
+                    egress_safe=False,
+                ),
+            ),
+        )
+
+        dispatcher = Dispatcher(backends=(capturing_external_backend,))
+        dispatcher.notify(event)
+
+        received = capturing_external_backend.events[0]
+        assert len(received.attachments) == 1
+        assert received.attachments[0].filename == "safe.txt"
+
+    def test_egress_gate_strips_unsafe_with_negative_control(
+        self,
+        capturing_external_backend,
+    ) -> None:
+        """Negative control: prove gate fails without egress_safe filtering."""
+        event = NotificationEvent(
+            category="files",
+            severity=Severity.INFO,
+            title="File Event",
+            body="Contains files",
+            fingerprint="file-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+            attachments=(
+                Attachment(
+                    filename="unsafe.txt",
+                    content_type="text/plain",
+                    content=b"unsafe content",
+                    egress_safe=False,
+                ),
+            ),
+        )
+
+        dispatcher = Dispatcher(backends=(capturing_external_backend,))
+        dispatcher.notify(event)
+
+        received = capturing_external_backend.events[0]
+        assert len(received.attachments) == 0

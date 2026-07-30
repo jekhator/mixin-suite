@@ -6,6 +6,25 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 
+@dataclass(frozen=True, slots=True)
+class Attachment:
+    """Immutable notification attachment with validation."""
+
+    filename: str
+    content_type: str
+    content: bytes
+    egress_safe: bool = False
+
+    def __post_init__(self) -> None:
+        """Validate non-empty required fields."""
+        from mixin_notifications.common.constants import events as const
+
+        if not self.filename:
+            raise ValueError(const.ERR_ATTACHMENT_EMPTY_FILENAME)
+        if not self.content_type:
+            raise ValueError(const.ERR_ATTACHMENT_EMPTY_CONTENT_TYPE)
+
+
 class Severity(StrEnum):
     """Notification severity levels."""
 
@@ -26,6 +45,7 @@ class NotificationEvent:
     occurred_at: str
     correlation_id: str | None
     metadata: tuple[tuple[str, str], ...] = ()
+    attachments: tuple[Attachment, ...] = ()
 
     def __post_init__(self) -> None:
         """Validate non-empty required fields."""

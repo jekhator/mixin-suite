@@ -98,6 +98,148 @@ Second dispatch (same fingerprint within window):
   Events in backend: 1
 ```
 
+## 0.6.0+ Features: Delivery Semantics & Attachment Support
+
+### Attachments
+
+Attach binary payloads to notifications with egress-safe marking:
+
+```python
+from mixin_notifications import Attachment, CollectingBackend, Dispatcher, NotificationEventClient
+
+collecting_backend = CollectingBackend()
+dispatcher = Dispatcher(backends=(collecting_backend,))
+
+event = NotificationEventClient.create(
+    category="report",
+    severity="INFO",
+    title="Monthly Report Ready",
+    body="Report is attached",
+    fingerprint="monthly-report-2026-07"
+)
+
+event_with_attachment = NotificationEventClient.create(
+    category="report",
+    severity="INFO",
+    title="Monthly Report Ready",
+    body="Report is attached",
+    fingerprint="monthly-report-2026-07",
+    attachments=(
+        Attachment(
+            filename="report_2026_07.pdf",
+            content_type="application/pdf",
+            content=b"PDF binary data here...",
+            egress_safe=True
+        ),
+    )
+)
+
+result = dispatcher.notify(event_with_attachment)
+
+print(f"Event dispatched with {len(collecting_backend.events[0].attachments)} attachment(s)")
+print(f"Attachment filename: {collecting_backend.events[0].attachments[0].filename}")
+print(f"Attachment egress_safe: {collecting_backend.events[0].attachments[0].egress_safe}")
+```
+
+**Output:**
+
+```
+Event dispatched with 1 attachment(s)
+Attachment filename: report_2026_07.pdf
+Attachment egress_safe: True
+```
+
+**Note:** `egress_safe=True` allows attachments to pass through external backends (e.g., SNS, email). Unmarked attachments (default `egress_safe=False`) are stripped when sending to external backends.
+
+### RetryingBackend (optional, requires mixin_retry)
+
+Wrap any backend with exponential backoff retry logic and optional dead-letter fallback:
+
+```python
+from mixin_notifications import (
+    CollectingBackend,
+    Dispatcher,
+    NotificationEventClient,
+    RetryingBackend,
+)
+from mixin_retry import RetryPolicy
+
+# This example is illustrative; in production, integrate with SNSBackend or SESBackend
+collecting_backend = CollectingBackend()
+dlq_backend = CollectingBackend()
+
+retry_policy = RetryPolicy(
+    max_attempts=3,
+    backoff_base_seconds=0.5,
+    backoff_multiplier=2,
+    backoff_max_seconds=30,
+    jitter=True
+)
+
+retrying_backend = RetryingBackend(
+    inner=collecting_backend,
+    policy=retry_policy,
+    dead_letter=dlq_backend
+)
+
+dispatcher = Dispatcher(backends=(retrying_backend,))
+
+event = NotificationEventClient.create(
+    category="alert",
+    severity="CRITICAL",
+    title="System Critical",
+    body="System health critical",
+    fingerprint="system-critical-001"
+)
+
+result = dispatcher.notify(event)
+
+print(f"Event delivered: {result.results[0].delivered}")
+print(f"Backend name: {result.results[0].backend_name}")
+print(f"Events in collecting backend: {len(collecting_backend.events)}")
+print(f"Dead-letter queue: {len(dlq_backend.events)} events")
+```
+
+**Output:**
+
+```
+Event delivered: True
+Backend name: CollectingBackend
+Events in collecting backend: 1
+Dead-letter queue: 0 events
+```
+
+**SNS/SES Backends (optional, requires boto3)**
+
+For AWS integration, use SNSBackend (with topic override via metadata) or SESBackend (with MIME attachments):
+
+```python
+# SNSBackend example (requires boto3, [sns] extra)
+# backend = SNSBackend(
+#     sns_client=boto3.client("sns"),
+#     default_topic_arn="arn:aws:sns:us-east-1:123456789012:notifications"
+# )
+#
+# # Per-event topic override:
+# event = NotificationEventClient.create(
+#     category="alert",
+#     severity="CRITICAL",
+#     title="Alert",
+#     body="...",
+#     fingerprint="...",
+#     metadata=(("topic_arn", "arn:aws:sns:us-east-1:123456789012:critical-alerts"),)
+# )
+
+# SESBackend example (requires boto3, [ses] extra)
+# backend = SESBackend(
+#     ses_client=boto3.client("ses"),
+#     to_addresses=("ops@example.com",),
+#     from_address="alerts@example.com"
+# )
+```
+
 ## Documentation
 
 - [Flow Trace](architecture/flow-trace.md): Dispatch flow and architecture diagram
+- [Security Audit](audits/2026-07-29-0.6.0-delivery-security-audit.md): 0.6.0 delivery semantics audit
+- [Architecture Review](reviews/2026-07-29-0.6.0-delivery-architecture-review.md): Design and backward compatibility review

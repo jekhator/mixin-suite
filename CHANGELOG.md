@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Attachment DTO (mixin_notifications)**: Frozen+slots dataclass for notification attachments. Fields: `filename`, `content_type`, `content` (bytes), `egress_safe` (bool, default False). Validates non-empty filename and content_type in `__post_init__`.
+- **Attachments field on NotificationEvent**: Additive `attachments: tuple[Attachment, ...] = ()` field (LAST field for backward compatibility). Existing code without attachments continues to work unchanged.
+- **Egress gate attachment filtering**: Dispatcher's `_apply_egress_gate` now filters attachments for external_egress backends: only attachments with `egress_safe=True` are forwarded; `egress_safe=False` attachments are stripped (fail-closed). Internal backends receive all attachments.
+- **RetryingBackend wrapper (mixin_notifications)**: Frozen dataclass composing `mixin_retry`'s RetryPolicy and RetryExecutor. Fields: `inner` (NotificationBackend), `policy` (RetryPolicy), `dead_letter` (optional fallback backend). Normalizes retryable DeliveryResult to internal exception, drives retry attempts via RetryExecutor, handles exhaustion via dead_letter with swallowed failures and warning logs. Combines external_egress status: `inner.external_egress OR dead_letter.external_egress`.
+- **SNSBackend (mixin_notifications, behind [sns] extra)**: AWS SNS backend for external delivery. Frozen dataclass with injected `sns_client` and `default_topic_arn`. Supports per-event topic override via metadata key `topic_arn`. Publishes with title as Subject, body as Message, and message attributes for category, severity, fingerprint, correlation_id. Classifies errors (Throttling/ServiceUnavailable/InternalError) as retryable; others non-retryable. Requires boto3>=1.28.0.
+- **SESBackend (mixin_notifications, behind [ses] extra)**: AWS SES backend for email delivery with inline attachments. Frozen dataclass with injected `ses_client`, `to_addresses` (tuple), and `from_address`. Builds MIME multipart email with egress-gated attachments (already stripped by Dispatcher). Sends via send_raw_email. Same error classification as SNSBackend. Requires boto3>=1.28.0.
+- **[sns] and [ses] optional dependencies**: Added to pyproject.toml; extends [all] group. Both pull boto3>=1.28.0.
+
 ## [0.5.0] - 2026-07-22
 
 ### Removed

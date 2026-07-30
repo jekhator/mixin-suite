@@ -38,6 +38,8 @@ fastapi = ["fastapi"]
 grpc = ["grpcio"]
 httpx = ["httpx"]
 requests = ["requests"]
+ses = ["boto3>=1.28.0"]
+sns = ["boto3>=1.28.0"]
 urllib3 = ["urllib3"]
 all = [
     "aiohttp",
@@ -47,6 +49,8 @@ all = [
     "grpcio",
     "httpx",
     "requests",
+    "ses",
+    "sns",
     "urllib3"
 ]
 

@@ -249,17 +249,31 @@ wheels = [
 ]
 
 [[package]]
+name = "boto3"
+version = "1.43.59"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "botocore" },
+    { name = "jmespath" },
+    { name = "s3transfer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dc/c8/ef9de1d7413da3adcdb6363258ba6b5cc703593409d8c1957825b20a69d3/boto3-1.43.59.tar.gz", hash = "sha256:4e9b14f89adc1a533c89312e86d8e00455a6f15d398796d92f9191b06e56b401", size = 112653, upload-time = "2026-07-29T19:33:25.703Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/10/c5999e72b020012f2e0ccccf2a15632329edd34cb95b02b1ccfb1712ec08/boto3-1.43.59-py3-none-any.whl", hash = "sha256:58b9635deebf075c1c3d76df78df08eb2979c2a74283194676783a0bff3b4557", size = 140024, upload-time = "2026-07-29T19:33:23.751Z" },
+]
+
+[[package]]
 name = "botocore"
-version = "1.43.44"
+version = "1.43.59"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/31/9e/ad63ae4996794be10afef4e1b2f98901947da65c6c349be9c063ee73edbf/botocore-1.43.44.tar.gz", hash = "sha256:cc2a95a53efdcf0ce34a51bca28058e72fcc3b10dd625eb1ad900c5ca3eb8bef", size = 15685774, upload-time = "2026-07-09T00:38:36.71Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/37/3712a70796583570a5a2e426163e13762ba5ec615a73e966ad18e5933954/botocore-1.43.59.tar.gz", hash = "sha256:8016da69ecc1d705249a8ef13548d3c95eec87ac1cd26133a8bdfa73ca175be0", size = 15788291, upload-time = "2026-07-29T19:33:14.871Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/05/5c5de6ed23b5e1b01e36b9e52f056dc2b09b259daf3371e4b615ad9a1d4a/botocore-1.43.44-py3-none-any.whl", hash = "sha256:6afb846fd93815133a53baf1578f1d6016ddbeda247623360379758ca2e3f338", size = 15374229, upload-time = "2026-07-09T00:38:33.716Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/cd/62d749f824b25c152144665f7c5eb8b5ca8be967a87e0c63577b7d4501ae/botocore-1.43.59-py3-none-any.whl", hash = "sha256:21393c35d23b19d7ba95cc4156b59f4013f80696d667997e1abd9d4e29651708", size = 15471171, upload-time = "2026-07-29T19:33:10.864Z" },
 ]
 
 [[package]]
@@ -907,6 +921,8 @@ all = [
     { name = "grpcio" },
     { name = "httpx" },
     { name = "requests" },
+    { name = "ses" },
+    { name = "sns" },
     { name = "urllib3" },
 ]
 botocore = [
@@ -926,6 +942,12 @@ httpx = [
 ]
 requests = [
     { name = "requests" },
+]
+ses = [
+    { name = "boto3" },
+]
+sns = [
+    { name = "boto3" },
 ]
 urllib3 = [
     { name = "urllib3" },
@@ -948,6 +970,8 @@ dev = [
 requires-dist = [
     { name = "aiohttp", marker = "extra == 'aiohttp'" },
     { name = "aiohttp", marker = "extra == 'all'" },
+    { name = "boto3", marker = "extra == 'ses'", specifier = ">=1.28.0" },
+    { name = "boto3", marker = "extra == 'sns'", specifier = ">=1.28.0" },
     { name = "botocore", marker = "extra == 'all'" },
     { name = "botocore", marker = "extra == 'botocore'" },
     { name = "celery", marker = "extra == 'all'" },
@@ -960,10 +984,12 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'httpx'" },
     { name = "requests", marker = "extra == 'all'" },
     { name = "requests", marker = "extra == 'requests'" },
+    { name = "ses", marker = "extra == 'all'" },
+    { name = "sns", marker = "extra == 'all'" },
     { name = "urllib3", marker = "extra == 'all'" },
     { name = "urllib3", marker = "extra == 'urllib3'" },
 ]
-provides-extras = ["aiohttp", "all", "botocore", "celery", "fastapi", "grpc", "httpx", "requests", "urllib3"]
+provides-extras = ["aiohttp", "all", "botocore", "celery", "fastapi", "grpc", "httpx", "requests", "ses", "sns", "urllib3"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1543,6 +1569,27 @@ wheels = [
 ]
 
 [[package]]
+name = "s3transfer"
+version = "0.19.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "botocore" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/76/43/35e4d8aa320bffe8287fe8f65f578fa2d2db0a64212f0e710dce58267854/s3transfer-0.19.2.tar.gz", hash = "sha256:ba0309fd86be3c27dbf78cdd813c13c5e1df16e5874b99d2535ebbdfb9892993", size = 165592, upload-time = "2026-07-22T19:30:44.432Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bc/e7/5c595c75e9f41a44f30e526eda465ea0b4eec93470e074e4a111b253f13a/s3transfer-0.19.2-py3-none-any.whl", hash = "sha256:d8168eccca828cbb2cd573675333f3bddd254313a9c42494b84c76b539e8ba25", size = 90216, upload-time = "2026-07-22T19:30:43.251Z" },
+]
+
+[[package]]
+name = "ses"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/5c/6f97f4e294eee78ca196248c91b7056b26d04ea6ed7b3a4e9d26f991389e/ses-0.0.1.tar.gz", hash = "sha256:f9b1e00afd8b7019cbb6689f8a11ab97d1234aa3606bdd9ad5e7c0a6c08e7cb9", size = 1128, upload-time = "2026-07-26T15:51:04.959Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/ed/8c4a85f7318db64f483443a9a17b03bd8e04e169458167f6f760d4f3a2c3/ses-0.0.1-py3-none-any.whl", hash = "sha256:f21681e8f3d7e814757e832fbc03d30941ca83225fe950fda448e692f65ba6db", size = 1480, upload-time = "2026-07-26T15:51:03.664Z" },
+]
+
+[[package]]
 name = "setuptools"
 version = "83.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1559,6 +1606,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
+
+[[package]]
+name = "sns"
+version = "0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/80/d5a2a12fae635474014e7e0c88959daab3bf815648250fbb7639dd02fe50/sns-0.1.tar.gz", hash = "sha256:2d847d23eb8e0ea20054dbadabdecfafc529e4c7a16a6ce70205c4bf8ebc6cf4", size = 2089, upload-time = "2015-08-11T20:00:35.35Z" }
 
 [[package]]
 name = "starlette"

@@ -178,3 +178,73 @@ Key observations:
   - Category, fingerprint, correlation_id, occurred_at remain unmasked (operational routing/dedup contract)
 - DeliveryResult provides per-backend outcome and retryability hint
 - All classes are frozen dataclasses or slots to prevent mutation
+
+---
+
+## RetryingBackend FLOW TRACE (0.6.0+)
+
+mixin_notifications/backends/_client.py (+ RetryingBackend, composing mixin_retry's RetryExecutor)
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+Imports: logging, RetryExecutor, RetryPolicy, DeliveryResult, NotificationBackend
+┌─ [DATACLASS,frozen,slots] RetryingBackend ──────────┐ inner: NotificationBackend ; policy: RetryPolicy ; dead_letter: NotificationBackend | None ; send[mth] ; external_egress[property] └─...
+
+### Retry Delivery Path
+
+iv RETRY LOOP  backend = RetryingBackend(inner=sns_client, policy=RetryPolicy(...), dead_letter=dlq_backend)
+    └─ result = backend.send(event)
+
+    a. ATTEMPT DELIVERY:
+        ├─ executor = RetryExecutor()
+        ├─ attempt_send() ← closure: returns inner.send(event)
+        │     ├─ result = sns_client.send(event)
+        │     ├─ if result.retryable=True:
+        │     │     └─ raise RetryableDeliveryError(result) ──▶ to retry loop
+        │     └─ return result (delivered or non-retryable failure)
+        │
+        └─ policy_with_predicate = RetryPolicy(..., should_retry=lambda exc: isinstance(exc, RetryableDeliveryError))
+
+    b. RETRY EXECUTION (executor.call):
+        ├─ for attempt in range(policy.max_attempts):
+        │     ├─ try:
+        │     │     └─ return attempt_send()
+        │     ├─ except RetryableDeliveryError:
+        │     │     ├─ if attempt < max_attempts - 1:
+        │     │     │     ├─ backoff = min(base * (multiplier^attempt), max_seconds)
+        │     │     │     └─ time.sleep(backoff + jitter)
+        │     │     └─ [if final attempt] raise
+        │     └─ [non-retryable exception] raise (no retry)
+        │
+        └─ return result (success on any attempt)
+
+    c. EXHAUSTION FALLBACK (if all attempts failed):
+        ├─ except RetryableDeliveryError as exc:
+        │     ├─ if dead_letter is not None:
+        │     │     ├─ try:
+        │     │     │     ├─ dead_result = dead_letter.send(event)
+        │     │     │     └─ return DeliveryResult(
+        │     │     │           delivered=dead_result.delivered,
+        │     │     │           backend_name=f"RetryingBackend(dead_letter={dead_letter.__class__.__name__})",
+        │     │     │           detail=f"exhausted retries, dead_letter outcome: {dead_result.detail}",
+        │     │     │           retryable=False
+        │     │     │         )
+        │     │     └─ except Exception as dead_exc:
+        │     │           ├─ logger.warning("Dead-letter backend failed...", exc_info=dead_exc)
+        │     │           └─ return DeliveryResult(delivered=False, detail="exhausted retries and dead_letter failed", retryable=False)
+        │     └─ return DeliveryResult(delivered=False, detail=f"exhausted retries: {exc.result.detail}", retryable=False)
+        │
+        └─ [no dead_letter] return DeliveryResult(delivered=False, detail="exhausted retries", retryable=False)
+
+    d. EXCEPTION FROM INNER (non-retryable exception):
+        ├─ except Exception as error:
+        │     ├─ if dead_letter is not None:
+        │     │     ├─ [same fallback as above]
+        │     └─ return DeliveryResult(delivered=False, detail=f"exception exhaustion: {error.__class__.__name__}", retryable=False)
+
+### Key Behaviors
+
+- **RetryPolicy composition:** User supplies max_attempts, backoff strategy, jitter; RetryingBackend composes into retry loop
+- **Retryable classification:** inner.send() result.retryable=True triggers retry; False returns immediately
+- **Exception normalization:** Retryable results are converted to internal RetryableDeliveryError for retry engine
+- **Dead-letter fail-safe:** Dead-letter exceptions are swallowed (logged warning, return failure); never propagate
+- **No infinite loops:** max_attempts ensures bounded retries; non-retryable results exit immediately
+- **Composition over inheritance:** Wraps any NotificationBackend; RetryingBackend(inner=RetryingBackend(...)) valid
