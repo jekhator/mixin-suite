@@ -119,6 +119,8 @@ class Dispatcher:
             severity=event.severity.value,
         )
 
+        safe_attachments = tuple(att for att in event.attachments if att.egress_safe)
+
         return NotificationEvent(
             category=event.category,
             severity=event.severity,
@@ -128,4 +130,5 @@ class Dispatcher:
             occurred_at=event.occurred_at,
             correlation_id=event.correlation_id,
             metadata=(("sensitive_count_metadata", str(metadata_counts)),),
+            attachments=safe_attachments,
         )
