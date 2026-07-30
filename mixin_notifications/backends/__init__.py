@@ -5,10 +5,10 @@ from mixin_notifications.backends._client import (
     LoggingBackend,
     NullBackend,
     RetryingBackend,
-    SESBackend,
-    SNSBackend,
 )
 from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
+from mixin_notifications.backends.ses import SESBackend
+from mixin_notifications.backends.sns import SNSBackend
 
 __all__ = [
     "CollectingBackend",

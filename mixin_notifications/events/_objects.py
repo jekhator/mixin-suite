@@ -2,27 +2,8 @@
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, object):
-        """Enum subclass whose members are strings (backport for <3.11)."""
-
-        def __new__(cls, value):
-            if not isinstance(value, str):
-                raise TypeError(  # noqa: R011
-                    f"{value!r} is not a string"
-                )
-            obj = str.__new__(cls, value)
-            obj._value_ = value
-            return obj
-
-        def __str__(self):
-            return self.value
+from enum import StrEnum
 
 
 @dataclass(frozen=True, slots=True)

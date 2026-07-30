@@ -73,16 +73,16 @@ class Dispatcher:
             try:
                 result = backend.send(egress_event)
                 results.append(result)
-            except Exception as exc:
+            except Exception as error:
                 self._logger.warning(
                     f"Backend {backend.__class__.__name__} failed to deliver notification",
-                    exc_info=exc,
+                    exc_info=error,
                 )
                 results.append(
                     DeliveryResult(
                         delivered=False,
                         backend_name=backend.__class__.__name__,
-                        detail=f"exception: {exc.__class__.__name__}",
+                        detail=f"exception: {error.__class__.__name__}",
                         retryable=True,
                     )
                 )

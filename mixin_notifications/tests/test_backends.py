@@ -394,9 +394,186 @@ class TestRetryingBackend:
         assert len(dead_letter.events) == 1
         assert "dead_letter" in result.backend_name
 
+    def test_retrying_backend_dead_letter_exception(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend handles dead-letter exceptions with warning."""
+
+        class AlwaysFailBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                from mixin_notifications import DeliveryResult
+
+                return DeliveryResult(
+                    delivered=False,
+                    backend_name="AlwaysFailBackend",
+                    detail="always fails",
+                    retryable=True,
+                )
+
+        class FailingDeadLetter:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                raise RuntimeError("Dead-letter backend failed")
+
+        inner = AlwaysFailBackend()
+        dead_letter = FailingDeadLetter()
+        policy = RetryPolicy(
+            max_attempts=1,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+        )
+        backend = RetryingBackend(inner=inner, policy=policy, dead_letter=dead_letter)
+
+        result = backend.send(test_event)
+
+        assert result.delivered is False
+        assert "dead_letter failed" in result.detail
+
+    def test_retrying_backend_inner_exception_dead_letter_success(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend uses dead-letter on exception from inner."""
+
+        class ExceptionRaisingBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                raise RuntimeError("Inner backend exception")
+
+        inner = ExceptionRaisingBackend()
+        dead_letter = CollectingBackend()
+        policy = RetryPolicy(
+            max_attempts=1,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+        )
+        backend = RetryingBackend(inner=inner, policy=policy, dead_letter=dead_letter)
+
+        result = backend.send(test_event)
+
+        assert result.delivered is True
+        assert len(dead_letter.events) == 1
+        assert "exception exhaustion" in result.detail
+
+    def test_retrying_backend_inner_exception_dead_letter_exception(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend handles exceptions during exception exhaustion fallback."""
+
+        class ExceptionRaisingBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                raise RuntimeError("Inner backend exception")
+
+        class FailingDeadLetter:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                raise RuntimeError("Dead-letter also failed")
+
+        inner = ExceptionRaisingBackend()
+        dead_letter = FailingDeadLetter()
+        policy = RetryPolicy(
+            max_attempts=1,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+        )
+        backend = RetryingBackend(inner=inner, policy=policy, dead_letter=dead_letter)
+
+        result = backend.send(test_event)
+
+        assert result.delivered is False
+        assert "dead_letter failed" in result.detail
+
+    def test_retrying_backend_inner_exception_no_dead_letter(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """RetryingBackend returns failure on inner exception without dead-letter."""
+
+        class ExceptionRaisingBackend:
+            @property
+            def external_egress(self) -> bool:
+                return False
+
+            def send(self, event):
+                raise RuntimeError("Inner backend exception")
+
+        inner = ExceptionRaisingBackend()
+        policy = RetryPolicy(
+            max_attempts=1,
+            backoff_base_seconds=0.01,
+            backoff_multiplier=1,
+            backoff_max_seconds=0.1,
+            jitter=False,
+        )
+        backend = RetryingBackend(inner=inner, policy=policy)
+
+        result = backend.send(test_event)
+
+        assert result.delivered is False
+        assert "exception exhaustion" in result.detail
+
 
 class TestSNSBackend:
     """Test SNSBackend."""
+
+    def test_sns_backend_metadata_without_topic_arn(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """SNSBackend ignores metadata that doesn't include topic_arn."""
+
+        class MockSNS:
+            def __init__(self):
+                self.published_args = {}
+
+            def publish(self, **kwargs):
+                self.published_args.update(kwargs)
+                return {"MessageId": "test-msg-id"}
+
+        mock_client = MockSNS()
+        backend = SNSBackend(
+            sns_client=mock_client,
+            default_topic_arn="arn:aws:sns:us-east-1:123456789012:default",
+        )
+
+        event_with_other_metadata = NotificationEvent(
+            category="test",
+            severity=Severity.INFO,
+            title="Test Event",
+            body="Test body",
+            fingerprint="test-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+            metadata=(("other_key", "other_value"),),
+        )
+
+        result = backend.send(event_with_other_metadata)
+
+        assert result.delivered is True
+        assert (
+            mock_client.published_args["TopicArn"]
+            == "arn:aws:sns:us-east-1:123456789012:default"
+        )
 
     def test_sns_backend_external_egress(self) -> None:
         """SNSBackend has external_egress=True."""
