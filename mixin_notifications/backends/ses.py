@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
+from mixin_notifications.backends._objects import DeliveryResult
 from mixin_notifications.events._objects import NotificationEvent
 
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
 
 from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
 from mixin_notifications.events._objects import NotificationEvent
