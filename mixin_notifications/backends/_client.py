@@ -157,10 +157,10 @@ class RetryingBackend:
                         detail=f"exhausted retries, dead_letter outcome: {dead_result.detail}",
                         retryable=False,
                     )
-                except Exception as dlq_error:
+                except Exception as error:
                     logger.warning(
                         "Dead-letter backend failed during exhaustion fallback",
-                        exc_info=dlq_error,
+                        exc_info=error,
                     )
                     return DeliveryResult(
                         delivered=False,
@@ -191,10 +191,10 @@ class RetryingBackend:
                         detail=f"{detail_prefix}, dead_letter outcome: {dead_result.detail}",
                         retryable=False,
                     )
-                except Exception as dlq_error:
+                except Exception as error:
                     logger.warning(
                         f"Dead-letter backend failed ({detail_prefix})",
-                        exc_info=dlq_error,
+                        exc_info=error,
                     )
                     return DeliveryResult(
                         delivered=False,

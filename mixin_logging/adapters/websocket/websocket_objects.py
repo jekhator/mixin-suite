@@ -8,8 +8,6 @@ from uuid import uuid4
 
 from mixin_logging.adapters.constants import websocket as const
 
-__all__ = ["Headers", "WebSocketCorrelation"]
-
 Headers = list[tuple[bytes, bytes]]
 
 

@@ -8,8 +8,6 @@ from typing import Self
 from mixin_logging import get_correlation_id
 from mixin_logging.adapters.constants import graphql as const
 
-__all__ = ["GraphQLCorrelation"]
-
 
 @dataclass(frozen=True, slots=True)
 class GraphQLCorrelation:

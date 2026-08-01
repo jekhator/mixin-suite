@@ -13,18 +13,18 @@ from typing import Any, TypeVar
 from mixin_retry.common.constants import errors as const
 from mixin_retry.policy import RetryPolicy
 
-T = TypeVar("T")
-
 
 class RetryExecutor:
     """Execute functions with exponential backoff retry logic."""
 
+    OperationReturnType = TypeVar("OperationReturnType")
+
     def wrap(
         self,
-        operation: Callable[..., T],
+        operation: Callable[..., OperationReturnType],
         /,
         policy: RetryPolicy,
-    ) -> Callable[..., T]:
+    ) -> Callable[..., OperationReturnType]:
         """Wrap function with retry logic (rebind once, call many).
 
         Returns a wrapper preserving operation's signature via functools.wraps.
@@ -43,13 +43,13 @@ class RetryExecutor:
 
     def _wrap_sync(
         self,
-        operation: Callable[..., T],
+        operation: Callable[..., OperationReturnType],
         policy: RetryPolicy,
-    ) -> Callable[..., T]:
+    ) -> Callable[..., OperationReturnType]:
         """Wrap a synchronous function."""
 
         @functools.wraps(operation)
-        def wrapper(*args: Any, **kwargs: Any) -> T:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             last_error: BaseException | None = None
             for attempt in range(policy.max_attempts):
                 try:
@@ -75,7 +75,7 @@ class RetryExecutor:
         """Wrap an asynchronous function."""
 
         @functools.wraps(operation)
-        async def wrapper(*args: Any, **kwargs: Any) -> T:
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             last_error: BaseException | None = None
             for attempt in range(policy.max_attempts):
                 try:
@@ -95,12 +95,12 @@ class RetryExecutor:
 
     def call(
         self,
-        operation: Callable[..., T],
+        operation: Callable[..., OperationReturnType],
         /,
         *args: Any,
         policy: RetryPolicy | None = None,
         **kwargs: Any,
-    ) -> T:
+    ) -> OperationReturnType:
         """Execute operation with retry (per-call convenience form).
 
         Args:
