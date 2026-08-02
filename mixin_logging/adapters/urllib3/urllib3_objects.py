@@ -8,8 +8,6 @@ from typing import Self
 from mixin_logging import get_correlation_id
 from mixin_logging.adapters.constants import urllib3 as const
 
-__all__ = ["Urllib3Correlation"]
-
 
 @dataclass(frozen=True, slots=True)
 class Urllib3Correlation:

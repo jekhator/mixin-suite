@@ -6,8 +6,6 @@ import aiohttp
 
 from mixin_logging.adapters.aiohttp import aiohttp_objects as objs
 
-__all__ = ["CorrelationIdInjector"]
-
 
 class CorrelationIdInjector:
     """Stateless TraceConfig surface for aiohttp correlation-ID propagation."""

@@ -9,8 +9,6 @@ import httpx as httpx_lib
 from mixin_logging.adapters.constants import httpx as const
 from mixin_logging.adapters.httpx import httpx_objects as objs
 
-__all__ = ["CorrelationIdInjector"]
-
 
 @dataclass(frozen=True, slots=True)
 class CorrelationIdInjector:

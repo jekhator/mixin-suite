@@ -366,7 +366,7 @@ Core classes and functions:
 
 Core classes and functions:
 - `RetryPolicy`: Configuration object for retry behavior (max_attempts, backoff, jitter, predicates)
-- `RetryExecutor`: Client for wrapping functions with retry logic via the `wrap(func, policy)` method
+- `RetryExecutor`: Client for wrapping functions with retry logic via the `wrap(operation, /, policy)` method
 
 ## Imports
 

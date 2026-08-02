@@ -13,99 +13,101 @@ from typing import Any, TypeVar
 from mixin_retry.common.constants import errors as const
 from mixin_retry.policy import RetryPolicy
 
-T = TypeVar("T")
-
 
 class RetryExecutor:
     """Execute functions with exponential backoff retry logic."""
 
+    OperationReturnType = TypeVar("OperationReturnType")
+
     def wrap(
         self,
-        fn: Callable[..., T],
+        operation: Callable[..., OperationReturnType],
+        /,
         policy: RetryPolicy,
-    ) -> Callable[..., T]:
+    ) -> Callable[..., OperationReturnType]:
         """Wrap function with retry logic (rebind once, call many).
 
-        Returns a wrapper preserving fn's signature via functools.wraps.
+        Returns a wrapper preserving operation's signature via functools.wraps.
         Supports both sync and async functions.
 
         Args:
-            fn: Function to wrap.
+            operation: Function to wrap.
             policy: Retry policy configuration.
 
         Returns:
             Wrapped function with retry logic.
         """
-        if inspect.iscoroutinefunction(fn):
-            return self._wrap_async(fn, policy)
-        return self._wrap_sync(fn, policy)
+        if inspect.iscoroutinefunction(operation):
+            return self._wrap_async(operation, policy)
+        return self._wrap_sync(operation, policy)
 
     def _wrap_sync(
         self,
-        fn: Callable[..., T],
+        operation: Callable[..., OperationReturnType],
         policy: RetryPolicy,
-    ) -> Callable[..., T]:
+    ) -> Callable[..., OperationReturnType]:
         """Wrap a synchronous function."""
 
-        @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> T:
-            last_exc: BaseException | None = None
+        @functools.wraps(operation)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            last_error: BaseException | None = None
             for attempt in range(policy.max_attempts):
                 try:
-                    return fn(*args, **kwargs)
-                except BaseException as exc:
-                    last_exc = exc
+                    return operation(*args, **kwargs)
+                except BaseException as error:
+                    last_error = error
                     if attempt == policy.max_attempts - 1:
                         raise
-                    if not self._should_retry(exc, policy):
+                    if not self._should_retry(error, policy):
                         raise
                     backoff = self._calculate_backoff(attempt, policy)
                     time.sleep(backoff)
-            assert last_exc is not None  # pragma: no cover
-            raise last_exc  # pragma: no cover
+            assert last_error is not None  # pragma: no cover
+            raise last_error  # pragma: no cover
 
         return wrapper
 
     def _wrap_async(
         self,
-        fn: Callable[..., Any],
+        operation: Callable[..., Any],
         policy: RetryPolicy,
     ) -> Callable[..., Any]:
         """Wrap an asynchronous function."""
 
-        @functools.wraps(fn)
-        async def wrapper(*args: Any, **kwargs: Any) -> T:
-            last_exc: BaseException | None = None
+        @functools.wraps(operation)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            last_error: BaseException | None = None
             for attempt in range(policy.max_attempts):
                 try:
-                    return await fn(*args, **kwargs)
-                except BaseException as exc:
-                    last_exc = exc
+                    return await operation(*args, **kwargs)
+                except BaseException as error:
+                    last_error = error
                     if attempt == policy.max_attempts - 1:
                         raise
-                    if not self._should_retry(exc, policy):
+                    if not self._should_retry(error, policy):
                         raise
                     backoff = self._calculate_backoff(attempt, policy)
                     await asyncio.sleep(backoff)
-            assert last_exc is not None  # pragma: no cover
-            raise last_exc  # pragma: no cover
+            assert last_error is not None  # pragma: no cover
+            raise last_error  # pragma: no cover
 
         return wrapper
 
     def call(
         self,
-        fn: Callable[..., T],
+        operation: Callable[..., OperationReturnType],
+        /,
         *args: Any,
         policy: RetryPolicy | None = None,
         **kwargs: Any,
-    ) -> T:
-        """Execute fn with retry (per-call convenience form).
+    ) -> OperationReturnType:
+        """Execute operation with retry (per-call convenience form).
 
         Args:
-            fn: Function to execute.
-            *args: Positional arguments to fn.
+            operation: Function to execute.
+            *args: Positional arguments to operation.
             policy: Retry policy configuration. Required.
-            **kwargs: Keyword arguments to fn.
+            **kwargs: Keyword arguments to operation.
 
         Returns:
             Function result.
@@ -116,12 +118,12 @@ class RetryExecutor:
         """
         if policy is None:
             raise ValueError(const.ERR_RETRY_POLICY_REQUIRED)
-        wrapped = self.wrap(fn, policy)
+        wrapped = self.wrap(operation, policy)
         return wrapped(*args, **kwargs)
 
     def _should_retry(
         self,
-        exc: BaseException,
+        error: BaseException,
         policy: RetryPolicy,
     ) -> bool:
         """Determine if exception is retryable.
@@ -130,9 +132,9 @@ class RetryExecutor:
         unwrapping of __cause__ chains.
         """
         if policy.should_retry is not None:
-            return policy.should_retry(exc)
+            return policy.should_retry(error)
         if policy.retry_on:
-            return isinstance(exc, policy.retry_on)
+            return isinstance(error, policy.retry_on)
         return False
 
     def _calculate_backoff(

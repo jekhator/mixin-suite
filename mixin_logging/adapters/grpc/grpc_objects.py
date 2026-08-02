@@ -8,8 +8,6 @@ from uuid import uuid4
 
 from mixin_logging.adapters.constants import grpc as const
 
-__all__ = ["GRPCCorrelation", "Metadata"]
-
 Metadata = tuple[tuple[str, str | bytes], ...]
 
 

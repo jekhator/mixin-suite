@@ -148,6 +148,7 @@ class RetryingBackend:
             result = executor.call(attempt_send, policy=policy_with_predicate)
             return result
         except RetryableDeliveryError as error:
+            exhaustion_error = error
             if self.dead_letter is not None:
                 try:
                     dead_result = self.dead_letter.send(event)
@@ -157,10 +158,10 @@ class RetryingBackend:
                         detail=f"exhausted retries, dead_letter outcome: {dead_result.detail}",
                         retryable=False,
                     )
-                except Exception as dlq_error:
+                except Exception as error:
                     logger.warning(
                         "Dead-letter backend failed during exhaustion fallback",
-                        exc_info=dlq_error,
+                        exc_info=error,
                     )
                     return DeliveryResult(
                         delivered=False,
@@ -171,11 +172,12 @@ class RetryingBackend:
             return DeliveryResult(
                 delivered=False,
                 backend_name="RetryingBackend",
-                detail=f"exhausted retries: {error.result.detail}",
+                detail=f"exhausted retries: {exhaustion_error.result.detail}",
                 retryable=False,
             )
         except Exception as error:
-            is_retryable_exception = should_retry(error)
+            outer_error = error
+            is_retryable_exception = should_retry(outer_error)
             detail_prefix = (
                 "exhausted retries"
                 if is_retryable_exception
@@ -191,10 +193,10 @@ class RetryingBackend:
                         detail=f"{detail_prefix}, dead_letter outcome: {dead_result.detail}",
                         retryable=False,
                     )
-                except Exception as dlq_error:
+                except Exception as error:
                     logger.warning(
                         f"Dead-letter backend failed ({detail_prefix})",
-                        exc_info=dlq_error,
+                        exc_info=error,
                     )
                     return DeliveryResult(
                         delivered=False,
@@ -206,6 +208,6 @@ class RetryingBackend:
             return DeliveryResult(
                 delivered=False,
                 backend_name="RetryingBackend",
-                detail=f"{detail_prefix}: {error.__class__.__name__}",
+                detail=f"{detail_prefix}: {outer_error.__class__.__name__}",
                 retryable=False,
             )

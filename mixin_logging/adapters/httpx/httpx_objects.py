@@ -11,8 +11,6 @@ import httpx as httpx_lib
 from mixin_logging import get_correlation_id
 from mixin_logging.adapters.constants import httpx as const
 
-__all__ = ["AsyncRequestHook", "EventHooks", "HttpxCorrelation", "RequestHook"]
-
 RequestHook = Callable[[httpx_lib.Request], None]
 AsyncRequestHook = Callable[[httpx_lib.Request], Awaitable[None]]
 

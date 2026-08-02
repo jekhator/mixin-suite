@@ -8,8 +8,6 @@ import urllib3
 
 from mixin_logging.adapters.urllib3 import urllib3_objects as objs
 
-__all__ = ["CorrelationIdPoolManager"]
-
 
 class CorrelationIdPoolManager(urllib3.PoolManager):
     """PoolManager that injects correlation-ID header into outbound requests."""

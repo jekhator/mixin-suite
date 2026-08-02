@@ -8,8 +8,6 @@ from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_logging.adapters.constants import websocket as const
 from mixin_logging.adapters.websocket import websocket_objects as objs
 
-__all__ = ["CorrelationIdMiddleware"]
-
 Scope = dict[str, Any]
 Receive = Any
 Send = Any
