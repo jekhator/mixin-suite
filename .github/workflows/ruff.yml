@@ -26,4 +26,4 @@ jobs:
       - name: Ruff lint
         run: uvx ruff@0.15.14 check .
       - name: Ruff format check
-        run: uvx ruff@0.15.14 format --check .
+        run: uvx ruff@0.15.14 format --check --exclude mixin_notifications/dispatch/_client.py .

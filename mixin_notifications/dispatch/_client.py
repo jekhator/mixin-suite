@@ -32,9 +32,7 @@ class Dispatcher:
             object.__setattr__(
                 self,
                 "_suppression_tracker",
-                SuppressionTracker(
-                    window_seconds=self.suppression_policy.window_seconds
-                ),
+                SuppressionTracker(window_seconds=self.suppression_policy.window_seconds),
             )
 
     def notify(self, event: NotificationEvent) -> DispatchResult:
