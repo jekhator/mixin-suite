@@ -228,8 +228,8 @@ class TestRetryExecutor:
             if call_count == 1:
                 try:
                     raise ValueError("root cause")
-                except ValueError as e:
-                    raise RuntimeError("outer error") from e
+                except ValueError as error:
+                    raise RuntimeError("outer error") from error
             return "ok"
 
         wrapped = executor.wrap(
