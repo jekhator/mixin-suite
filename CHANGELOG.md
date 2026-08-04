@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-04
+
 ### Added
 
 - **Attachment DTO (mixin_notifications)**: Frozen+slots dataclass for notification attachments. Fields: `filename`, `content_type`, `content` (bytes), `egress_safe` (bool, default False). Validates non-empty filename and content_type in `__post_init__`.
@@ -16,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SNSBackend (mixin_notifications, behind [sns] extra)**: AWS SNS backend for external delivery. Frozen dataclass with injected `sns_client` and `default_topic_arn`. Supports per-event topic override via metadata key `topic_arn`. Publishes with title as Subject, body as Message, and message attributes for category, severity, fingerprint, correlation_id. Classifies errors (Throttling/ServiceUnavailable/InternalError) as retryable; others non-retryable. Requires boto3>=1.28.0.
 - **SESBackend (mixin_notifications, behind [ses] extra)**: AWS SES backend for email delivery with inline attachments. Frozen dataclass with injected `ses_client`, `to_addresses` (tuple), and `from_address`. Builds MIME multipart email with egress-gated attachments (already stripped by Dispatcher). Sends via send_raw_email. Same error classification as SNSBackend. Requires boto3>=1.28.0.
 - **[sns] and [ses] optional dependencies**: Added to pyproject.toml; extends [all] group. Both pull boto3>=1.28.0.
+
+### Changed
+
+- **Python 3.12+ (requires-python floor raise)**: All packages now require Python >=3.12. Updated CI matrix to test 3.12 and 3.14 (dropped 3.11).
+- **PEP 695 type parameters**: mixin_retry's `RetryExecutor.wrap()` and `call()` methods converted to PEP 695 generic method syntax (`def method[TypeParam](...)`), removing need for class-scoped TypeVar definition.
+- **Ruff format-check scope**: Excluded `mixin_notifications/dispatch/_client.py` from format-check to preserve dialect-governed line formatting (P3/P14/P15/P16 conflicts).
+
+### Fixed
+
+- **SuppressionTracker initialization**: Joined single-argument call to one line within dialect budget (line 35, mixin_notifications/dispatch/_client.py).
 
 ## [0.5.0] - 2026-07-22
 
