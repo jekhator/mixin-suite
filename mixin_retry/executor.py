@@ -41,9 +41,9 @@ class RetryExecutor:
 
     def _wrap_sync(
         self,
-        operation: Callable[..., OperationReturnType],
+        operation: Callable[..., Any],
         policy: RetryPolicy,
-    ) -> Callable[..., OperationReturnType]:
+    ) -> Callable[..., Any]:
         """Wrap a synchronous function."""
 
         @functools.wraps(operation)
