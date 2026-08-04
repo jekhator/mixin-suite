@@ -8,7 +8,7 @@ import inspect
 import random
 import time
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any
 
 from mixin_retry.common.constants import errors as const
 from mixin_retry.policy import RetryPolicy
@@ -17,9 +17,7 @@ from mixin_retry.policy import RetryPolicy
 class RetryExecutor:
     """Execute functions with exponential backoff retry logic."""
 
-    OperationReturnType = TypeVar("OperationReturnType")
-
-    def wrap(
+    def wrap[OperationReturnType](
         self,
         operation: Callable[..., OperationReturnType],
         /,
@@ -93,7 +91,7 @@ class RetryExecutor:
 
         return wrapper
 
-    def call(
+    def call[OperationReturnType](
         self,
         operation: Callable[..., OperationReturnType],
         /,
