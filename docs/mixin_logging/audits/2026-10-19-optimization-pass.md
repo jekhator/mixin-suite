@@ -29,7 +29,7 @@ Module-path changes (no names exported from the package root changed): the flush
 
 ## Candidates not applied
 
-These were found during the pass and left unchanged, either because the change alters behavior beyond the objective or because it needs a design decision or a test change in another leg.
+These were found during the pass and left unchanged, either because the change alters behavior beyond the objective or because it needs a design decision or a test change in another pass.
 
 - gRPC context lifetime: the interceptor sets and clears the correlation context around continuation(), which returns the handler; the handler executes after the context is cleared. The adapter document says the handler sees the context. A fix needs the handler methods wrapped; this is a design change.
 - WSGI middleware generator: the middleware body is a generator, so the context is set only when the response is iterated and cleared only on exhaustion or close.
@@ -38,7 +38,7 @@ These were found during the pass and left unchanged, either because the change a
 - Logger resolution in the mixin runs on every log call; caching per class would save a lookup but changes when the logger is created.
 - Module-level aliases in the correlation and ambient modules (get_correlation_id and the log_* functions) are public names; a container form would need a public-surface decision.
 - Typing of the WebSocket middleware with the ASGI aliases: the adapter tests pass untyped fakes that fail strict typing; the test fakes need retyping first.
-- Unused constant RESPONSE_STATUS_KEY in the ASGI constants, and the empty decorators packages, are removal candidates for a later leg.
+- Unused constant RESPONSE_STATUS_KEY in the ASGI constants, and the empty decorators packages, are removal candidates for a later pass.
 - The docs for the flush handler and the gRPC adapter contain statements that the pass did not change: the flush handler compatibility note names Python 3.11, and the gRPC note is described above.
 
 ## Gate results
@@ -81,7 +81,7 @@ Each source file under mixin_logging (excluding tests) appears once. Findings ca
 | mixin_logging/adapters/cloud/cloud_objects.py | [perf] per-character generator in the safety check | yes | Set disjointness test; event extraction order unchanged. |
 | mixin_logging/adapters/constants/__init__.py | none | no | Package docstring only. |
 | mixin_logging/adapters/constants/aiohttp.py | none | no | Constants only. |
-| mixin_logging/adapters/constants/asgi.py | [dead] RESPONSE_STATUS_KEY has no source reference (test references only) | no | Candidate for removal with a test update in a later leg. |
+| mixin_logging/adapters/constants/asgi.py | [dead] RESPONSE_STATUS_KEY has no source reference (test references only) | no | Candidate for removal with a test update in a later pass. |
 | mixin_logging/adapters/constants/botocore.py | none | no | Constants only. |
 | mixin_logging/adapters/constants/celery.py | none | no | TASK_REQUEST_HEADERS_ATTR now used by the client. |
 | mixin_logging/adapters/constants/cloud.py | none | no | Constants only. |
@@ -118,7 +118,7 @@ Each source file under mixin_logging (excluding tests) appears once. Findings ca
 | mixin_logging/adapters/urllib3/urllib3_client.py | none | no | Header mapping copy is required so the caller mapping is not mutated. |
 | mixin_logging/adapters/urllib3/urllib3_objects.py | [perf] per-character generator in the safety check | yes | Set disjointness test. |
 | mixin_logging/adapters/websocket/__init__.py | none | no | Re-exports only. |
-| mixin_logging/adapters/websocket/websocket_client.py | [typing] Any aliases where the ASGI adapter declares concrete ones | no | Not changed: the adapter tests pass untyped fakes that fail strict typing; candidate for the test leg. |
+| mixin_logging/adapters/websocket/websocket_client.py | [typing] Any aliases where the ASGI adapter declares concrete ones | no | Not changed: the adapter tests pass untyped fakes that fail strict typing; candidate for the test pass. |
 | mixin_logging/adapters/websocket/websocket_objects.py | [perf] per-character generator in the safety check; [correctness] decode with errors ignored silently alters non-UTF-8 IDs | yes | Set disjointness test; decode behavior unchanged and reported as a candidate. |
 | mixin_logging/adapters/wsgi/__init__.py | none | no | Re-exports only. |
 | mixin_logging/adapters/wsgi/wsgi_client.py | [typing] Optional in a signature; [correctness] middleware body is a generator, so the context is set only on iteration and cleared only on exhaustion or close | yes | Union syntax; generator behavior reported, not changed. |
@@ -128,17 +128,17 @@ Each source file under mixin_logging (excluding tests) appears once. Findings ca
 | mixin_logging/common/__init__.py | none | no | Re-exports only. |
 | mixin_logging/common/constants/__init__.py | none | no | Re-exports only. |
 | mixin_logging/common/constants/public_api.py | none | no | Public name set matches the top-level exports (checked). |
-| mixin_logging/common/constants/tests.py | [docs] shared test constants live in the source tree | no | Confirm wheel exclusion in a later leg. |
+| mixin_logging/common/constants/tests.py | [docs] shared test constants live in the source tree | no | Confirm wheel exclusion in a later pass. |
 | mixin_logging/config/__init__.py | none | no | Package docstring only. |
-| mixin_logging/config/_version.py | none | no | Version unchanged; the release cut belongs to a later leg. |
+| mixin_logging/config/_version.py | none | no | Version unchanged; the release cut belongs to a later pass. |
 | mixin_logging/context/__init__.py | none | no | Package docstring only. |
 | mixin_logging/context/constants/__init__.py | none | no | Package docstring only. |
 | mixin_logging/context/constants/correlation.py | none | no | Constants only. |
 | mixin_logging/context/correlation/__init__.py | none | no | Re-exports only. |
 | mixin_logging/context/correlation/correlation_client.py | [correctness] ContextVar created without a default; first read in a new thread raises LookupError (verified on 3.12 and 3.14) | yes | Default added; import-time set removed; module-level aliases kept as public API. |
 | mixin_logging/context/correlation/correlation_objects.py | none | no | Value object already minimal. |
-| mixin_logging/decorators/__init__.py | [dead] package with no modules left | no | Candidate for removal in a later leg. |
-| mixin_logging/decorators/constants/__init__.py | [dead] package with no modules left | no | Candidate for removal in a later leg. |
+| mixin_logging/decorators/__init__.py | [dead] package with no modules left | no | Candidate for removal in a later pass. |
+| mixin_logging/decorators/constants/__init__.py | [dead] package with no modules left | no | Candidate for removal in a later pass. |
 | mixin_logging/mixin/__init__.py | none | no | Package docstring only. |
 | mixin_logging/mixin/mixin.py | [dup] conditional update of the extra mapping; [perf] logger resolved per call | yes | Single mapping expression; per-call logger lookup kept (candidate: cache per class). |
 | mixin_logging/redaction/__init__.py | none | no | Re-exports only. |
