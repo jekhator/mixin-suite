@@ -79,17 +79,9 @@ mixin_logging/
 |   |   +-- correlation.py
 |   +-- tests/
 |       +-- test_correlation/{conftest.py, test_correlation_objects.py, test_correlation_client.py}
-+-- decorators/
-|   +-- __init__.py             # Public exports for decorators
-|   +-- logged/
-|   |   +-- __init__.py
-|   |   +-- logged_objects.py
-|   |   +-- logged_client.py
++-- decorators/                 # no public surface; @logged removed in 0.5.0
 |   +-- constants/
-|   |   +-- __init__.py
-|   |   +-- decorators.py
 |   +-- tests/
-|       +-- test_logged/{conftest.py, test_logged_objects.py, test_logged_client.py}
 +-- mixin/
 |   +-- __init__.py             # Public exports for mixin
 |   +-- mixin.py
@@ -123,16 +115,17 @@ mixin_logging/
 |---|---|
 | `mixin/mixin.py`, `LoggingMixin` | `log_debug/info/warning/error/exception(event, **extra)`; per-class logger `<module>.<ClassName>`; injects `correlation_id`; **decoupled from masking** (caller passes masked values explicitly via `**extra`). Instance-only (not `@classmethod`/`@staticmethod`). |
 | `context/correlation/correlation_objects.py` + `correlation_client.py` | Frozen dataclass `CorrelationContext(correlation_id: str \| None)` with `is_set` property; `ContextVarClient` owning the ContextVar + `_client` singleton; `current_id/set_id/clear()` access layer. See `docs/apps/context/correlation.md`. |
-| `decorators/logged/logged_objects.py` + `logged_client.py`, `@logged` | Frozen dataclass decorator `@logged(event: str)`, class-based, not function-based. Wraps a `LoggingMixin` method to emit `<event>.start`, catch exceptions and emit `<event>.error`, then re-raise unchanged. Preserves method signatures via `ParamSpec`/`Concatenate`. See `docs/apps/decorators/logged.md`. |
+| `ambient/ambient_client.py`, `AmbientLogger` and the module-level `log_debug/info/warning/error/exception` | Logging without a class: events go to the fixed `mixin_logging.ambient` logger with `correlation_id` injected from the ContextVar. `AmbientLogger` is a frozen slotted client that takes its logger as a field. |
+| Removed in 0.5.0: `@logged` and `LoggedClient` | The decorator surface was removed; see the archived page `apps/decorators/logged.md`. |
 
 ## Design Principles
 
 - **Framework-neutral core**, stdlib logging + `contextvars` only; frameworks via optional adapters. Reusable beyond Django.
 - **Instance-bound logging**, methods read `self._logger`; not callable from class/static methods.
 - **Root-layout package structure**, `mixin_logging/<concern>/` (no `src/` wrapper); one concern per app dir.
-- **Curated public API**, top-level `mixin_logging/__init__.py` is the single source of truth for the public surface. Internal subpackage `__init__.py` files are empty (docstring only, no re-exports). Public users import from the top level: `from mixin_logging import LoggingMixin, logged, CorrelationContext, ...`. Internal code and the top `__init__.py` both import from the defining file (e.g., `from .correlation.correlation_objects import CorrelationContext`), not from subpackage `__init__`s.
+- **Curated public API**, top-level `mixin_logging/__init__.py` is the single source of truth for the public surface. Internal subpackage `__init__.py` files are empty (docstring only, no re-exports). Public users import from the top level: `from mixin_logging import LoggingMixin, log_info, CorrelationContext, ...`. Internal code and the top `__init__.py` both import from the defining file (e.g., `from .correlation.correlation_objects import CorrelationContext`), not from subpackage `__init__`s.
 - **Decoupled from masking**, `LoggingMixin` does not inspect or compose masking hooks; callers explicitly pass masked data via `**extra`. This preserves framework-neutral scope and avoids hidden dependencies on `mixin-sensitivity`.
-- **Frozen dataclasses**, `CorrelationContext`, `ContextVarClient`, `@logged` all use `@dataclass(frozen=True, slots=True)` per `strict-module` standards.
+- **Frozen dataclasses**, `CorrelationContext`, `ContextVarClient`, `AmbientLogger` all use `@dataclass(frozen=True, slots=True)` per `strict-module` standards.
 
 ## Adapter Design: ASGI
 
