@@ -299,3 +299,61 @@ There is no docs subtree for mixin_latency; its documentation is the Latency sec
 | mixin_latency/tests/__init__.py | none | no | Package marker. |
 | mixin_latency/tests/fakes.py | [tests] fake counter needed by the fixture and tests | yes (new) | Helper class kept out of conftest so tests import it directly. |
 | mixin_latency/tests/test_latency_clock.py | [determinism] real time.sleep with wall-clock bounds; [constants] literal field name and rounding input | yes | Rewritten on the fake counter with exact expected durations; constants used for field name and rounding. |
+
+## Repository-level summary (optimization pass)
+
+This section lists every document written by the pass and the whole-suite gate results on the branch after the final code commit. The documents are docs/mixin_logging/audits/2026-10-19-optimization-pass.md (this file, with the mixin_latency section above), docs/mixin_retry/audits/2026-10-19-optimization-pass.md, docs/mixin_sensitivity/audits/2026-10-19-optimization-pass.md and docs/mixin_notifications/audits/2026-10-19-optimization-pass.md. mixin_latency has no docs subtree; its section is above. The pass covered the four roots that were not covered by the logging pass: mixin_latency, mixin_retry, mixin_sensitivity and mixin_notifications, plus the packaging fix for the all extra, the version bump to 0.7.0 and the changelog, README and contributing updates.
+
+### Counts
+
+- Python files reviewed in the four roots: 70 (source and tests); files changed or added: 36; unchanged: 34 (see the per-root summaries).
+- Tests: 609 before the pass, 621 after (retry 26 to 28, sensitivity 41 to 42, notifications 69 to 78, latency 13 to 13).
+- Coverage (branch, whole suite): 100 percent before and after. Statements 1623 before, 1634 after; branches 238 before, 238 after.
+- Behavior changes are listed in each root document and mirrored in the CHANGELOG 0.7.0 section.
+
+### Gate results
+
+Python 3.12 test gate (pytest -v --cov --cov-fail-under=100):
+
+```
+TOTAL                                                       1634      0    238      0   100%
+Required test coverage of 100% reached. Total coverage: 100.00%
+======================== 621 passed, 1 warning in 9.82s ========================
+```
+
+Python 3.14 test gate:
+
+```
+TOTAL                                                       1634      0    238      0   100%
+Required test coverage of 100% reached. Total coverage: 100.00%
+======================== 621 passed, 1 warning in 7.48s ========================
+```
+
+Type check over the five roots under Python 3.14:
+
+```
+Success: no issues found in 234 source files
+```
+
+Ruff lint (ruff@0.15.14 check .):
+
+```
+All checks passed!
+```
+
+Ruff format check with the repository exclusion:
+
+```
+233 files already formatted
+```
+
+strict-module over the five roots with strict-suite 0.4.0 under Python 3.14: exit status 0 with no findings printed (the github format prints findings only).
+
+Loc-cap over the 34 listed directories:
+
+```
+OK: All Python files within 300 LOC cap (ratchet: baseline allows improvements)
+loccap_exit=0
+```
+
+Markdown dash check: no matches. Attribution check over the branch commits: no matches. uv lock --check: "Resolved 66 packages", exit status 0. The lock carries no torch entry (grep count 0).
