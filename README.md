@@ -246,7 +246,7 @@ profile = classify(user)
 
 ## Run-Verified Examples
 
-These examples were executed against the 0.7.0 source tree on Python 3.14 with `uv run --all-extras python`. The outputs are pasted from those runs.
+These examples are executed against the 0.7.0 source tree on Python 3.12 and 3.14 with `uv run --all-extras python`. Outputs are pasted from the 3.14 runs; the 3.12 runs printed the same lines apart from the timestamps in the logging example.
 
 ### Logging Example: Correlation-ID Propagation
 
