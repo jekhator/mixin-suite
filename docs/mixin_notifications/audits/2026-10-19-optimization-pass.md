@@ -38,8 +38,8 @@ These were found during the pass and left unchanged, because the change alters b
 - SES content type. SESBackend writes every attachment part as application/octet-stream and ignores Attachment.content_type. Using the declared type needs a validated type and subtype split first; that changes outbound messages and is deferred.
 - Suppression clock. The window uses time.time(), a wall clock that can step. A monotonic source is more robust but changes the meaning of the stored timestamps and the test seam; deferred.
 - Retry predicate scope. RetryingBackend retries whatever the policy predicate accepts, including BaseException subclasses such as KeyboardInterrupt if the caller allows them. This is the caller choice under the predicate contract and is recorded, not changed.
-- docs/mixin_notifications/README.md. The attachment example passes attachments= to NotificationEventClient.create(), which does not accept it; running the example raises TypeError (verified). The RetryingBackend example output and the SNS and SES usage text are not verified against 0.7.0. architecture/flow-trace.md and the 0.6.0 reviews name module paths that no longer exist (dispatch_client.py, events_client.py). All of this is deferred to the documentation pass.
-- Method docstrings are kept; the method docstring ruling is pending.
+- docs/mixin_notifications/README.md. The attachment example passed attachments= to NotificationEventClient.create(), which does not accept it. In the documentation pass the README was rewritten: the attachment example builds the event with dataclasses.replace, the RetryingBackend and SNS examples were run, and the metadata limitation of the egress gate is documented. architecture/flow-trace.md was rewritten for the 0.7.0 module paths.
+- Method docstrings are kept pending a separate decision.
 
 ## Per-file table
 
