@@ -28,10 +28,10 @@ class SensitivityProfile:
     def from_dataclass(cls, target: type) -> Self:
         """Read each field's sensitivity metadata into a field-to-class profile."""
         pairs: list[tuple[str, Sensitivity]] = []
-        for field in fields(target):
-            kind = field.metadata.get(const.SENSITIVITY_KEY)
+        for dataclass_field in fields(target):
+            kind = dataclass_field.metadata.get(const.SENSITIVITY_KEY)
             if kind is not None:
-                pairs.append((field.name, Sensitivity(kind)))
+                pairs.append((dataclass_field.name, Sensitivity(kind)))
         return cls(classes=tuple(pairs))
 
     @property
