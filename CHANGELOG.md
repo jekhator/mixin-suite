@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Correlation context in new threads**: The correlation context variable now has a default, so the first log call in a thread or context that never set a correlation ID no longer raises LookupError.
 - **WSGI empty correlation header**: An empty X-Correlation-ID request header is treated as absent and a new identifier is generated, instead of failing the request with ValueError.
+- **gRPC handler correlation context**: The gRPC interceptor now sets the correlation context while each handler method runs. Previously the context was cleared before the handler ran, so log calls in the handler had no correlation ID.
 - **Flush handler eviction**: A correlation ID whose buffer expired and later reappeared keeps its records. Capacity eviction now removes the oldest live buffer by creation order.
 
 ### Changed

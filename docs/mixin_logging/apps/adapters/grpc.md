@@ -16,12 +16,13 @@ Inbound/Ingress, the same category as the ASGI and WSGI adapters, specialized fo
 
 ## Behavior
 
-- `CorrelationInterceptor` is a `grpc.ServerInterceptor` registered on a gRPC server.
+- `CorrelationInterceptor` is a synchronous `grpc.ServerInterceptor` registered on a gRPC server.
 - On each inbound RPC invocation, `intercept_service()` is called with the handler call details.
 - The interceptor extracts the correlation ID from invocation metadata via `GRPCCorrelation.from_metadata()`. If the metadata key is present and safe, the ID is extracted with `extracted=True`; if absent or unsafe, a new UUID4 hex[:12] ID is generated with `extracted=False`.
-- The correlation ID is set in the `CorrelationContext` via `set_correlation_id()`.
-- The RPC handler is invoked via `continuation()`.
-- After the handler completes or raises, the correlation context is cleared via `clear_correlation_id()` in a finally block, ensuring isolation between requests.
+- `continuation()` is called to find the handler. The correlation context is not set while it runs.
+- If no handler matches, `intercept_service()` returns None and nothing is bound.
+- Otherwise the interceptor returns a copy of the handler whose callables are wrapped. Each wrapped callable calls `set_correlation_id()` before the handler code runs and `clear_correlation_id()` in a finally block after it returns or raises, so the handler sees the correlation ID for the duration of its own work and no context leaks between requests.
+- Unary-unary and stream-unary handlers are wrapped around the call. Unary-stream and stream-stream handlers are wrapped around each step of the response iterator: the context is set while each response item is produced and cleared before the item is handed to gRPC, so an early close of the stream leaves no context behind.
 
 ## Value Object
 
@@ -53,24 +54,7 @@ gRPC Python library (modern async/sync RPC framework). Requires the `[grpc]` ext
 
 ## Example Usage
 
-```python
-import grpc
-from mixin_logging.adapters.grpc import CorrelationInterceptor
-
-def serve():
-    server = grpc.aio.server(
-        interceptors=[CorrelationInterceptor()]
-    )
-    # Add services to server
-    server.add_insecure_port("[::]:50051")
-    await server.start()
-    await server.wait_for_termination()
-
-# Incoming RPC now sets up correlation context automatically.
-# All logging within the handler includes the correlation ID.
-```
-
-Or with synchronous gRPC:
+The interceptor is a synchronous `grpc.ServerInterceptor`. `grpc.aio.server` rejects it with a ValueError, so use the synchronous server:
 
 ```python
 import grpc
@@ -86,7 +70,7 @@ server.start()
 server.wait_for_termination()
 ```
 
-Every RPC now carries correlation-ID context from inbound metadata or a freshly generated ID, and all logs from the handler inherit that context.
+Every RPC now carries correlation-ID context from inbound metadata or a freshly generated ID, and all logs written while a handler method runs inherit that context.
 
 ## See Also
 
