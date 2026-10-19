@@ -1,134 +1,81 @@
 # mixin_retry Flow Trace
 
-## Architecture Overview
+This trace follows the code in `mixin_retry/executor.py` and `mixin_retry/policy.py` as shipped in 0.7.0.
 
-mixin_retry/decorators/retried/retried_client.py (+ RetryContainer, constants)
-═══════════════════════════════════════════════════════════════════════════════
-Imports: functools, time, asyncio, random, inspect; dataclass RetryContainer
-┌─ [DATACLASS,frozen,slots] RetryContainer ──────────┐ max_attempts: int ; base_delay_s: float ; max_delay_s: float ; jitter: bool └─...
-┌─ [CLASS,slots] RetryClient ──────────┐ container: RetryContainer ; retry_on: callable ; __call__[mth] ; _wrap_callable[mth] ; _execute_sync[mth] ; _execute_async[mth] ; _calculate_delay[mth] ; _decorate_class[mth] └─...
+## Components
 
-## FLOW TRACE
+```
+RetryPolicy (frozen, slots dataclass; policy.py)
+  fields: max_attempts, backoff_base_seconds, backoff_multiplier,
+          backoff_max_seconds, jitter, should_retry, retry_on
+  __post_init__: validates the bounds above
 
-i CONSTRUCT  retried(max_attempts=4, base_delay_s=0.1, max_delay_s=0.5, jitter=True)
-      └─ RetryContainer(max_attempts=4, base_delay_s=0.1, ...)
-      └─ RetryClient(container=..., retry_on=_default_retry_on)
-      └─ return RetryClient (acts as decorator callable)
+RetryExecutor (executor.py)
+  wrap(operation, policy)      -> sync wrapper or async wrapper
+  _wrap_sync / _wrap_async     -> retry loops
+  call(operation, *a, policy)  -> wrap() then invoke once
+  _should_retry(error, policy) -> predicate, else retry_on, else False
+  _calculate_backoff(n, policy)-> capped exponential, optional jitter
+```
 
-ii DECORATE   @retried(...) on a class
+## Construction
 
-    a. CLASS path (target is a class):
-       ├─ __call__(target=MyService)
-       ├─ inspect.isclass(target) → True ──▶ _decorate_class(target)
-       │     └─ for name, value in cls.__dict__.items():
-       │           ├─ _should_skip_member(name, value)
-       │           │     ├─ name.startswith("_") → True ──▶ skip
-       │           │     ├─ isinstance(value, property) → True ──▶ skip
-       │           │     └─ inspect.isclass(value) → True ──▶ skip
-       │           ├─ hasattr(value, "__retried_decorated__") ──▶ skip if already wrapped
-       │           ├─ isinstance(value, classmethod):
-       │           │     ├─ wrapped = _wrap_callable(value.__func__, for_static_or_class=True)
-       │           │     ├─ setattr(cls, name, classmethod(wrapped))
-       │           │     └─ setattr(wrapped, "__retried_decorated__", True)
-       │           ├─ isinstance(value, staticmethod):
-       │           │     ├─ wrapped = _wrap_callable(value.__func__, for_static_or_class=True)
-       │           │     ├─ setattr(cls, name, staticmethod(wrapped))
-       │           │     └─ setattr(wrapped, "__retried_decorated__", True)
-       │           └─ callable(value) ── instance methods:
-       │                 ├─ wrapped = _wrap_callable(value)  ← no for_static_or_class
-       │                 ├─ setattr(cls, name, wrapped)
-       │                 └─ setattr(wrapped, "__retried_decorated__", True)
-       └─ return target (class now has wrapped methods)
+1. `RetryPolicy(...)` runs `__post_init__`. Invalid bounds raise `ValueError` with the messages in `common/constants/errors.py`.
+2. `RetryExecutor()` holds no state. One executor can wrap many callables.
 
-    b. CALLABLE path (target is a single function):
-       ├─ __call__(target=some_func)
-       ├─ callable(target) → True ──▶ _wrap_callable(target)
-       └─ return wrapper
+## wrap() on a sync function
 
-iii CALL-TIME (instance method example)
+1. `inspect.iscoroutinefunction(operation)` is False, so `_wrap_sync` builds the wrapper with `functools.wraps`.
+2. Each call to the wrapper runs the loop `for attempt in range(max_attempts - 1)`:
+   - `operation(*args, **kwargs)` returns: the result is returned to the caller.
+   - It raises: `_should_retry(error, policy)` is checked. False re-raises the original exception.
+   - True: `time.sleep(_calculate_backoff(attempt, policy))`, then the loop continues.
+3. After the loop, one direct call `operation(*args, **kwargs)` runs. Its exception, if any, propagates unchanged.
 
-     a. Instance method with retries (for_static_or_class=False):
-        ├─ service.fetch_item(123) ──▶ wrapper(instance=service, item_id=123)
-        │     └─ _execute_sync(fetch_item, service, item_id=123)
-        │           ├─ for attempt in range(4):  ← max_attempts=4
-        │           │     ├─ attempt=0:
-        │           │     │     ├─ try: return fetch_item(service, 123)
-        │           │     │     │           raises IOError("Network timeout")
-        │           │     │     └─ except BaseException as exc:
-        │           │     │           ├─ _should_retry_exception(exc) → True
-        │           │     │           ├─ retry_on(IOError) → True (default)
-        │           │     │           ├─ attempt < max_attempts-1 → True (0 < 3)
-        │           │     │           ├─ delay = _calculate_delay(0)
-        │           │     │           │     ├─ exponential = 0.1 * (2 ** 0) = 0.1
-        │           │     │           │     ├─ capped = min(0.1, 0.5) = 0.1
-        │           │     │           │     └─ jittered = random.uniform(0, 0.1)
-        │           │     │           └─ time.sleep(jittered)
-        │           │     ├─ attempt=1:
-        │           │     │     ├─ try: return fetch_item(service, 123)
-        │           │     │     │           raises IOError("Network timeout")
-        │           │     │     └─ except: [same as above]
-        │           │     │           ├─ delay = _calculate_delay(1)
-        │           │     │           │     ├─ exponential = 0.1 * (2 ** 1) = 0.2
-        │           │     │           │     ├─ capped = min(0.2, 0.5) = 0.2
-        │           │     │           │     └─ jittered = random.uniform(0, 0.2)
-        │           │     │           └─ time.sleep(jittered)
-        │           │     └─ attempt=2:
-        │           │           ├─ try: return fetch_item(service, 123)
-        │           │           │           returns "Item#123:data=OK"
-        │           │           └─ return result
-        └─ returns "Item#123:data=OK"
+So a policy with `max_attempts=4` makes at most four calls: three guarded calls and one final unguarded call.
 
-     b. Async method with retries (for_static_or_class=False, is_coroutine=True):
-        ├─ await service.fetch_async() ──▶ async_wrapper(instance=service)
-        │     └─ _execute_async(fetch_async, service)
-        │           ├─ for attempt in range(max_attempts):
-        │           │     ├─ attempt=0:
-        │           │     │     ├─ try: return await fetch_async(service)
-        │           │     │     │           raises IOError
-        │           │     │     └─ except: [retry logic]
-        │           │     │           ├─ delay = _calculate_delay(0)
-        │           │     │           └─ await asyncio.sleep(delay)
-        │           │     └─ [more attempts...]
-        └─ returns awaited result
+## wrap() on a coroutine function
 
-     c. Classmethod with retries (for_static_or_class=True):
-        ├─ MyService.create() ──▶ static_wrapper(...)
-        │     └─ _execute_sync(create, ...)
-        │           ├─ [retry loop as above]
-        └─ returns created instance
+Same loop as above, using `await operation(...)` and `await asyncio.sleep(...)`.
+
+## _should_retry
+
+1. If `policy.should_retry` is set, its return value decides. The predicate receives the exception as raised and handles any `__cause__` unwrapping itself.
+2. Otherwise, if `policy.retry_on` is non-empty, `isinstance(error, retry_on)` decides.
+3. Otherwise the answer is False, so the exception propagates on the first failure.
+
+## _calculate_backoff
+
+1. `exponential = backoff_base_seconds * backoff_multiplier ** attempt`. If the power overflows float range, the result is treated as infinity when the base is positive and as 0.0 when it is zero.
+2. `backoff = min(exponential, backoff_max_seconds)`.
+3. If `jitter` is True, `backoff *= random.uniform(0.9, 1.1)`.
+
+## call()
+
+1. `policy is None` raises `ValueError("policy is required for call()")`.
+2. Otherwise `wrap(operation, policy)` is built and invoked once with the given arguments.
 
 ## REAL RUN OUTPUT
 
-Example output from actual execution (Python 3.11.15):
+The output below is from running the README example (`uv run --all-extras python` on Python 3.14, 0.7.0 tree). The script is embedded in the README.
 
 ```
-=== mixin_retry RUN-VERIFIED EXAMPLE ===
-
-Test 1: Decorator on service method with exponential backoff
-
 [Attempt 1] Fetching item 123...
 [Attempt 2] Fetching item 123...
 [Attempt 3] Fetching item 123...
 Result: Item#123:data=OK
-
-Test 2: Decorator on service method without jitter
-
-Result: cached_item_42
-
-Test 3: Exhausted retries after max_attempts
-
-[Attempt 1]
-[Attempt 2]
-Failed after max_attempts: Permanent error
+[Attempt 1] Fetching item 456...
+[Attempt 2] Fetching item 456...
+[Attempt 3] Fetching item 456...
+Per-call result: Item#456:data=OK
+Missing policy: policy is required for call()
+Exhausted after max_attempts: permanent failure
+Predicate result: recovered
+Async result: fetched https://example.com
 ```
 
-Key observations:
+## Invariants
 
-- Decorator wraps methods and preserves their behavior (function signature, return type)
-- Retry loop executes synchronously (time.sleep) or asynchronously (asyncio.sleep)
-- Each failed attempt checks: _should_retry_exception → retry_on predicate → attempt limit
-- _calculate_delay applies exponential backoff with optional jitter
-- After max_attempts exhausted, final exception is re-raised (never swallowed)
-- Class decoration fan-out wraps instance methods, classmethods, and staticmethods individually
-- Private methods and properties are skipped during class decoration
-- setattr(wrapper, "__retried_decorated__", True) marks methods to prevent double wrapping
+- The attempt count never exceeds `max_attempts`.
+- The exception that finally reaches the caller is the original one.
+- Retry decisions are made per exception, after the call that raised it.

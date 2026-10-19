@@ -30,10 +30,10 @@ This document records an optimization pass over every Python file under mixin_re
 
 These were found during the pass and left unchanged, because the change alters behavior beyond the objective or needs a design decision.
 
-- docs/mixin_retry (README.md and architecture/flow-trace.md) describe the removed @retried decorator, RetryClient and a Python 3.11 floor. They are outside this pass markdown scope (version, Python floor, changelog and audits only) and are listed for the documentation pass.
+- docs/mixin_retry (README.md and architecture/flow-trace.md) described the removed @retried decorator, RetryClient and a Python 3.11 floor; both files were rewritten for RetryPolicy and RetryExecutor in the documentation pass.
 - The jitter draws from the module-level random generator. Injecting a generator would make the jitter tests exact, but it changes the constructor surface, so it is deferred.
 - `RetryExecutor.call` keeps `policy=None` as its default and raises ValueError for it. A required keyword-only policy would be a breaking signature change and is deferred.
-- Method docstrings on the wrap helpers and call are kept; the method docstring ruling is pending.
+- Method docstrings on the wrap helpers and call are kept; method docstrings are kept pending a separate decision.
 
 ## Per-file table
 
