@@ -272,3 +272,30 @@ Each test file from the start of the pass has one line. Changed means the file d
 | mixin_logging/tests/helpers.py | [duplication] private collector duplicated in three conftests; [coverage] no shared fake clock | yes | Public collector and fake clock; logger factory alias for the ambient tests. |
 | mixin_logging/tests/test_helpers.py | [naming] imports the collector under its old private name | yes | Renamed import. |
 | mixin_logging/tests/test_suite_version_consistency.py | [duplication] suite-level version check repeated the lockstep check; [dead] file made redundant | yes | File removed; its release pin moved to the lockstep test. |
+
+## mixin_latency
+
+There is no docs subtree for mixin_latency; its documentation is the Latency section of the top-level README and its docstrings. This section records the pass over every Python file under mixin_latency/.
+
+- Files reviewed: 13 (9 source files and 4 test files, two of the test files new)
+- Files changed or added: 6
+- Files with at least one finding: 5
+- Findings by lens (a file can carry more than one): constants 2, control flow 1, determinism 1, docs 1, tests 2
+- Tests before and after: 13 before, 13 after (the same tests now run on a fake counter with exact durations).
+- Behavior changes: none. The context manager now yields a started clock without a no-op try block; its docstring describes that behavior.
+
+| Path | Findings | Changed | Note |
+| --- | --- | --- | --- |
+| mixin_latency/__init__.py | none | no | Curated public API; exports unchanged. |
+| mixin_latency/clock/__init__.py | none | no | Re-exports only. |
+| mixin_latency/clock/_client.py | [control flow] no-op try/finally in measure; [docs] measure docstring said duration is measured on exit, which it is not | yes | measure yields a started clock; the docstring now says to call stop() after the block. |
+| mixin_latency/clock/_objects.py | none | no | Frozen slots value object; no change. |
+| mixin_latency/common/__init__.py | none | no | Package docstring only. |
+| mixin_latency/common/constants/__init__.py | none | no | Re-exports only. |
+| mixin_latency/common/constants/clock.py | [constants] LATENCY_DURATION_MS_FIELD had no use in source or tests | yes | Now used by the tests as the field name. |
+| mixin_latency/config/__init__.py | none | no | Re-exports only. |
+| mixin_latency/config/_version.py | none | yes | Version bump to 0.7.0 (release lockstep); not a finding. |
+| mixin_latency/conftest.py | [tests] no fixture for a settable clock; timing asserted on the wall clock | yes (new) | Adds fake_perf_counter fixture; monkeypatches time.perf_counter for TestLatencyClock. |
+| mixin_latency/tests/__init__.py | none | no | Package marker. |
+| mixin_latency/tests/fakes.py | [tests] fake counter needed by the fixture and tests | yes (new) | Helper class kept out of conftest so tests import it directly. |
+| mixin_latency/tests/test_latency_clock.py | [determinism] real time.sleep with wall-clock bounds; [constants] literal field name and rounding input | yes | Rewritten on the fake counter with exact expected durations; constants used for field name and rounding. |
