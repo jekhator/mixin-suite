@@ -6,7 +6,10 @@ from __future__ import annotations
 import pytest
 from starlette.testclient import TestClient
 
-from mixin_logging import clear_correlation_id, get_correlation_id
+from mixin_logging import clear_correlation_id, get_correlation_id, set_correlation_id
+from mixin_logging.adapters.constants import fastapi as const
+from mixin_logging.adapters.fastapi import get_correlation_id_dependency
+from mixin_logging.adapters.fastapi.constants import ERR_FASTAPI_NO_CORRELATION_ID
 from mixin_logging.common.constants import tests as test_const
 
 
@@ -105,8 +108,6 @@ class TestCorrelationIdMiddleware:
         fastapi_client: TestClient,
     ) -> None:
         """Middleware rejects oversized correlation ID and generates new one."""
-        from mixin_logging.adapters.constants import fastapi as const
-
         oversized_id = "x" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         response = fastapi_client.get(
             "/test", headers={"x-correlation-id": oversized_id}
@@ -126,9 +127,6 @@ class TestGetCorrelationIdDependency:
         correlation_id_abc: str,
     ) -> None:
         """get_correlation_id_dependency() returns correlation ID when set in context."""
-        from mixin_logging import set_correlation_id
-        from mixin_logging.adapters.fastapi import get_correlation_id_dependency
-
         set_correlation_id(correlation_id_abc)
         result = await get_correlation_id_dependency()
         assert result == correlation_id_abc
@@ -137,8 +135,6 @@ class TestGetCorrelationIdDependency:
     @pytest.mark.asyncio
     async def test_dependency_raises_when_not_set(self) -> None:
         """get_correlation_id_dependency() raises ValueError when no correlation ID in context."""
-        from mixin_logging.adapters.fastapi import get_correlation_id_dependency
-
         clear_correlation_id()
-        with pytest.raises(ValueError, match="Correlation ID not set in context"):
+        with pytest.raises(ValueError, match=ERR_FASTAPI_NO_CORRELATION_ID):
             await get_correlation_id_dependency()
