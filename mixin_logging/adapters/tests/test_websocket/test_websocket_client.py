@@ -38,8 +38,8 @@ class TestCorrelationIdMiddlewareCall:
         middleware = websocket_client.CorrelationIdMiddleware(recording_app)
         await middleware(basic_websocket_scope, mock_receive, mock_send)
         assert set_value is not None
-        assert len(set_value) == 12
-        assert all(char in "0123456789abcdef" for char in set_value)
+        assert len(set_value) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in set_value)
 
     async def test_middleware_websocket_with_header_extracts_correlation(
         self,
@@ -169,5 +169,5 @@ class TestCorrelationIdMiddlewareCall:
             websocket_scope_with_carriage_return_header, mock_receive, mock_send
         )
         assert set_value is not None
-        assert len(set_value) == 12
-        assert all(char in "0123456789abcdef" for char in set_value)
+        assert len(set_value) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in set_value)

@@ -14,7 +14,7 @@ from mixin_logging.adapters.constants import grpc as const
 from mixin_logging.adapters.grpc import grpc_client
 from mixin_logging.common.constants import tests as test_const
 
-HEX_CHARS = "0123456789abcdef"
+HEX_CHARS = test_const.HEX_DIGITS
 
 
 def _context() -> grpc.ServicerContext:

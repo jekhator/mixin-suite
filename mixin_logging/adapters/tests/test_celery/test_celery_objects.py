@@ -38,7 +38,7 @@ class TestCeleryCorrelationFromContext:
 
     def test_from_context_with_overlong_value_returns_none(self) -> None:
         """from_context() returns None when correlation_id exceeds length cap."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         set_correlation_id(overlong_id)
         correlation = objs.CeleryCorrelation.from_context()
         assert correlation is None
@@ -59,7 +59,7 @@ class TestCeleryCorrelationConstruction:
 
     def test_construct_with_overlong_raises_value_error(self) -> None:
         """CeleryCorrelation constructor raises ValueError for overlong correlation_id."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         with pytest.raises(ValueError, match=const.ERR_CORRELATION_ID_UNSAFE):
             objs.CeleryCorrelation(correlation_id=overlong_id)
 

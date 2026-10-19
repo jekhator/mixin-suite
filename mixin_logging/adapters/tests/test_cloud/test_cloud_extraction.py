@@ -231,7 +231,7 @@ class TestCloudCorrelationFromEventUnsafeFallback:
 
     def test_from_event_header_overlong_generates_id(self) -> None:
         """from_event() generates id when header value exceeds length cap."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         event = {"headers": {"X-Correlation-ID": overlong_id}}
         correlation = objs.CloudCorrelation.from_event(event)
         assert correlation.extracted is False

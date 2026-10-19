@@ -26,8 +26,8 @@ class TestGRPCCorrelationFromMetadata:
         """from_metadata() generates 12-hex ID and sets extracted=False when key absent."""
         metadata: grpc_objs.Metadata = (("other-key", "other-value"),)
         correlation = grpc_objs.GRPCCorrelation.from_metadata(metadata)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_metadata_with_unsafe_carriage_return(self) -> None:
@@ -37,8 +37,8 @@ class TestGRPCCorrelationFromMetadata:
             ("other-key", "other-value"),
         )
         correlation = grpc_objs.GRPCCorrelation.from_metadata(metadata)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_metadata_with_unsafe_newline(self) -> None:
@@ -48,8 +48,8 @@ class TestGRPCCorrelationFromMetadata:
             ("other-key", "other-value"),
         )
         correlation = grpc_objs.GRPCCorrelation.from_metadata(metadata)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_metadata_with_unsafe_null_byte(self) -> None:
@@ -59,8 +59,8 @@ class TestGRPCCorrelationFromMetadata:
             ("other-key", "other-value"),
         )
         correlation = grpc_objs.GRPCCorrelation.from_metadata(metadata)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_metadata_with_oversized_id(self) -> None:
@@ -68,8 +68,8 @@ class TestGRPCCorrelationFromMetadata:
         oversized_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         metadata: grpc_objs.Metadata = (("x-correlation-id", oversized_id),)
         correlation = grpc_objs.GRPCCorrelation.from_metadata(metadata)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_metadata_with_hex_id(self) -> None:
@@ -85,8 +85,8 @@ class TestGRPCCorrelationFromMetadata:
         """from_metadata() generates ID from empty metadata."""
         metadata: grpc_objs.Metadata = ()
         correlation = grpc_objs.GRPCCorrelation.from_metadata(metadata)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
 

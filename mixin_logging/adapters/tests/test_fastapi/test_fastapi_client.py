@@ -7,6 +7,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from mixin_logging import clear_correlation_id, get_correlation_id
+from mixin_logging.common.constants import tests as test_const
 
 
 class TestCorrelationIdMiddleware:
@@ -34,7 +35,7 @@ class TestCorrelationIdMiddleware:
         assert response.status_code == 200
         data = response.json()
         assert data["correlation_id"] is not None
-        assert len(data["correlation_id"]) == 12
+        assert len(data["correlation_id"]) == test_const.GENERATED_ID_LENGTH
 
     def test_middleware_injects_correlation_id_into_response_header(
         self,
@@ -57,7 +58,7 @@ class TestCorrelationIdMiddleware:
         assert response.status_code == 200
         correlation_id = response.headers.get("x-correlation-id")
         assert correlation_id is not None
-        assert len(correlation_id) == 12
+        assert len(correlation_id) == test_const.GENERATED_ID_LENGTH
 
     def test_middleware_clears_context_after_request(
         self,
@@ -97,7 +98,7 @@ class TestCorrelationIdMiddleware:
         assert response.status_code == 200
         data = response.json()
         assert data["correlation_id"] != unsafe_id
-        assert len(data["correlation_id"]) == 12
+        assert len(data["correlation_id"]) == test_const.GENERATED_ID_LENGTH
 
     def test_middleware_rejects_oversized_correlation_id(
         self,
@@ -113,7 +114,7 @@ class TestCorrelationIdMiddleware:
         assert response.status_code == 200
         data = response.json()
         assert data["correlation_id"] != oversized_id
-        assert len(data["correlation_id"]) == 12
+        assert len(data["correlation_id"]) == test_const.GENERATED_ID_LENGTH
 
 
 class TestGetCorrelationIdDependency:

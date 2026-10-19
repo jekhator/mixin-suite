@@ -52,7 +52,7 @@ class TestCorrelationIdMiddleware:
         _status, headers = captured[0]
         generated = dict(headers).get(const.CORRELATION_ID_HEADER)
         assert generated is not None
-        assert len(generated) == 12
+        assert len(generated) == test_const.GENERATED_ID_LENGTH
 
     def test_absent_header_generates_and_sets_response_header(
         self,
@@ -73,8 +73,8 @@ class TestCorrelationIdMiddleware:
         header_dict = dict(headers)
         generated_id = header_dict.get(const.CORRELATION_ID_HEADER)
         assert generated_id is not None
-        assert len(generated_id) == 12
-        assert all(char in "0123456789abcdef" for char in generated_id)
+        assert len(generated_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in generated_id)
 
     def test_correlation_cleared_after_response_iteration_completes(
         self,
