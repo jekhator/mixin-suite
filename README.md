@@ -246,7 +246,7 @@ profile = classify(user)
 
 ## Run-Verified Examples
 
-These examples are executed against the 0.7.0 source tree on Python 3.12 and 3.14.
+These examples were executed against the 0.7.0 source tree on Python 3.14 with `uv run --all-extras python`. The outputs are pasted from those runs.
 
 ### Logging Example: Correlation-ID Propagation
 
@@ -287,10 +287,10 @@ status = service.process("doc-123")
 
 **Output (Python 3.14, mixin-suite 0.7.0 source tree):**
 ```
-2026-10-18 23:33:31,800 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
-2026-10-18 23:33:31,801 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-10-001
-2026-10-18 23:33:31,801 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-10-001
-2026-10-18 23:33:31,801 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-10-001
+2026-10-18 23:49:42,639 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
+2026-10-18 23:49:42,639 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-10-001
+2026-10-18 23:49:42,639 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-10-001
+2026-10-18 23:49:42,639 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-10-001
 ```
 
 ### Sensitivity Example: Data Masking
@@ -329,6 +329,72 @@ HealthRecord(patient_id=42, ssn=***MASKED***, diagnosis=***MASKED***, treatment_
 PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 ```
 
+### Latency Example: Elapsed Time
+
+```python
+import time
+
+from mixin_latency import LatencyClock
+
+clock = LatencyClock.start()
+time.sleep(0.02)
+measurement = clock.stop()
+print(f"Elapsed at least 20 ms: {measurement.duration_ms >= 20}")
+print(f"Type of duration: {type(measurement.duration_ms).__name__}")
+
+with LatencyClock.measure() as block_clock:
+    time.sleep(0.01)
+block_measurement = block_clock.stop()
+print(f"Context-manager elapsed at least 10 ms: {block_measurement.duration_ms >= 10}")
+```
+
+**Output (Python 3.14, mixin-suite 0.7.0 source tree):**
+```
+Elapsed at least 20 ms: True
+Type of duration: float
+Context-manager elapsed at least 10 ms: True
+```
+
+### Notifications Example: Dispatch with Suppression
+
+```python
+from mixin_notifications import (
+    CollectingBackend,
+    Dispatcher,
+    NotificationEventClient,
+    SuppressionPolicy,
+)
+
+backend = CollectingBackend()
+dispatcher = Dispatcher(
+    backends=(backend,),
+    suppression_policy=SuppressionPolicy(window_seconds=300),
+)
+
+event = NotificationEventClient.create(
+    category="pipeline",
+    severity="CRITICAL",
+    title="Ingest failed",
+    body="Nightly ingest stopped after 3 retries",
+    fingerprint="ingest-nightly",
+)
+
+first = dispatcher.notify(event)
+second = dispatcher.notify(event)
+print(f"First dispatch suppressed: {first.suppressed}, delivered: {first.results[0].delivered}")
+print(f"Second dispatch suppressed: {second.suppressed}")
+print(f"Events collected: {len(backend.events)}")
+print(f"Collected title: {backend.events[0].title}")
+```
+
+**Output (Python 3.14, mixin-suite 0.7.0 source tree):**
+```
+First dispatch suppressed: False, delivered: True
+Second dispatch suppressed: True
+Events collected: 1
+Collected title: Ingest failed
+```
+
 ## Documentation
 
 - **Logging:** See `docs/mixin_logging/` for detailed adapter documentation, architecture, and integration patterns
@@ -355,7 +421,7 @@ Core classes and functions:
 
 Core classes and functions:
 - `SensitiveRepr`: Base class for dataclasses that masks sensitive fields in repr output
-- `classify(dataclass_or_instance)`: Introspect sensitivity profile of a dataclass
+- `classify(dataclass)`: Introspect the sensitivity profile of a dataclass (a dataclass instance also works)
 - `Sensitivity`: Enum taxonomy: PHI, PII, PCI, SECRET
 - `SensitivityProfile`: Data class containing field-to-sensitivity mappings
 - `SensitiveDeclarationError`: Exception raised for invalid sensitivity declarations
@@ -365,6 +431,21 @@ Core classes and functions:
 Core classes and functions:
 - `RetryPolicy`: Configuration object for retry behavior (max_attempts, backoff, jitter, predicates)
 - `RetryExecutor`: Client for wrapping functions with retry logic via the `wrap(operation, /, policy)` method
+
+### mixin_latency (v0.7.0)
+
+- `LatencyClock`: `start()` returns a running clock; `stop()` returns a `LatencyMeasurement`
+- `LatencyClock.measure()`: context manager that yields a started clock; call `stop()` on it after the block
+- `LatencyMeasurement`: frozen dataclass with `duration_ms`, rounded to the library's decimal rule
+
+### mixin_notifications (v0.7.0)
+
+- `NotificationEventClient.create(category, severity, title, body, fingerprint, metadata=())`: builds a `NotificationEvent` with the correlation ID and a UTC timestamp
+- `NotificationEvent`, `Attachment`, `Severity`: frozen event types; attachments are added with `dataclasses.replace`
+- `Dispatcher(backends, suppression_policy=None)`: `notify(event)` returns a `DispatchResult`
+- `SuppressionPolicy(window_seconds)`: suppresses repeats of the same (category, fingerprint) inside the window
+- Backends: `NullBackend`, `CollectingBackend`, `LoggingBackend`, `RetryingBackend`; `SNSBackend` and `SESBackend` behind the `[sns]` and `[ses]` extras
+- `NotificationBackend`, `DeliveryResult`, `DispatchResult`: protocol and result types
 
 ## Imports
 
