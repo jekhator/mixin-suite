@@ -3,7 +3,7 @@
 > **Location:** `docs/mixin_logging/apps/mixin/mixin.md`
 > **Status:** Built and ready for use
 > **Code:** `mixin_logging/mixin/mixin.py`
-> **Sibling docs:** `docs/apps/context/correlation.md`, `docs/apps/decorators/logged.md`.
+> **Sibling docs:** `docs/mixin_logging/apps/context/correlation.md`, `docs/mixin_logging/architecture/flow-trace.md`.
 
 ## Overview
 
@@ -163,12 +163,12 @@ For cross-class logging in class/static contexts, use the stdlib logging module 
 ## When to Use
 
 - Every service/repository/handler class that performs side effects (DB writes, API calls, async tasks).
-- Public methods that warrant start/error visibility (pair with `@logged` decorator).
+- Public methods that warrant start and error visibility: log an event at each step with `log_info` and log the failure with `log_error` or `log_exception` in an explicit `try/except`.
 - Multi-step workflows where correlation ID tracing is valuable for debugging.
 
 ## What It Does NOT Do
 
-- **No automatic exception catching**, for exception handling, pair with `@logged` or explicit try/except.
+- **No automatic exception catching**, for exception handling, use an explicit try/except and `log_exception`.
 - **No performance metrics**, duration/timing are a separate concern (observability-engineer's domain).
 - **No automatic masking**, `LoggingMixin` does not inspect or mask sensitive data; callers must explicitly pass masked values via `**extra` (e.g., `self.log_info("event", **self.mask_for_logging())`).
 - **No sensitivity-aware composition**, fully decoupled from `mixin-sensitivity`; mixin-logging has no knowledge of PII or masking concerns.
