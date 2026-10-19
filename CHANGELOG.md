@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Correlation context in new threads**: The correlation context variable now has a default, so the first log call in a thread or context that never set a correlation ID no longer raises LookupError.
+- **WSGI empty correlation header**: An empty X-Correlation-ID request header is treated as absent and a new identifier is generated, instead of failing the request with ValueError.
+- **Flush handler eviction**: A correlation ID whose buffer expired and later reappeared keeps its records. Capacity eviction now removes the oldest live buffer by creation order.
+
+### Changed
+
+- Correlation ID safety checks in the adapters use a set disjointness test instead of a per-character generator. Behavior is unchanged.
+- The ASGI middleware sets the correlation context directly for each request instead of building a wrapper object. ASGIApp remains exported.
+- The FastAPI middleware reads the request headers mapping without copying it for each request.
+- The ambient logger methods share one helper that builds the extra mapping.
+- The flush handler defaults, validation messages and null correlation key moved to the stdlib adapter constants module. Code that imported them by their old module path must import them from the constants module.
+- The default sensitive field name patterns moved to the redaction constants module, and record fields are iterated without copying the key list.
+- The Celery worker restore reads the request headers attribute through the adapter constant.
+
 ## [0.6.0] - 2026-08-04
 
 ### Added
