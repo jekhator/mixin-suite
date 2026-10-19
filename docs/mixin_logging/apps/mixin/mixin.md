@@ -92,13 +92,17 @@ result = svc.process_order("ORD-123", 99.99)
 Every log event automatically includes the current `correlation_id` from the correlation module (see `docs/apps/context/correlation.md`):
 
 1. **Set correlation ID at request entry** (e.g., in middleware, handler, or async task):
-   ```python
+   Illustrative fragment, not run-verified; an excerpt of the class definition.
+
+```python
    from mixin_logging import set_correlation_id
    set_correlation_id("req-12345")
    ```
 
 2. **Service methods automatically pick it up**:
-   ```python
+   Illustrative fragment, not run-verified; relies on OrderService defined elsewhere.
+
+```python
    svc = OrderService(db_url="...")
    svc.process_order("ORD-123", 99.99)
    # All logs from svc.log_* include correlation_id="req-12345" in the extra dict
@@ -113,6 +117,8 @@ Every log event automatically includes the current `correlation_id` from the cor
 `LoggingMixin` does **not** compose with or mask sensitive fields, masking is **decoupled by design** and is the caller's responsibility.
 
 If your service class has sensitive data (e.g., SSN, API keys), the caller must explicitly pass masked data to `log_*` methods:
+
+Illustrative fragment, not run-verified; imports a removed package name.
 
 ```python
 from dataclasses import dataclass
@@ -140,6 +146,8 @@ This separation preserves `LoggingMixin`'s framework-neutral scope and avoids hi
 ## Instance-Only Behavior
 
 `LoggingMixin` methods are available only on **instances**, not on class or static methods:
+
+Illustrative fragment, not run-verified; LoggingMixin is not imported in this block.
 
 ```python
 class OrderService(LoggingMixin):

@@ -56,12 +56,15 @@ gRPC Python library (modern async/sync RPC framework). Requires the `[grpc]` ext
 
 The interceptor is a synchronous `grpc.ServerInterceptor`. `grpc.aio.server` rejects it with a ValueError, so use the synchronous server:
 
+Illustrative fragment, not run-verified; requires grpcio. Starts a server and blocks, so it is not run.
+
 ```python
 import grpc
+from concurrent.futures import ThreadPoolExecutor
 from mixin_logging.adapters.grpc import CorrelationInterceptor
 
 server = grpc.server(
-    thread_pool=grpc.ThreadPoolExecutor(max_workers=10),
+    thread_pool=ThreadPoolExecutor(max_workers=10),
     interceptors=[CorrelationInterceptor()]
 )
 # Add services to server

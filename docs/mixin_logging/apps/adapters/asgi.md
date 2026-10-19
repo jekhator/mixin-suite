@@ -112,6 +112,8 @@ MIDDLEWARE = [
 
 **Example usage (Flask):**
 
+Illustrative fragment, not run-verified; requires flask.
+
 ```python
 from flask import Flask
 from mixin_logging.adapters.wsgi import CorrelationIdMiddleware

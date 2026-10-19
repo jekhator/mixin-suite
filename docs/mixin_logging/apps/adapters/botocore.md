@@ -59,6 +59,8 @@ boto3 / botocore sync clients; aiobotocore shares the same (synchronous) event e
 
 ## Example Usage
 
+Illustrative fragment, not run-verified; requires boto3 and AWS credentials, and calls a live AWS API, so it is not run.
+
 ```python
 import boto3
 from mixin_logging.adapters.botocore.botocore_client import CorrelationIdInjector

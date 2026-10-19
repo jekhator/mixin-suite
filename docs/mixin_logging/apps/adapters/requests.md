@@ -47,6 +47,8 @@ Synchronous `requests` library (popular, widely-used HTTP client for Python). Re
 
 ## Example Usage
 
+Illustrative fragment, not run-verified; requires requests and network access to api.example.com.
+
 ```python
 from mixin_logging.adapters.requests import CorrelationHTTPAdapter
 
@@ -55,6 +57,8 @@ response = session.get("https://api.example.com/resource")
 ```
 
 Or register on an existing session:
+
+Illustrative fragment, not run-verified; requires requests and network access to api.example.com.
 
 ```python
 import requests

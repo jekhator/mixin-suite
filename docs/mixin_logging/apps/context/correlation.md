@@ -38,6 +38,8 @@ class CorrelationContext:
 
 **File: `mixin_logging/context/correlation/correlation_client.py`**
 
+Illustrative fragment, not run-verified; a relative import that needs the package context.
+
 ```python
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -72,6 +74,8 @@ _client: ContextVarClient = ContextVarClient(
 
 Both `CorrelationContext` and `ContextVarClient` are imported in the top-level public API:
 
+Illustrative fragment, not run-verified; an excerpt of a module file.
+
 ```python
 # mixin_logging/__init__.py (curated public API)
 from .correlation.correlation_client import ContextVarClient, _client
@@ -81,6 +85,8 @@ __all__ = [..., "ContextVarClient", "CorrelationContext", "_client", ...]
 ```
 
 The internal subpackage `__init__.py` is now empty (docstring only), with no re-exports. Public integrators import from the top level:
+
+Illustrative fragment, not run-verified; imports a private name.
 
 ```python
 from mixin_logging import CorrelationContext, ContextVarClient, _client
@@ -109,6 +115,8 @@ def clear_correlation_id() -> None:
 ### Usage
 
 #### In Application Code
+
+Illustrative fragment, not run-verified; uses request from a web framework.
 
 ```python
 from mixin_logging import set_correlation_id, get_correlation_id
@@ -196,6 +204,8 @@ def lambda_handler(event, context):
 
 `CorrelationContext.is_set` is a convenience property for checking whether a correlation_id is present:
 
+Illustrative fragment, not run-verified; CorrelationContext is not imported in this block.
+
 ```python
 ctx = CorrelationContext(None)
 assert not ctx.is_set  # True (is_set returns False)
@@ -209,6 +219,8 @@ This replaces the previous pattern of checking against an empty string sentinel 
 #### Async Safety
 
 The `ContextVar` ensures each asyncio task (or thread, per `threading.local` semantics) gets its own isolated `correlation_id`:
+
+Illustrative fragment, not run-verified; uses await outside a function.
 
 ```python
 async def task_a():
@@ -229,6 +241,8 @@ No manual cleanup needed if the task is properly scoped; `ContextVar` inherits t
 #### Immutability
 
 `CorrelationContext` is frozen (`@dataclass(frozen=True, slots=True)`), a new instance must be created to change the correlation_id:
+
+Illustrative fragment, not run-verified; set_correlation_id is not imported in this block.
 
 ```python
 set_correlation_id("new-id")  # Internally: _correlation_ctx.set(CorrelationContext("new-id"))

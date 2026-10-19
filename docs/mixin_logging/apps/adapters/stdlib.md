@@ -66,6 +66,8 @@ logger.info("Request processed")
 
 Or in a logging configuration dictionary:
 
+Illustrative fragment, not run-verified; CorrelationLogFilter is not imported in this block.
+
 ```python
 import logging.config
 

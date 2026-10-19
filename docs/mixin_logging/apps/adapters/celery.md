@@ -56,6 +56,8 @@ celery 5.x / 6.x (any broker: Redis, RabbitMQ, etc.). No package extra is requir
 
 ## Example Usage
 
+Illustrative fragment, not run-verified; requires celery and a running broker, and starts a worker.
+
 ```python
 from celery import Celery
 from mixin_logging.adapters.celery.celery_client import CorrelationSignals

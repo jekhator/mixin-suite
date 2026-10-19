@@ -46,6 +46,8 @@ Any Python GraphQL framework with a context dict: FastAPI with Strawberry or Gra
 
 ### FastAPI + Strawberry
 
+Illustrative fragment, not run-verified; requires strawberry.
+
 ```python
 import strawberry
 from fastapi import FastAPI
@@ -69,6 +71,8 @@ async def graphql_endpoint(request: Request):
 ```
 
 ### Django Graphene
+
+Illustrative fragment, not run-verified; requires graphene and does not parse as written.
 
 ```python
 from graphene import ObjectType, String, Schema

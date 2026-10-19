@@ -24,6 +24,8 @@ pip install "mixin-logging[httpx]"
 
 ### Sync Client
 
+Illustrative fragment, not run-verified; requires network access to a real endpoint.
+
 ```python
 import httpx
 from mixin_logging.adapters.httpx import CorrelationIdInjector
@@ -36,6 +38,8 @@ response = client.get("https://api.example.com/users")
 ```
 
 ### Async Client
+
+Illustrative fragment, not run-verified; uses await outside a function.
 
 ```python
 import httpx
@@ -51,6 +55,8 @@ response = await async_client.get("https://api.example.com/users")
 ### With Existing Event Hooks
 
 If you already have custom event hooks, merge them:
+
+Illustrative fragment, not run-verified; depends on my_custom_hook defined elsewhere.
 
 ```python
 from mixin_logging.adapters.httpx import CorrelationIdInjector
@@ -78,6 +84,8 @@ client = httpx.Client(event_hooks=merged_hooks)
 **`event_hooks() -> EventHooks`**
 
 Returns a dict of event hooks ready for `httpx.Client(..., event_hooks=...)`:
+
+Illustrative fragment, not run-verified; depends on inject_sync defined elsewhere.
 
 ```python
 {
@@ -116,6 +124,8 @@ If a correlation ID fails validation, it is silently skipped and no header is in
 ## Correlation ID Propagation
 
 Use with the ASGI, WSGI, or other inbound adapters to create end-to-end propagation:
+
+Illustrative fragment, not run-verified; depends on a FastAPI app defined elsewhere.
 
 ```python
 # Request handler (e.g., FastAPI)

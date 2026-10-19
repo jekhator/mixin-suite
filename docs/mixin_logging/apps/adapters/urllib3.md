@@ -47,6 +47,8 @@ Synchronous `urllib3` library (widely-used HTTP client for Python, used as the t
 
 ## Example Usage
 
+Illustrative fragment, not run-verified; requires urllib3 and network access to api.example.com.
+
 ```python
 from mixin_logging.adapters.urllib3 import CorrelationIdPoolManager
 
