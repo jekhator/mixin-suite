@@ -7,13 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.7.0] - 2026-10-18
 
-- **all extra**: The `[all]` extra pulled two unrelated packages named `ses` and `sns`. It now installs `boto3` like the `[ses]` and `[sns]` extras.
-- **Correlation context in new threads**: The correlation context variable now has a default, so the first log call in a thread or context that never set a correlation ID no longer raises LookupError.
-- **WSGI empty correlation header**: An empty X-Correlation-ID request header is treated as absent and a new identifier is generated, instead of failing the request with ValueError.
-- **gRPC handler correlation context**: The gRPC interceptor now sets the correlation context while each handler method runs. Previously the context was cleared before the handler ran, so log calls in the handler had no correlation ID.
-- **Flush handler eviction**: A correlation ID whose buffer expired and later reappeared keeps its records. Capacity eviction now removes the oldest live buffer by creation order.
+### Added
+
+- No new public names in this release.
 
 ### Changed
 
@@ -24,6 +22,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The flush handler defaults, validation messages and null correlation key moved to the stdlib adapter constants module. Code that imported them by their old module path must import them from the constants module.
 - The default sensitive field name patterns moved to the redaction constants module, and record fields are iterated without copying the key list.
 - The Celery worker restore reads the request headers attribute through the adapter constant.
+- **Retry wrapper typing**: The retry wrappers are typed with the wrap type parameter instead of Any. Jitter bounds moved to the retry constants module.
+- **Latency context manager docs**: The LatencyClock measure context manager is documented to yield a started clock; call stop() on it after the block to read the duration.
+- **Suppression eviction**: The suppression tracker evicts the least recently recorded key in constant time instead of scanning every entry. Eviction follows record order, which matches timestamp order for a monotonic clock.
+- **Repr masking constants**: The masking token and the SensitiveRepr adoption error text moved to a masking constants module. Code that imported them from the repr module must import them from the constants module.
+- **Notification backend constants**: Backend detail text and the AWS retryable error codes moved to a backends constants module. SES and SNS share one error classifier.
+- **Dead-letter warning text**: The warning logged when a dead_letter backend fails uses one message for both retry fallback paths.
+- **Egress constants**: The redacted body text and the count metadata key moved to the events constants module.
+
+### Fixed
+
+- **all extra**: The `[all]` extra pulled two unrelated packages named `ses` and `sns`. It now installs `boto3` like the `[ses]` and `[sns]` extras.
+- **Correlation context in new threads**: The correlation context variable now has a default, so the first log call in a thread or context that never set a correlation ID no longer raises LookupError.
+- **WSGI empty correlation header**: An empty X-Correlation-ID request header is treated as absent and a new identifier is generated, instead of failing the request with ValueError.
+- **gRPC handler correlation context**: The gRPC interceptor now sets the correlation context while each handler method runs. Previously the context was cleared before the handler ran, so log calls in the handler had no correlation ID.
+- **Flush handler eviction**: A correlation ID whose buffer expired and later reappeared keeps its records. Capacity eviction now removes the oldest live buffer by creation order.
+- **Retry backoff overflow**: Exponential backoff no longer raises OverflowError for large attempt counts. The delay is capped at the maximum backoff.
+- **Repr masking of string markers**: A field whose sensitivity marker is a plain string value, such as "phi", is masked in SensitiveRepr output. Previously only Sensitivity members masked the field.
+- **SES attachment filename**: Attachment filenames are quoted in the Content-Disposition header, so names with spaces or semicolons are sent intact.
+- **AWS error classification**: An AWS error response whose structure is not a mapping no longer raises while the failure is classified. The failure is reported with the exception class name.
+
+### Removed
+
+- No public names were removed.
 
 ## [0.6.0] - 2026-08-04
 

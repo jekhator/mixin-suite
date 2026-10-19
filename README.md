@@ -116,7 +116,8 @@ print(f"Elapsed: {measurement.duration_ms} ms")
 # Or context-manager form:
 with LatencyClock.measure() as clock:
     # ... do work ...
-    pass  # Duration auto-measured on exit
+    pass
+measurement = clock.stop()  # read the duration after the block
 ```
 
 ## Installation
@@ -152,7 +153,9 @@ uv add "mixin-suite[httpx,botocore]"  # Multiple extras
 uv add "mixin-suite[all]"             # All adapters
 ```
 
-**Python version:** Requires Python 3.11 or later (3.11 and 3.14 tested).
+Notification backend extras: `[ses]` (AWS SES) and `[sns]` (AWS SNS), both installing boto3.
+
+**Python version:** Requires Python 3.12 or later (3.12 and 3.14 tested).
 
 ## Quick Start
 
@@ -233,21 +236,17 @@ user = User(
 
 # Safe for logging
 logger.info("User created: %s", repr(user))
-# → "User created: User(id=1, api_token=***MASKED***, email=***MASKED***, ssn=***MASKED***, name='Alice')"
+# "User created: User(id=1, api_token=***MASKED***, email=***MASKED***, ssn=***MASKED***, name='Alice')"
 
 # Introspect sensitivity profile
 from mixin_sensitivity import classify
 profile = classify(user)
-# → SensitivityProfile(classes=(
-#     ('api_token', Sensitivity.SECRET),
-#     ('email', Sensitivity.PII),
-#     ('ssn', Sensitivity.PHI),
-# ))
+# SensitivityProfile(classes=(('api_token', <Sensitivity.SECRET: 'secret'>), ('email', <Sensitivity.PII: 'pii'>), ('ssn', <Sensitivity.PHI: 'phi'>)))
 ```
 
 ## Run-Verified Examples
 
-These examples are executed against the published mixin-suite==0.5.0 distribution.
+These examples are executed against the 0.7.0 source tree on Python 3.12 and 3.14.
 
 ### Logging Example: Correlation-ID Propagation
 
@@ -286,12 +285,12 @@ result = service.upload("report.pdf", 1024000)
 status = service.process("doc-123")
 ```
 
-**Output (Python 3.14, mixin-suite==0.5.0):**
+**Output (Python 3.14, mixin-suite 0.7.0 source tree):**
 ```
-2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
-2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-10-001
-2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-10-001
-2026-07-10 03:05:20,405 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-10-001
+2026-10-18 23:33:31,800 - __main__.DocumentService - INFO - upload.initiated - correlation_id=req-2026-07-10-001
+2026-10-18 23:33:31,801 - __main__.DocumentService - INFO - upload.complete - correlation_id=req-2026-07-10-001
+2026-10-18 23:33:31,801 - __main__.DocumentService - INFO - process.started - correlation_id=req-2026-07-10-001
+2026-10-18 23:33:31,801 - __main__.DocumentService - INFO - process.finished - correlation_id=req-2026-07-10-001
 ```
 
 ### Sensitivity Example: Data Masking
@@ -324,10 +323,9 @@ profile = classify(record)
 print(f"PHI fields: {[f for f, s in profile.classes if s == Sensitivity.PHI]}")
 ```
 
-**Output (Python 3.14, mixin-suite==0.5.0):**
+**Output (Python 3.14, mixin-suite 0.7.0 source tree):**
 ```
 HealthRecord(patient_id=42, ssn=***MASKED***, diagnosis=***MASKED***, treatment_notes=***MASKED***, attending_physician='Dr. Smith')
-
 PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 ```
 
@@ -339,7 +337,7 @@ PHI fields: ['ssn', 'diagnosis', 'treatment_notes']
 
 ## Public API
 
-### mixin_logging (v0.5.0)
+### mixin_logging (v0.7.0)
 
 Core classes and functions:
 - `LoggingMixin`: Base class providing `log_info()`, `log_debug()`, `log_warning()`, `log_error()`, and `log_exception()` methods
@@ -353,7 +351,7 @@ Core classes and functions:
 - `AmbientLogger`: Namespace for ambient logging functions (log_info, log_debug, log_warning, log_error)
 - `PUBLIC_API`: Frozenset of all public names
 
-### mixin_sensitivity (v0.5.0)
+### mixin_sensitivity (v0.7.0)
 
 Core classes and functions:
 - `SensitiveRepr`: Base class for dataclasses that masks sensitive fields in repr output
@@ -362,7 +360,7 @@ Core classes and functions:
 - `SensitivityProfile`: Data class containing field-to-sensitivity mappings
 - `SensitiveDeclarationError`: Exception raised for invalid sensitivity declarations
 
-### mixin_retry (v0.5.0)
+### mixin_retry (v0.7.0)
 
 Core classes and functions:
 - `RetryPolicy`: Configuration object for retry behavior (max_attempts, backoff, jitter, predicates)
