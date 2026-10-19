@@ -154,7 +154,7 @@ This section records the pass over the test tree. Scope: every .py file under mi
 ### Test tree summary
 
 - Files reviewed: 80
-- Files changed: 53 (52 edited and 2 removed: one empty conftest and one duplicate suite-level version test)
+- Files changed: 53 (51 edited and 2 removed: one empty conftest and one duplicate suite-level version test)
 - New test files: 1 conftest under mixin_logging/ambient/tests; 1 root conftest at mixin_logging/conftest.py
 - Findings by lens (a file can carry more than one): duplication 21, constants 18, determinism 10, assertion 7, coverage 7, typing 5, naming 5, dead code 4, structure 2, lint 2. Every finding is either fixed or listed under Deferred candidates below.
 - Tests: 598 before the pass, 609 after (same pytest command on Python 3.12)
