@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from mixin_logging.adapters.asgi.asgi_objects import App, Message, Receive, Scope, Send
 from mixin_logging.adapters.constants import asgi as const
 from mixin_logging.common.constants import tests as test_const
 
@@ -160,33 +161,33 @@ def http_scope_with_string_header_value() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_receive() -> Any:
+def mock_receive() -> Receive:
     """Mock ASGI receive callable returning an empty http.request message."""
 
-    async def receive() -> dict[str, Any]:
+    async def receive() -> Message:
         return {"type": test_const.HTTP_EVENT_REQUEST, "body": b""}
 
     return receive
 
 
 @pytest.fixture
-def mock_send() -> Any:
+def mock_send() -> Send:
     """Mock ASGI send callable that discards messages."""
 
-    async def send(message: dict[str, Any]) -> None:
+    async def send(message: Message) -> None:
         return None
 
     return send
 
 
 @pytest.fixture
-def mock_app() -> Any:
+def mock_app() -> App:
     """Mock ASGI app that does nothing."""
 
     async def app(
-        scope: dict[str, Any],
-        receive: Any,
-        send: Any,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> None:
         return None
 
@@ -194,13 +195,13 @@ def mock_app() -> Any:
 
 
 @pytest.fixture
-def http_app_that_sends_response() -> Any:
+def http_app_that_sends_response() -> App:
     """Mock ASGI app that emits an http.response.start message."""
 
     async def app(
-        scope: dict[str, Any],
-        receive: Any,
-        send: Any,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> None:
         await send(
             {
