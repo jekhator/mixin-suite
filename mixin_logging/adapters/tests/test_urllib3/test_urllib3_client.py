@@ -221,7 +221,7 @@ class TestCorrelationIdPoolManagerUrlopen:
             manager.urlopen(
                 "GET",
                 "https://example.com/test",
-                timeout=10.0,
+                timeout=test_const.HTTP_TIMEOUT_SECONDS,
                 retries=3,
             )
 

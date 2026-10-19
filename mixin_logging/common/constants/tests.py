@@ -144,3 +144,8 @@ ERR_TEST_HANDLER_FAILED: Final = "test handler failed"
 
 HEX_DIGITS: Final = "0123456789abcdef"
 GENERATED_ID_LENGTH: Final = 12
+
+
+"""Local HTTP test server timeouts."""
+
+HTTP_TIMEOUT_SECONDS: Final = 10

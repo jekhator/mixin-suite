@@ -56,3 +56,4 @@ def http_server_with_header_capture() -> Generator[
     server_thread.start()
     yield f"http://{host}:{port}", captured_headers
     server.shutdown()
+    server.server_close()
