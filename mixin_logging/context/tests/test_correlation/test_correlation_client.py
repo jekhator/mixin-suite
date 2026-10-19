@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import threading
+
 from mixin_logging import (
     clear_correlation_id,
     get_correlation_id,
@@ -89,6 +91,23 @@ class TestClearCorrelationId:
 
 class TestContextVarBehavior:
     """Tests for ContextVar async/task isolation (context-local behavior)."""
+
+    def test_read_in_new_thread_returns_none_without_raising(self) -> None:
+        """get_correlation_id() in a thread that never set an ID returns None instead of raising."""
+        outcome: list[str | None | BaseException] = []
+
+        def read_in_thread() -> None:
+            """Record the correlation ID seen by a fresh thread, or the error raised."""
+            try:
+                outcome.append(get_correlation_id())
+            except LookupError as error:
+                outcome.append(error)
+
+        thread = threading.Thread(target=read_in_thread)
+        thread.start()
+        thread.join()
+
+        assert outcome == [None]
 
     def test_context_is_isolated_per_call_to_set(self) -> None:
         """Each set_correlation_id() call creates a new context snapshot."""

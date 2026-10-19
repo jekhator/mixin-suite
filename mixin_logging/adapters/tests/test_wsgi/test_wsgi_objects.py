@@ -59,6 +59,13 @@ class TestWsgiCorrelation:
         assert len(correlation.correlation_id) == 12
         assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
 
+    def test_empty_header_is_treated_as_absent(self, make_environ) -> None:
+        """from_environ() treats an empty X-Correlation-ID header as absent and generates an ID."""
+        environ = make_environ({"X-Correlation-ID": ""})
+        correlation = wsgi_objs.WsgiCorrelation.from_environ(environ)
+        assert correlation.from_header is False
+        assert len(correlation.correlation_id) == 12
+
     def test_empty_correlation_id_raises_value_error(self) -> None:
         """__post_init__() raises ValueError if correlation_id is empty string."""
         with pytest.raises(ValueError, match=const.ERR_CORRELATION_ID_EMPTY):
