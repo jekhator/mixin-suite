@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 
 import pytest
 
@@ -56,3 +56,33 @@ def fake_clock(monkeypatch: pytest.MonkeyPatch) -> FakeClock:
     clock = FakeClock()
     monkeypatch.setattr(time, "time", clock.time)
     return clock
+
+
+@pytest.fixture
+def scratch_logger_factory(
+    request: pytest.FixtureRequest,
+) -> Iterator[Callable[[str], logging.Logger]]:
+    """Factory for loggers scoped to one test: named after the test, detached from the root logger.
+
+    Each logger is created with propagate disabled, and its handlers and filters are cleared
+    before the test and again after it, so nothing attached during a test outlives it.
+    Used by TestCorrelationLogFilterAddCorrelationFilter and TestCorrelationLogFilterRealLoggingIntegration.
+    """
+    created: list[logging.Logger] = []
+
+    def make(suffix: str) -> logging.Logger:
+        """Create a fresh logger for this test with the given suffix."""
+        logger = logging.getLogger(f"mixin_logging_test.{request.node.name}.{suffix}")
+        logger.handlers.clear()
+        logger.filters.clear()
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        created.append(logger)
+        return logger
+
+    yield make
+    for logger in created:
+        logger.handlers.clear()
+        logger.filters.clear()
+        logger.setLevel(logging.NOTSET)
+        logger.propagate = True
