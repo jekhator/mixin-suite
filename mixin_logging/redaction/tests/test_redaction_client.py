@@ -12,7 +12,7 @@ class TestRedactionClient:
     def test_attach_default_to_logger(self, redaction_logger: logging.Logger) -> None:
         """Attach default redaction filter to a logger."""
         RedactionClient.attach_default(redaction_logger)
-        assert len(redaction_logger.filters) > 0
+        assert len(redaction_logger.filters) == 1
         assert isinstance(redaction_logger.filters[0], RedactionFilter)
 
     def test_filter_masks_api_key_field(self, redaction_logger: logging.Logger) -> None:

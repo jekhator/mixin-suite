@@ -39,13 +39,8 @@ class TestVersionLockstep:
         """Package versions must match the installed mixins dist version."""
         from mixin_logging.config._version import __version__ as logging_version
 
-        try:
-            dist_version = importlib.metadata.version("mixin-suite")
-        except importlib.metadata.PackageNotFoundError:
-            dist_version = None
+        dist_version = importlib.metadata.version("mixin-suite")
 
-        if dist_version is not None:
-            assert logging_version == dist_version, (
-                f"Package version {logging_version} != "
-                f"installed dist version {dist_version}"
-            )
+        assert logging_version == dist_version, (
+            f"Package version {logging_version} != installed dist version {dist_version}"
+        )
