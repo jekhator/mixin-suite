@@ -44,3 +44,9 @@ class TestVersionLockstep:
         assert logging_version == dist_version, (
             f"Package version {logging_version} != installed dist version {dist_version}"
         )
+
+    def test_logging_version_is_release_pin(self) -> None:
+        """The mixin_logging version equals the release pin for this distribution."""
+        from mixin_logging import __version__
+
+        assert __version__ == "0.6.0"
