@@ -7,16 +7,9 @@ from typing import Any
 
 import pytest
 from celery import Celery
+from celery.signals import before_task_publish, task_postrun, task_prerun
 
-from mixin_logging import clear_correlation_id
-
-
-@pytest.fixture(autouse=True)
-def reset_correlation() -> Iterator[None]:
-    """Clear correlation context before and after each test for isolation."""
-    clear_correlation_id()
-    yield
-    clear_correlation_id()
+from mixin_logging.adapters.celery import celery_client
 
 
 @pytest.fixture
@@ -33,3 +26,16 @@ def celery_app() -> Callable[..., Any]:
         return app
 
     return factory
+
+
+@pytest.fixture
+def connected_celery_signals() -> Iterator[None]:
+    """Connect the correlation signal handlers for one test and disconnect them afterwards.
+
+    Used by TestCorrelationSignalsRealCeleryIntegration so no handler leaks into later tests.
+    """
+    celery_client.CorrelationSignals.connect()
+    yield
+    before_task_publish.disconnect(celery_client.CorrelationSignals.inject_on_publish)
+    task_prerun.disconnect(celery_client.CorrelationSignals.restore_on_prerun)
+    task_postrun.disconnect(celery_client.CorrelationSignals.clear_on_postrun)

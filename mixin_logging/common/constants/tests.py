@@ -130,3 +130,22 @@ HTTPX_CORR_ID_XYZ: Final = "id-xyz"
 
 ERROR_MSG_CUSTOM_WORK_FAILED: Final = "something went wrong"
 ERROR_MSG_RUNTIME_NO_CODE: Final = "runtime error without code"
+
+
+"""gRPC adapter test values."""
+
+CORRELATION_ID_UNSAFE_CR: Final = "test\r-bad"
+GRPC_CALL_TIMEOUT_SECONDS: Final = 10
+ERR_TEST_CONTINUATION_FAILED: Final = "test continuation failed"
+ERR_TEST_HANDLER_FAILED: Final = "test handler failed"
+
+
+"""Generated correlation ID shape (uuid4 hex prefix)."""
+
+HEX_DIGITS: Final = "0123456789abcdef"
+GENERATED_ID_LENGTH: Final = 12
+
+
+"""Local HTTP test server timeouts."""
+
+HTTP_TIMEOUT_SECONDS: Final = 10

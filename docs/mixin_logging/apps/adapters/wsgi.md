@@ -26,6 +26,8 @@ MIDDLEWARE = [
 
 ### Flask
 
+Illustrative fragment, not run-verified; requires flask.
+
 ```python
 from mixin_logging.adapters.wsgi import CorrelationIdMiddleware
 from flask import Flask
@@ -68,6 +70,8 @@ The correlation ID is now available in the context for:
 WSGI middleware callable that extracts/generates and propagates correlation IDs.
 
 **Usage:**
+
+Illustrative fragment, not run-verified; relies on the app defined in the earlier block.
 
 ```python
 wrapped_app = CorrelationIdMiddleware(app)

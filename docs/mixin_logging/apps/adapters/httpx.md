@@ -11,18 +11,20 @@ The HTTPX adapter uses event hooks to inject the correlation ID from the current
 Install the `httpx` optional dependency:
 
 ```bash
-uv add "logging-mixin[httpx]"
+uv add "mixin-logging[httpx]"
 ```
 
 Or with pip:
 
 ```bash
-pip install "logging-mixin[httpx]"
+pip install "mixin-logging[httpx]"
 ```
 
 ## Usage
 
 ### Sync Client
+
+Illustrative fragment, not run-verified; requires network access to a real endpoint.
 
 ```python
 import httpx
@@ -36,6 +38,8 @@ response = client.get("https://api.example.com/users")
 ```
 
 ### Async Client
+
+Illustrative fragment, not run-verified; uses await outside a function.
 
 ```python
 import httpx
@@ -51,6 +55,8 @@ response = await async_client.get("https://api.example.com/users")
 ### With Existing Event Hooks
 
 If you already have custom event hooks, merge them:
+
+Illustrative fragment, not run-verified; depends on my_custom_hook defined elsewhere.
 
 ```python
 from mixin_logging.adapters.httpx import CorrelationIdInjector
@@ -75,9 +81,11 @@ client = httpx.Client(event_hooks=merged_hooks)
 
 ### CorrelationIdInjector
 
-**`event_hooks() → EventHooks`**
+**`event_hooks() -> EventHooks`**
 
 Returns a dict of event hooks ready for `httpx.Client(..., event_hooks=...)`:
+
+Illustrative fragment, not run-verified; depends on inject_sync defined elsewhere.
 
 ```python
 {
@@ -87,11 +95,11 @@ Returns a dict of event hooks ready for `httpx.Client(..., event_hooks=...)`:
 
 The hooks read the current correlation ID from context and inject it as the `X-Correlation-ID` header.
 
-**`inject_sync(request: httpx.Request) → None`**
+**`inject_sync(request: httpx.Request) -> None`**
 
 Synchronously injects the correlation ID header into a request. Called automatically by the event hook system.
 
-**`inject_async(request: httpx.Request) → Awaitable[None]`**
+**`inject_async(request: httpx.Request) -> Awaitable[None]`**
 
 Async wrapper of `inject_sync`. Called for async clients.
 
@@ -117,6 +125,8 @@ If a correlation ID fails validation, it is silently skipped and no header is in
 
 Use with the ASGI, WSGI, or other inbound adapters to create end-to-end propagation:
 
+Illustrative fragment, not run-verified; depends on a FastAPI app defined elsewhere.
+
 ```python
 # Request handler (e.g., FastAPI)
 from mixin_logging.adapters.asgi import CorrelationIdMiddleware
@@ -137,8 +147,8 @@ async def get_order(order_id: int):
 ```
 
 The correlation ID flows:
-1. Client request → FastAPI (ASGI middleware sets context)
-2. Handler → httpx client (injects into outbound request)
+1. Client request -> FastAPI (ASGI middleware sets context)
+2. Handler -> httpx client (injects into outbound request)
 3. Downstream service receives the same correlation ID
 
 ## See Also

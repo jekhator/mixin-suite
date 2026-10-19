@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, MutableMapping
 from dataclasses import dataclass
-from typing import Any, Optional, Self
+from typing import Any, Self
 from uuid import uuid4
 
 from mixin_logging.adapters.constants import wsgi as const
@@ -13,7 +13,7 @@ Environ = MutableMapping[str, Any]
 Headers = list[tuple[str, str]]
 ExcInfo = tuple[type, BaseException, Any]
 
-StartResponse = Callable[[str, Headers, Optional[ExcInfo]], Callable[[bytes], None]]
+StartResponse = Callable[[str, Headers, ExcInfo | None], Callable[[bytes], None]]
 App = Callable[[Environ, StartResponse], Iterable[bytes]]
 
 
@@ -32,11 +32,9 @@ class WsgiCorrelation:
     @staticmethod
     def _is_safe(value: str) -> bool:
         """Check if a correlation ID value is safe for logging and HTTP headers."""
-        if len(value) > const.CORRELATION_ID_MAX_LENGTH:
+        if not value or len(value) > const.CORRELATION_ID_MAX_LENGTH:
             return False
-        if any(char in const.UNSAFE_HEADER_CHARS for char in value):
-            return False
-        return True
+        return const.UNSAFE_HEADER_CHARS.isdisjoint(value)
 
     @classmethod
     def from_environ(cls, environ: Environ) -> Self:

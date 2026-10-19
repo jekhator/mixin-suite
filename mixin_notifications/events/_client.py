@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from mixin_logging import get_correlation_id
 from mixin_notifications.events._objects import NotificationEvent, Severity
 
 
@@ -32,13 +33,11 @@ class NotificationEventClient:
         Returns:
             Configured NotificationEvent with correlation_id and occurred_at populated.
         """
-        from mixin_logging import get_correlation_id
-
         resolved_severity = (
             Severity(severity) if isinstance(severity, str) else severity
         )
 
-        now_utc = datetime.now(timezone.utc).isoformat()
+        now_utc = datetime.now(UTC).isoformat()
 
         return NotificationEvent(
             category=category,

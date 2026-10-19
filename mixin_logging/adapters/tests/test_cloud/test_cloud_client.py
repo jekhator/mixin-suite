@@ -6,6 +6,7 @@ from typing import Any
 
 from mixin_logging import get_correlation_id
 from mixin_logging.adapters.cloud import cloud_client
+from mixin_logging.common.constants import tests as test_const
 
 
 class TestCloudSetupSetupCorrelationIdApiGateway:
@@ -169,7 +170,7 @@ class TestCloudSetupSetupCorrelationIdGenerated:
         event: dict[str, Any] = {}
         correlation_id = cloud_client.CloudSetup.setup_correlation_id(event)
         assert isinstance(correlation_id, str)
-        assert len(correlation_id) == 12
+        assert len(correlation_id) == test_const.GENERATED_ID_LENGTH
         assert get_correlation_id() == correlation_id
 
     def test_setup_correlation_id_unsafe_header_returns_generated_id(self) -> None:
@@ -177,7 +178,7 @@ class TestCloudSetupSetupCorrelationIdGenerated:
         event = {"headers": {"X-Correlation-ID": "bad\r\nvalue"}}
         correlation_id = cloud_client.CloudSetup.setup_correlation_id(event)
         assert isinstance(correlation_id, str)
-        assert len(correlation_id) == 12
+        assert len(correlation_id) == test_const.GENERATED_ID_LENGTH
         assert get_correlation_id() == correlation_id
 
     def test_setup_correlation_id_generated_with_context_param(self) -> None:
@@ -189,7 +190,7 @@ class TestCloudSetupSetupCorrelationIdGenerated:
             context=dummy_context,
         )
         assert isinstance(correlation_id, str)
-        assert len(correlation_id) == 12
+        assert len(correlation_id) == test_const.GENERATED_ID_LENGTH
         assert get_correlation_id() == correlation_id
 
     def test_setup_correlation_id_generated_ids_are_unique(self) -> None:

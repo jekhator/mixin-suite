@@ -12,7 +12,7 @@
 
 ## Question 1: Header Injection Vulnerability
 
-**Finding:** ✅ NO ISSUE
+**Finding:** yes NO ISSUE
 
 **Analysis:**
 
@@ -42,7 +42,7 @@ Since `correlation.response_header` returns only the pre-validated `self.correla
 
 ## Question 2: Validate-and-Regenerate Threat Model
 
-**Finding:** ✅ NO ISSUE
+**Finding:** yes NO ISSUE
 
 **Analysis:**
 
@@ -74,7 +74,7 @@ If a header is unsafe, a fresh uuid4 is silently generated. This is **not exploi
 
 ## Question 3: Correlation-ID Disclosure
 
-**Finding:** ✅ NO ISSUE
+**Finding:** yes NO ISSUE
 
 **Analysis:**
 
@@ -94,7 +94,7 @@ The correlation ID is **explicitly designed to be public and traceable**:
 
 ## Question 4: No-Secrets-in-Correlation-ID
 
-**Finding:** ✅ NO ISSUE
+**Finding:** yes NO ISSUE
 
 **Analysis:**
 
@@ -120,7 +120,7 @@ The validation chain prevents secret smuggling:
 
 ## Question 5: Length Cap (128 bytes)
 
-**Finding:** ✅ NO ISSUE
+**Finding:** yes NO ISSUE
 
 **Analysis:**
 
@@ -149,7 +149,7 @@ The `CORRELATION_ID_MAX_LENGTH = 128` is a sensible upper bound:
 
 ## Question 6: WsgiApp Helper Validation
 
-**Finding:** ⚠ NEEDS REVIEW
+**Finding:** WARNING NEEDS REVIEW
 
 **Analysis:**
 
@@ -200,7 +200,7 @@ Or, mark `WsgiApp` as internal-only with a docstring warning against direct inst
 
 ## Question 7: clear_correlation_id() Exception Handling
 
-**Finding:** ✅ NO ISSUE
+**Finding:** yes NO ISSUE
 
 **Analysis:**
 
@@ -249,8 +249,8 @@ finally:
 **Status:** READY FOR PRODUCTION with one medium-severity enhancement recommended.
 
 **Issues Found:**
-- ✅ **6/7 questions:** No blocker-level issues.
-- ⚠ **1/7 questions:** Question 6 (WsgiApp direct instantiation). Medium risk; recommend adding validation or documentation.
+- yes **6/7 questions:** No blocker-level issues.
+- WARNING **1/7 questions:** Question 6 (WsgiApp direct instantiation). Medium risk; recommend adding validation or documentation.
 
 **Blockers:** None.
 
@@ -263,7 +263,7 @@ finally:
    - Document that `WsgiApp` should only be instantiated by the middleware, not directly by application code.
 
 2. **Low Priority (operational best practices):**
-   - Verify that `clear_correlation_id()` in the logging-mixin context is a no-fail operation. If any doubt, wrap the finally block with exception suppression.
+   - Verify that `clear_correlation_id()` in the mixin-logging context is a no-fail operation. If any doubt, wrap the finally block with exception suppression.
    - Consider adding a test case for direct unsafe instantiation to document the expected failure mode.
 
 **Production Safety Assessment:** The WSGI adapter is safe to deploy. The one enhancement (WsgiApp validation) is defensive; the current implementation handles all tested scenarios correctly.

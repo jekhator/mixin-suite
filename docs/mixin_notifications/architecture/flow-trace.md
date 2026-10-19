@@ -1,250 +1,56 @@
 # mixin_notifications Flow Trace
 
-## Architecture Overview
+This trace follows the 0.7.0 modules:
 
-mixin_notifications/dispatch/dispatch_client.py (+ Dispatcher, guarded dispatch, suppression, egress gating)
-═══════════════════════════════════════════════════════════════════════════════════════════════════════════
-Imports: logging, time, dataclass, NotificationBackend, SuppressionTracker; factory correlation capture
-┌─ [DATACLASS,slots] Dispatcher ──────────┐ backends: tuple[NotificationBackend, ...] ; suppression_policy: SuppressionPolicy | None ; notify[mth] ; _apply_egress_gate[mth] ; _count_metadata_by_sensitivity[mth] ; _build_count_metadata[mth] └─...
+- `mixin_notifications/events/_client.py` and `_objects.py`: event factory and frozen event type
+- `mixin_notifications/dispatch/_client.py` and `_objects.py`: Dispatcher, egress gate, result type
+- `mixin_notifications/suppression/_objects.py`: in-memory suppression tracker
+- `mixin_notifications/backends/_client.py`: CollectingBackend, LoggingBackend, NullBackend, RetryingBackend
+- `mixin_notifications/backends/sns.py`, `ses.py`, `aws_errors.py`: AWS backends and the shared error classifier
 
-mixin_notifications/events/events_client.py (+ NotificationEventClient factory with auto-capture)
-████████████████████████████████████████████████████████████████████████████════════════════════════════
-Imports: datetime, mixin_logging.get_correlation_id; auto-capture correlation_id + occurred_at
-┌─ [CLASS,slots] NotificationEventClient ──────────┐ create[staticmethod] ← Severity | str → NotificationEvent ← auto-capture get_correlation_id() & now_utc └─...
+## Construction
 
-mixin_notifications/suppression/suppression_objects.py (+ SuppressionTracker in-memory state)
-███████════════════════════════════════════════════════════════════════════════════════════════════════════
-Imports: dataclass, time; capacity-capped in-memory seen dict
-┌─ [DATACLASS,slots] SuppressionTracker ──────────┐ is_suppressed[mth] ; record[mth] ; _seen[dict] ← (category, fingerprint) → time └─...
+1. `Dispatcher(backends=..., suppression_policy=...)` stores the backend tuple. When a suppression policy is given, a `SuppressionTracker` with the policy window is created.
+2. `NotificationEventClient.create(...)` reads the correlation ID from mixin_logging, stamps `occurred_at` in UTC, converts a string severity to `Severity`, and returns a `NotificationEvent`. The event has no attachments unless they are added afterwards with `dataclasses.replace`.
 
-## FLOW TRACE
+## notify(event)
 
-i CONSTRUCT  Dispatcher(backends=(CollectingBackend(), LoggingBackend()), suppression_policy=SuppressionPolicy(window_seconds=60))
-      └─ backends tuple pinned (explicit, no registry global)
-      └─ SuppressionTracker(window_seconds=60) initialized if policy provided
-      └─ Dispatcher ready
+1. The time is read once for the call.
+2. Suppression, if configured: when the (category, fingerprint) key was recorded inside the window, the call returns `DispatchResult(suppressed=True, results=())` and no backend runs.
+3. Otherwise the key is recorded with the current time.
+4. For each backend in order:
+   - `_apply_egress_gate(event, backend)`:
+     - `backend.external_egress` is False: the event is passed unchanged.
+     - True: the event is replaced by a derived title (`"{category}: {severity} notification"`), a fixed body (`"[content redacted for external delivery]"`), a metadata tuple holding only `sensitive_count_metadata` with the number of original entries, and an attachment tuple containing only attachments with `egress_safe=True`.
+   - `backend.send(egress_event)` runs. An exception is logged as a warning and recorded as a failed `DeliveryResult` with `retryable=True`. The loop continues with the next backend.
+5. `DispatchResult(total_backends, results, suppressed=False)` is returned.
 
-ii FACTORY   NotificationEventClient.create(category="auth", severity="WARNING", title="Login Failed", fingerprint="login-001", body="User provided wrong password")
+Because of step 4, an external backend never sees the original metadata. See the limitation in the README: a per-event `topic_arn` does not reach `SNSBackend` through `notify()`.
 
-    └─ get_correlation_id() → "corr-12345" (from mixin_logging context)
-    └─ datetime.now(timezone.utc).isoformat() → "2026-07-21T10:00:00+00:00"
-    └─ Severity("WARNING") → Severity.WARNING
-    └─ NotificationEvent(
-         category="auth",
-         severity=Severity.WARNING,
-         title="Login Failed",
-         body="User provided wrong password",
-         fingerprint="login-001",
-         occurred_at="2026-07-21T10:00:00+00:00",
-         correlation_id="corr-12345",
-         metadata=()
-       )
+## RetryingBackend.send(event)
 
-iii NOTIFY   dispatcher.notify(event)
+1. `RetryExecutor().call(attempt_send, policy=replace(policy, should_retry=...))` runs the inner backend.
+2. A result with `retryable=True` is raised as an internal error; the retry predicate treats it as retryable. Other results are returned as they are.
+3. When attempts run out:
+   - a retryable result: the fallback detail reports exhaustion with the inner detail.
+   - an exception that the predicate accepts: the same exhaustion detail with the exception class name.
+   - any other exception: the non-retryable detail.
+4. `_fallback` sends the event to `dead_letter` when one is set. If the dead-letter backend raises, a warning is logged and a failed result is returned. Without a dead letter, a failed result is returned.
 
-     a. SUPPRESSION CHECK (if policy exists):
-        ├─ current_time = time.time() → 1721555700.123
-        ├─ _suppression_tracker.is_suppressed("auth", "login-001", current_time)
-        │     ├─ key = ("auth", "login-001")
-        │     ├─ key in _seen → True (from previous dispatch)
-        │     ├─ current_time - last_seen = 1.5 < 60 → True ──▶ return True (SUPPRESSED)
-        │     └─ [or] not in _seen / outside window → return False (ALLOWED)
-        ├─ [if suppressed] return DispatchResult(total_backends=2, results=(), suppressed=True)
-        └─ [if allowed] record in _seen and proceed to dispatch
+`external_egress` of the wrapper is True when either the inner backend or the dead-letter backend is external.
 
-     b. GUARDED DISPATCH (event sent to each backend):
-        ├─ for backend in backends:
-        │     ├─ egress_event = _apply_egress_gate(event, backend)
-        │     │     ├─ backend.external_egress → False (CollectingBackend) ──▶ return event (unmasked)
-        │     │     ├─ [or] backend.external_egress → True (WebhookBackend)
-        │     │     │     ├─ title = EGRESS_TITLE_TEMPLATE.format(category, severity)
-        │     │     │     │     └─ original "Secret payment issue" → "payment: CRITICAL notification"
-        │     │     │     ├─ body masked to redacted: "[content redacted for external delivery]"
-        │     │     │     ├─ metadata reduced to counts: (("sensitive_count_metadata", "2"), ...)
-        │     │     │     ├─ category, fingerprint, correlation_id, occurred_at unchanged (routing/dedup)
-        │     │     │     └─ return masked event
-        │     │
-        │     ├─ try: result = backend.send(egress_event)
-        │     │     └─ CollectingBackend.send(event) → DeliveryResult(delivered=True, ...)
-        │     │     └─ LoggingBackend.send(event) → logs + DeliveryResult(delivered=True, ...)
-        │     │     └─ [exception] ──▶ except clause below
-        │     │
-        │     └─ except Exception:
-        │           ├─ _logger.warning(f"Backend {class_name} failed", exc_info=exc)
-        │           └─ DeliveryResult(delivered=False, backend_name=..., retryable=True)
-        │
-        └─ collect all results
+## SNSBackend.send(event)
 
-     c. RETURN   DispatchResult(total_backends=2, results=(result1, result2), suppressed=False)
+1. The topic is the default topic, unless a `topic_arn` metadata entry is present. Direct sends see that entry; sends through `Dispatcher.notify` do not, because of the egress gate.
+2. `sns_client.publish(TopicArn, Subject=title, Message=body, MessageAttributes=...)` is called.
+3. A response gives `DeliveryResult(delivered=True, detail="message_id: ...")`. An exception goes through `AwsErrorClassifier.failure`, which marks throttling, service-unavailable and internal errors as retryable.
 
-## REAL RUN OUTPUT
+## Output of a run
 
-Example output from actual execution (Python 3.11.15):
+The fake-client run in the README shows both halves of the topic behaviour: the direct send uses `critical-alerts`, and the dispatched send uses the default topic.
 
-```
-=== mixin_notifications RUN-VERIFIED EXAMPLE ===
+## Invariants
 
-Test 1: Basic dispatch with CollectingBackend
-
-event = NotificationEventClient.create(
-    category="auth",
-    severity="WARNING",
-    title="Login Failed",
-    body="User provided invalid credentials",
-    fingerprint="login-failed-001"
-)
-
-dispatcher = Dispatcher(backends=(CollectingBackend(),))
-result = dispatcher.notify(event)
-
-print(f"Dispatched to {result.total_backends} backend(s)")
-print(f"Results: {len(result.results)} delivery outcome(s)")
-print(f"First backend delivered: {result.results[0].delivered}")
-print(f"Suppressed: {result.suppressed}")
-
-Output:
-Dispatched to 1 backend(s)
-Results: 1 delivery outcome(s)
-First backend delivered: True
-Suppressed: False
-
----
-
-Test 2: Suppression within window
-
-dispatcher = Dispatcher(
-    backends=(CollectingBackend(),),
-    suppression_policy=SuppressionPolicy(window_seconds=60)
-)
-
-result1 = dispatcher.notify(event)
-result2 = dispatcher.notify(event)
-
-print(f"First dispatch suppressed: {result1.suppressed}")
-print(f"Second dispatch suppressed: {result2.suppressed}")
-
-Output:
-First dispatch suppressed: False
-Second dispatch suppressed: True
-
----
-
-Test 3: Egress gate masks sensitive content
-
-class ExternalBackend:
-    @property
-    def external_egress(self) -> bool:
-        return True
-    
-    def send(self, event):
-        return DeliveryResult(
-            delivered=True,
-            backend_name="ExternalBackend",
-            detail="sent",
-            retryable=False
-        )
-
-external_backend = ExternalBackend()
-dispatcher = Dispatcher(backends=(external_backend,))
-
-sensitive_event = NotificationEventClient.create(
-    category="user",
-    severity="INFO",
-    title="User Data",
-    body="SSN: 123-45-6789",
-    fingerprint="user-data-001"
-)
-
-result = dispatcher.notify(sensitive_event)
-
-print(f"Event sent to external backend")
-print(f"Content masked: {'123-45-6789' not in external_backend.events[0].body}")
-
-Output:
-Event sent to external backend
-Content masked: True
-```
-
-Key observations:
-
-- Dispatcher requires explicit backends tuple (no global registry default)
-- NotificationEventClient.create() auto-captures correlation_id from mixin_logging context and current UTC time
-- Suppression window is (category, fingerprint) keyed; duplicates within window are discarded server-side
-- Guarded dispatch catches backend exceptions, logs warnings, and continues (never raises into caller)
-- Egress gate inspects backend.external_egress; for external backends:
-  - Title is REPLACED with derived label from EGRESS_TITLE_TEMPLATE (category + severity, no original content)
-  - Body is redacted to "[content redacted for external delivery]"
-  - Metadata reduced to counts only
-  - Category, fingerprint, correlation_id, occurred_at remain unmasked (operational routing/dedup contract)
-- DeliveryResult provides per-backend outcome and retryability hint
-- All classes are frozen dataclasses or slots to prevent mutation
-
----
-
-## RetryingBackend FLOW TRACE (0.6.0+)
-
-mixin_notifications/backends/_client.py (+ RetryingBackend, composing mixin_retry's RetryExecutor)
-═══════════════════════════════════════════════════════════════════════════════════════════════════════════
-Imports: logging, RetryExecutor, RetryPolicy, DeliveryResult, NotificationBackend
-┌─ [DATACLASS,frozen,slots] RetryingBackend ──────────┐ inner: NotificationBackend ; policy: RetryPolicy ; dead_letter: NotificationBackend | None ; send[mth] ; external_egress[property] └─...
-
-### Retry Delivery Path
-
-iv RETRY LOOP  backend = RetryingBackend(inner=sns_client, policy=RetryPolicy(...), dead_letter=dlq_backend)
-    └─ result = backend.send(event)
-
-    a. ATTEMPT DELIVERY:
-        ├─ executor = RetryExecutor()
-        ├─ attempt_send() ← closure: returns inner.send(event)
-        │     ├─ result = sns_client.send(event)
-        │     ├─ if result.retryable=True:
-        │     │     └─ raise RetryableDeliveryError(result) ──▶ to retry loop
-        │     └─ return result (delivered or non-retryable failure)
-        │
-        └─ policy_with_predicate = RetryPolicy(..., should_retry=lambda exc: isinstance(exc, RetryableDeliveryError))
-
-    b. RETRY EXECUTION (executor.call):
-        ├─ for attempt in range(policy.max_attempts):
-        │     ├─ try:
-        │     │     └─ return attempt_send()
-        │     ├─ except RetryableDeliveryError:
-        │     │     ├─ if attempt < max_attempts - 1:
-        │     │     │     ├─ backoff = min(base * (multiplier^attempt), max_seconds)
-        │     │     │     └─ time.sleep(backoff + jitter)
-        │     │     └─ [if final attempt] raise
-        │     └─ [non-retryable exception] raise (no retry)
-        │
-        └─ return result (success on any attempt)
-
-    c. EXHAUSTION FALLBACK (if all attempts failed):
-        ├─ except RetryableDeliveryError as exc:
-        │     ├─ if dead_letter is not None:
-        │     │     ├─ try:
-        │     │     │     ├─ dead_result = dead_letter.send(event)
-        │     │     │     └─ return DeliveryResult(
-        │     │     │           delivered=dead_result.delivered,
-        │     │     │           backend_name=f"RetryingBackend(dead_letter={dead_letter.__class__.__name__})",
-        │     │     │           detail=f"exhausted retries, dead_letter outcome: {dead_result.detail}",
-        │     │     │           retryable=False
-        │     │     │         )
-        │     │     └─ except Exception as dead_exc:
-        │     │           ├─ logger.warning("Dead-letter backend failed...", exc_info=dead_exc)
-        │     │           └─ return DeliveryResult(delivered=False, detail="exhausted retries and dead_letter failed", retryable=False)
-        │     └─ return DeliveryResult(delivered=False, detail=f"exhausted retries: {exc.result.detail}", retryable=False)
-        │
-        └─ [no dead_letter] return DeliveryResult(delivered=False, detail="exhausted retries", retryable=False)
-
-    d. EXCEPTION FROM INNER (non-retryable exception):
-        ├─ except Exception as error:
-        │     ├─ if dead_letter is not None:
-        │     │     ├─ [same fallback as above]
-        │     └─ return DeliveryResult(delivered=False, detail=f"exception exhaustion: {error.__class__.__name__}", retryable=False)
-
-### Key Behaviors
-
-- **RetryPolicy composition:** User supplies max_attempts, backoff strategy, jitter; RetryingBackend composes into retry loop
-- **Retryable classification:** inner.send() result.retryable=True triggers retry; False returns immediately
-- **Exception normalization:** Retryable results are converted to internal RetryableDeliveryError for retry engine
-- **Dead-letter fail-safe:** Dead-letter exceptions are swallowed (logged warning, return failure); never propagate
-- **No infinite loops:** max_attempts ensures bounded retries; non-retryable results exit immediately
-- **Composition over inheritance:** Wraps any NotificationBackend; RetryingBackend(inner=RetryingBackend(...)) valid
+- An `Exception` raised by a backend never propagates out of `notify()`.
+- The egress gate runs before every external backend, on every dispatch.
+- Suppression is checked before any backend runs.

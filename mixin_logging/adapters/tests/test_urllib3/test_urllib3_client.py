@@ -69,8 +69,7 @@ class TestCorrelationIdPoolManagerUrlopen:
         ):
             manager.urlopen("GET", "https://example.com/test")
 
-        if "headers" in captured_kwargs:
-            assert const.CORRELATION_ID_HEADER not in captured_kwargs["headers"]
+        assert const.CORRELATION_ID_HEADER not in captured_kwargs.get("headers", {})
 
     def test_urlopen_with_unsafe_context_omits_header(self) -> None:
         """urlopen() omits header when context has unsafe value."""
@@ -97,8 +96,7 @@ class TestCorrelationIdPoolManagerUrlopen:
         ):
             manager.urlopen("GET", "https://example.com/test")
 
-        if "headers" in captured_kwargs:
-            assert const.CORRELATION_ID_HEADER not in captured_kwargs["headers"]
+        assert const.CORRELATION_ID_HEADER not in captured_kwargs.get("headers", {})
 
     def test_urlopen_preserves_existing_headers(self) -> None:
         """urlopen() adds correlation header without dropping existing headers."""
@@ -223,7 +221,7 @@ class TestCorrelationIdPoolManagerUrlopen:
             manager.urlopen(
                 "GET",
                 "https://example.com/test",
-                timeout=10.0,
+                timeout=test_const.HTTP_TIMEOUT_SECONDS,
                 retries=3,
             )
 

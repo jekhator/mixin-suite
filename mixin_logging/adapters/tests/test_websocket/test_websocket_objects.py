@@ -27,8 +27,8 @@ class TestWebSocketCorrelationFromHeaders:
         """from_headers() generates 12-hex correlation ID and sets extracted=False."""
         headers = basic_websocket_scope["headers"]
         correlation = objs.WebSocketCorrelation.from_headers(headers)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_headers_case_insensitive_header_match(
@@ -46,8 +46,8 @@ class TestWebSocketCorrelationFromHeaders:
         """from_headers() rejects header with CR and falls back to generated ID."""
         headers = websocket_scope_with_carriage_return_header["headers"]
         correlation = objs.WebSocketCorrelation.from_headers(headers)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_headers_rejects_newline_in_header(
@@ -56,8 +56,8 @@ class TestWebSocketCorrelationFromHeaders:
         """from_headers() rejects header with LF and falls back to generated ID."""
         headers = websocket_scope_with_newline_header["headers"]
         correlation = objs.WebSocketCorrelation.from_headers(headers)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_headers_rejects_null_byte_in_header(
@@ -66,8 +66,8 @@ class TestWebSocketCorrelationFromHeaders:
         """from_headers() rejects header with null byte and falls back to generated ID."""
         headers = websocket_scope_with_null_byte_header["headers"]
         correlation = objs.WebSocketCorrelation.from_headers(headers)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_headers_rejects_oversized_header(
@@ -76,8 +76,8 @@ class TestWebSocketCorrelationFromHeaders:
         """from_headers() rejects header exceeding MAX_LENGTH and falls back to generated ID."""
         headers = websocket_scope_with_oversized_header["headers"]
         correlation = objs.WebSocketCorrelation.from_headers(headers)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.extracted is False
 
     def test_from_headers_stops_after_first_correlation_header(self) -> None:

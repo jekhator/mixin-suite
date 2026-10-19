@@ -50,7 +50,7 @@ Total: 428 LOC across 8 files; all well within LOC cap (300 per file).
 - `fastapi_client.py` contains executable middleware: CorrelationIdMiddleware (Starlette/FastAPI middleware) and get_correlation_id_dependency (FastAPI dependency).
 - `__init__.py` re-exports public surface with `__all__`.
 
-**Evidence:** fastapi_objects.py, fastapi_client.py structure matches canonical pattern (same as ASGI adapter).
+**Evidence:** fastapi_objects.py, fastapi_client.py structure matches reference pattern (same as ASGI adapter).
 
 ---
 
@@ -74,8 +74,8 @@ Total: 428 LOC across 8 files; all well within LOC cap (300 per file).
 - All constants use `Final` type annotation (fastapi.py lines 8, 12, 15, 18, 21, 24): correct.
 - `UNSAFE_HEADER_CHARS` is `frozenset` (line 23): correct, contains CR/LF/null for header injection prevention.
 - `ERR_CORRELATION_ID_EMPTY` present as constant (line 26): matches field-level validation message (fastapi_objects.py line 20).
-- Section dividers use block comments (fastapi.py lines 10-11, 14-15, 17-18, 20-21, 23-24, 25-26): follows canonical pattern from ASGI adapter.
-- `__all__` exported (fastapi.py lines 7-16): canonical canonical.
+- Section dividers use block comments (fastapi.py lines 10-11, 14-15, 17-18, 20-21, 23-24, 25-26): follows reference pattern from ASGI adapter.
+- `__all__` exported (fastapi.py lines 7-16): reference.
 
 **Evidence:** fastapi.py lines 1-26.
 
@@ -176,7 +176,7 @@ Total: 428 LOC across 8 files; all well within LOC cap (300 per file).
 
 ---
 
-### 12. No Employer/Brand Language in Public Code
+### 12. No Vendor or Brand Language in Public Code
 
 **PASS**
 
@@ -184,15 +184,15 @@ Total: 428 LOC across 8 files; all well within LOC cap (300 per file).
 - All code is generic library code with no internal phase language.
 - README example uses `myapp` (generic).
 
-**Evidence:** All source files use generic neutral language with no employer affiliation, no internal phase language, no customer tier framing.
+**Evidence:** All source files use generic neutral language with no vendor affiliation, no internal planning language, no customer tier framing.
 
 ---
 
-### 13. No AI Attribution
+### 13. No Tool Attribution
 
 **PASS**
 
-- No `Co-Authored-By Claude`, `Generated with Claude`, `🤖`, or `noreply@anthropic` in any files or commit messages.
+- No co-author trailers, generated-by lines or vendor no-reply addresses in any files or commit messages.
 
 **Evidence:** Files clean of attribution markers.
 
@@ -245,7 +245,7 @@ Command: `uv run pytest mixin_logging/adapters/tests/test_fastapi/ -v --cov --co
 ## Summary
 
 The FastAPI adapter is a well-designed, production-ready middleware that:
-- Follows canonical DTO and object/client patterns
+- Follows reference DTO and object/client patterns
 - Validates and rejects unsafe/oversized correlation IDs
 - Falls back gracefully to UUID generation
 - Propagates correlation ID into logging context

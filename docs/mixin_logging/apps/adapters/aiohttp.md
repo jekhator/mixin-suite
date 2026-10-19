@@ -1,6 +1,6 @@
-# logging-mixin. Aiohttp Adapter
+# mixin-logging. Aiohttp Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/aiohttp.md`
+> **Location:** `docs/mixin_logging/apps/adapters/aiohttp.md`
 > **Status:** Implemented. Outbound correlation-ID propagation via the aiohttp library `TraceConfig.on_request_start` hook.
 > **Code location:** `mixin_logging/adapters/aiohttp/` (`aiohttp_objects.py` + `aiohttp_client.py`); constants in `mixin_logging/adapters/constants/aiohttp.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).

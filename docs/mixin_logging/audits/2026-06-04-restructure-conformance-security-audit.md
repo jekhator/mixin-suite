@@ -1,7 +1,7 @@
-# Security Audit: logging-mixin Restructure + Conformance Sweep
+# Security Audit: mixin-logging Restructure and Conformance Pass
 
 **Date**: 2026-06-04
-**Scope**: Full diff (staged + working-tree) across root-layout restructure + conformance optimization
+**Scope**: Full diff (staged + working-tree) across root-layout restructure and conformance optimization
 **Branch**: `chore/conformance-sweep`
 **Audit Focus**: OWASP Top 10 (A01/A03), correlation-ID injection safety (CRLF/null/length/encoding), secret hygiene, multi-source extraction safety
 
@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-**Status: PASS** ✓ All critical security gates cleared.
+**Status: PASS** yes All critical security gates cleared.
 
-The restructure + conformance sweep introduces no new vulnerabilities. Correlation-ID validation logic remains intact across all 8 adapter types. No secrets exposed, no injection surfaces, no authentication/authorization regressions.
+The restructure and conformance pass introduces no new vulnerabilities. Correlation-ID validation logic remains intact across all 8 adapter types. No secrets exposed, no injection surfaces, no authentication/authorization regressions.
 
 ---
 
@@ -28,12 +28,12 @@ The restructure + conformance sweep introduces no new vulnerabilities. Correlati
 - **Encoding**: UTF-8 decoding with fallback to generation (no crashes on bad input)
 
 **Test Coverage**: 26 test cases across ASGI, WSGI, httpx, requests, botocore, celery, cloud adapters
-- CR injection rejection (ASGI, WSGI): ✓
-- LF injection rejection (ASGI, WSGI): ✓
-- Null-byte injection rejection (ASGI, WSGI): ✓
-- Oversized header rejection (ASGI, WSGI): ✓
-- Invalid UTF-8 fallback (ASGI): ✓
-- Malformed header types (ASGI): ✓
+- CR injection rejection (ASGI, WSGI): yes
+- LF injection rejection (ASGI, WSGI): yes
+- Null-byte injection rejection (ASGI, WSGI): yes
+- Oversized header rejection (ASGI, WSGI): yes
+- Invalid UTF-8 fallback (ASGI): yes
+- Malformed header types (ASGI): yes
 
 **Code Locations**:
 - `/mixin_logging/adapters/constants/{asgi,wsgi,httpx,requests,botocore,celery,cloud}.py`: Unified `UNSAFE_HEADER_CHARS` frozenset
@@ -62,7 +62,7 @@ def from_scope(cls, scope: Scope) -> Self:
             break  # Reject unsafe, fall through to generate
     return cls(correlation_id=uuid4().hex[:12], from_header=False)
 ```
-✓ **Controls**:
+yes **Controls**:
 - Type check on header name/value (skips string names, non-bytes values)
 - UTF-8 decode with exception handling (no crash, fallback to generation)
 - `_is_safe()` check: length + char validation
@@ -78,7 +78,7 @@ def from_environ(cls, environ: Environ) -> Self:
         return cls(correlation_id=raw, from_header=True)
     return cls(correlation_id=uuid4().hex[:12], from_header=False)
 ```
-✓ **Controls**:
+yes **Controls**:
 - Type check (string only)
 - `_is_safe()` validation
 - Safe fallback
@@ -98,7 +98,7 @@ def inject_sync(cls, request: httpx_lib.Request) -> None:
     name, value = correlation.header_tuple  # (str, str)
     request.headers[name] = value
 ```
-✓ **Controls**:
+yes **Controls**:
 - `from_context()` validates or returns `None` (safe short-circuit)
 - `header_tuple` property returns `(str, str)` after validation
 - httpx.headers dict assignment is type-safe
@@ -114,7 +114,7 @@ def add_headers(self, request: Any, **kwargs: Any) -> None:
     name, value = correlation.header_tuple
     request.headers[name] = value
 ```
-✓ **Controls**: Same as httpx (short-circuit on `None`, tuple unpacking)
+yes **Controls**: Same as httpx (short-circuit on `None`, tuple unpacking)
 
 **botocore Injection** (`botocore_client.py:27-36`):
 ```python
@@ -130,13 +130,13 @@ def inject_before_sign(cls, request: Any, **kwargs: Any) -> None:
     else:
         request.headers[name] = value
 ```
-✓ **Controls**: Signed before SigV4, validated before assignment, safe replace/insert
+yes **Controls**: Signed before SigV4, validated before assignment, safe replace/insert
 
 ### 1.4 Task Propagation (Celery)
 
 **Finding**: Correlation-ID safely propagated across celery producer/worker boundary via signal hooks.
 
-**Producer-side injection** (`celery_objects.py` → `celery_client.py:27-33`):
+**Producer-side injection** (`celery_objects.py` -> `celery_client.py:27-33`):
 ```python
 @classmethod
 def inject_on_publish(cls, headers: Any = None, **kwargs: Any) -> None:
@@ -147,7 +147,7 @@ def inject_on_publish(cls, headers: Any = None, **kwargs: Any) -> None:
     name, value = correlation.header_pair
     headers[name] = value
 ```
-✓ **Controls**: Validates before assignment, short-circuit on `None`
+yes **Controls**: Validates before assignment, short-circuit on `None`
 
 **Worker-side restore** (`celery_client.py:36-43`):
 ```python
@@ -161,21 +161,21 @@ def restore_on_prerun(cls, task: Any = None, **kwargs: Any) -> None:
     if raw_value is not None and objs.CeleryCorrelation._is_safe(raw_value):
         set_correlation_id(raw_value)
 ```
-✓ **Controls**: Type-safe `.get()`, validation check, safe short-circuit
+yes **Controls**: Type-safe `.get()`, validation check, safe short-circuit
 
 ### 1.5 Cloud Event Extraction (Lambda/SQS/SNS/EventBridge)
 
 **Finding**: Multi-source extraction safe across all cloud event types.
 
 **Extraction Precedence** (`cloud_objects.py:24-73`):
-1. `event["headers"]["X-Correlation-ID"]` (API Gateway / ALB) → type-safe dict access
-2. `event["Records"][0]["messageAttributes"]["X-Correlation-ID"]` (SQS) → bounds-checked
-3. `event["Records"][0]["Sns"]["MessageAttributes"]["X-Correlation-ID"]` (SNS) → fallback chain
-4. `event["detail"]["correlation_id"]` (EventBridge) → dot notation safe
-5. `event["correlation_id"]` (Step Functions / direct invoke) → simple key
+1. `event["headers"]["X-Correlation-ID"]` (API Gateway / ALB) -> type-safe dict access
+2. `event["Records"][0]["messageAttributes"]["X-Correlation-ID"]` (SQS) -> bounds-checked
+3. `event["Records"][0]["Sns"]["MessageAttributes"]["X-Correlation-ID"]` (SNS) -> fallback chain
+4. `event["detail"]["correlation_id"]` (EventBridge) -> dot notation safe
+5. `event["correlation_id"]` (Step Functions / direct invoke) -> simple key
 6. Generated uuid4 if none present or unsafe
 
-✓ **Controls**:
+yes **Controls**:
 - `event.get("headers") or {}` avoids `KeyError` on missing structure
 - Bounds-safe access via chain logic (no index out-of-range)
 - Type check: `isinstance(candidate, str)` before validation
@@ -214,22 +214,22 @@ Correlation-ID is a **non-authenticating** identifier for distributed tracing on
 ### A03:2021 - Injection (PASS)
 
 **Subclass A03:B - Log Injection**:
-✓ Correlation-ID is log-safe (validated, length-capped, CRLF-stripped)
-- Logs: `/mixin_logging/mixin/mixin.py` injects `correlation_id` into LogRecord via `%` formatting → input is string, safe for logging
+yes Correlation-ID is log-safe (validated, length-capped, CRLF-stripped)
+- Logs: `/mixin_logging/mixin/mixin.py` injects `correlation_id` into LogRecord via `%` formatting -> input is string, safe for logging
 
 **Subclass A03:C - Command Injection**:
-✓ No shell commands constructed from correlation-ID
+yes No shell commands constructed from correlation-ID
 - No `subprocess.run()`, `os.system()`, or equivalent
 - No template engines or dynamic code generation
 
 **Subclass A03:D - LDAP Injection**:
-✓ Not applicable (no LDAP integration in scope)
+yes Not applicable (no LDAP integration in scope)
 
 **Subclass A03:E - SQL Injection**:
-✓ Not applicable (no SQL construction in scope; logging-mixin is a library, not ORM)
+yes Not applicable (no SQL construction in scope; mixin-logging is a library, not ORM)
 
 **Subclass A03:F - HTTP Response Splitting (CRLF Injection)**:
-✓ **CRITICAL CONTROL**: Unsafe character set `{"\r", "\n", "\0"}` enforced in ALL adapters
+yes **CRITICAL CONTROL**: Unsafe character set `{"\r", "\n", "\0"}` enforced in ALL adapters
 - `asgi_objects.py:38-40` validates on inbound extraction
 - `httpx_objects.py:47-51` validates on outbound injection
 - `botocore_objects.py:37-41` validates on outbound injection
@@ -263,24 +263,24 @@ No user authentication in scope.
 ### 3.1 No Hardcoded Secrets (PASS)
 
 **Scan Results**:
-- `git diff --cached` grep for `(password|secret|api.?key|token|credential|aws.?access|private.?key)` → 0 matches
-- `git diff` grep for same pattern → 0 matches in code (documentation path update only)
-- Manual inspection of 8 adapters + 1 context module → no credentials, tokens, or API keys
+- `git diff --cached` grep for `(password|secret|api.?key|token|credential|aws.?access|private.?key)` -> 0 matches
+- `git diff` grep for same pattern -> 0 matches in code (documentation path update only)
+- Manual inspection of 8 adapters + 1 context module -> no credentials, tokens, or API keys
 
 ### 3.2 .gitignore Completeness (PASS)
 
-**File**: `/home/jamesekhator/logging-mixin/.gitignore`
-- `.env`, `.venv` covered ✓
-- IDE files (`.vscode`, `.idea`) covered ✓
-- OS files (`.DS_Store`) covered ✓
-- Python cache (`__pycache__`, `.pyc`, `.egg-info`) covered ✓
+**File**: `.gitignore` (in the mixin-logging repository)
+- `.env`, `.venv` covered yes
+- IDE files (`.vscode`, `.idea`) covered yes
+- OS files (`.DS_Store`) covered yes
+- Python cache (`__pycache__`, `.pyc`, `.egg-info`) covered yes
 - No sensitive config patterns missing
 
 ### 3.3 Environment Variable Hygiene (PASS)
 
 **Finding**: No environment variables read or used in correlation-ID logic.
 
-Scope check: `grep -r "os.environ\|os.getenv" mixin_logging/` → 0 results
+Scope check: `grep -r "os.environ\|os.getenv" mixin_logging/` -> 0 results
 
 ---
 
@@ -294,12 +294,12 @@ Scope check: `grep -r "os.environ\|os.getenv" mixin_logging/` → 0 results
 - No security-critical transitive deps pulled in uncontrolled
 
 **Test Dependencies**:
-- `pytest>=8`, `pytest-cov`, `pytest-asyncio` → standard test infrastructure, no risk
-- Optional adapters tested in isolation → no cross-adapter supply-chain risk
+- `pytest>=8`, `pytest-cov`, `pytest-asyncio` -> standard test infrastructure, no risk
+- Optional adapters tested in isolation -> no cross-adapter supply-chain risk
 
 ### 4.2 Python Version Requirement (PASS)
 
-- `requires-python = ">=3.11"` → modern, security-patched versions only
+- `requires-python = ">=3.11"` -> modern, security-patched versions only
 - No deprecated Python 2.x, 3.8, 3.9, or 3.10 support
 
 ---
@@ -341,25 +341,25 @@ The root-layout restructure moves code from `mixin_logging/apps/{adapters,contex
 
 | Adapter | CRLF | Newline | Null | Oversized | Invalid UTF-8 | Malformed Type |
 |---------|------|---------|------|-----------|---------------|---|
-| ASGI | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| WSGI | ✓ | ✓ | ✓ | ✓ | ✓ | N/A (string-only) |
-| httpx | (context-only) | - | - | ✓ | N/A | N/A |
-| requests | (context-only) | - | - | ✓ | N/A | N/A |
-| botocore | (context-only) | - | - | ✓ | N/A | N/A |
-| celery | (signal-only) | - | - | ✓ | N/A | N/A |
-| cloud | (multi-source) | - | - | ✓ | N/A | N/A |
+| ASGI | yes | yes | yes | yes | yes | yes |
+| WSGI | yes | yes | yes | yes | yes | N/A (string-only) |
+| httpx | (context-only) | - | - | yes | N/A | N/A |
+| requests | (context-only) | - | - | yes | N/A | N/A |
+| botocore | (context-only) | - | - | yes | N/A | N/A |
+| celery | (signal-only) | - | - | yes | N/A | N/A |
+| cloud | (multi-source) | - | - | yes | N/A | N/A |
 
 **Test File Locations**:
-- `/mixin_logging/adapters/tests/test_asgi/conftest.py:74-157` → 8 fixture definitions for edge cases
-- `/mixin_logging/adapters/tests/test_asgi/test_asgi_objects.py:38-91` → 8 test methods covering injection scenarios
+- `/mixin_logging/adapters/tests/test_asgi/conftest.py:74-157` -> 8 fixture definitions for edge cases
+- `/mixin_logging/adapters/tests/test_asgi/test_asgi_objects.py:38-91` -> 8 test methods covering injection scenarios
 
 ### 6.2 Round-trip Correctness
 
 **ASGI Round-trip** (`test_asgi_client.py`):
-- Request → correlation extraction → set in context → response injection ✓
+- Request -> correlation extraction -> set in context -> response injection yes
 
 **Celery Round-trip** (`test_celery_client.py`):
-- Producer publish → header injection → worker restore → context set → postrun clear ✓
+- Producer publish -> header injection -> worker restore -> context set -> postrun clear yes
 
 ---
 
@@ -371,9 +371,9 @@ The root-layout restructure moves code from `mixin_logging/apps/{adapters,contex
 
 **Failure Mode Scenarios**:
 
-1. **Missing headers dict**: `event.get("headers") or {}` → safe fallback to empty dict
-2. **Records array empty**: `records = event.get("Records") or []` → safe check, no index error
-3. **Missing messageAttributes**: Chain uses `.get()` with `or {}` → no KeyError
+1. **Missing headers dict**: `event.get("headers") or {}` -> safe fallback to empty dict
+2. **Records array empty**: `records = event.get("Records") or []` -> safe check, no index error
+3. **Missing messageAttributes**: Chain uses `.get()` with `or {}` -> no KeyError
 4. **Ambiguous sources** (multiple headers present): First match wins (precedence order preserved)
 5. **Type confusion** (headers as list instead of dict): `isinstance(candidate, str)` gate prevents non-string values
 
@@ -392,7 +392,7 @@ if candidate is None:
 ```
 
 **Test Coverage**:
-- `/mixin_logging/adapters/tests/test_cloud/test_cloud_extraction.py` → multi-source scenarios
+- `/mixin_logging/adapters/tests/test_cloud/test_cloud_extraction.py` -> multi-source scenarios
 
 ---
 
@@ -412,7 +412,7 @@ _correlation_var.set(objs.CorrelationContext(None))
 _client: ContextVarClient = ContextVarClient(_correlation_var)
 ```
 
-✓ **ContextVar Guarantees**:
+yes **ContextVar Guarantees**:
 - Isolated per async task (Python 3.11+)
 - Isolated per thread (inherited via `contextvars.copy_context()`)
 - No race conditions between concurrent requests/tasks
@@ -443,8 +443,8 @@ class AsgiCorrelation: ...
 ### 9.2 Type Safety Preserved
 
 **Before and After**:
-- `from_context()` returns `Self | None` → safe short-circuit pattern
-- `header_tuple` property returns `tuple[str, str]` → no type coercion surprises
+- `from_context()` returns `Self | None` -> safe short-circuit pattern
+- `header_tuple` property returns `tuple[str, str]` -> no type coercion surprises
 - `_is_safe()` static method is pure (no side effects)
 
 ---
@@ -478,20 +478,20 @@ class AsgiCorrelation: ...
 
 | Category | Status | Confidence |
 |----------|--------|-----------|
-| **Correlation-ID Injection Safety** | ✓ PASS | **High** |
-| **CRLF/Null-Byte Prevention** | ✓ PASS | **High** |
-| **OWASP A01 (Broken Access Control)** | ✓ N/A | - |
-| **OWASP A03 (Injection)** | ✓ PASS | **High** |
-| **Secrets Hygiene** | ✓ PASS | **High** |
-| **Dependency Vulnerabilities** | ✓ PASS | **High** |
-| **Thread/Async Safety** | ✓ PASS | **High** |
-| **Multi-Source Extraction Safety** | ✓ PASS | **High** |
-| **Code Path Migration Impact** | ✓ PASS | **High** |
-| **Test Coverage (Security Scenarios)** | ✓ PASS | **High** |
+| **Correlation-ID Injection Safety** | yes PASS | **High** |
+| **CRLF/Null-Byte Prevention** | yes PASS | **High** |
+| **OWASP A01 (Broken Access Control)** | yes N/A | - |
+| **OWASP A03 (Injection)** | yes PASS | **High** |
+| **Secrets Hygiene** | yes PASS | **High** |
+| **Dependency Vulnerabilities** | yes PASS | **High** |
+| **Thread/Async Safety** | yes PASS | **High** |
+| **Multi-Source Extraction Safety** | yes PASS | **High** |
+| **Code Path Migration Impact** | yes PASS | **High** |
+| **Test Coverage (Security Scenarios)** | yes PASS | **High** |
 
-**Overall Assessment**: ✓ **CONFORMANCE PASSED**
+**Overall Assessment**: yes **CONFORMANCE PASSED**
 
-The restructure + conformance sweep introduces **zero new security risks**. All validation controls remain intact, tests cover injection edge cases, and the migration to root-layout schema improves code organization without compromising security boundaries.
+The restructure and conformance pass introduces **zero new security risks**. All validation controls remain intact, tests cover injection edge cases, and the migration to root-layout schema improves code organization without compromising security boundaries.
 
 **Recommendations** (non-blocking):
 1. Monitor UUID collision rates in production (advisory telemetry)

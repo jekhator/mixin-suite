@@ -17,8 +17,8 @@ from mixin_logging.common.constants import tests as test_const
 class TestCorrelationIdInjectorEventHooks:
     """Tests for CorrelationIdInjector.event_hooks() class method."""
 
-    def test_event_hooks_returns_request_event_list(self) -> None:
-        """event_hooks() returns dict with request key containing inject_sync and inject_async."""
+    def test_event_hooks_registers_sync_and_async_request_hooks(self) -> None:
+        """event_hooks() maps the request event to inject_sync and inject_async."""
         hooks = httpx_client.CorrelationIdInjector.event_hooks()
         assert const.EVENT_HOOK_REQUEST in hooks
         assert len(hooks[const.EVENT_HOOK_REQUEST]) == 2

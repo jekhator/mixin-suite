@@ -38,7 +38,7 @@ class TestHttpxCorrelationFromContext:
 
     def test_from_context_with_overlong_value_returns_none(self) -> None:
         """from_context() returns None when correlation_id exceeds length cap."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         set_correlation_id(overlong_id)
         correlation = objs.HttpxCorrelation.from_context()
         assert correlation is None
@@ -59,7 +59,7 @@ class TestHttpxCorrelationConstruction:
 
     def test_construct_with_overlong_raises_value_error(self) -> None:
         """HttpxCorrelation constructor raises ValueError for overlong correlation_id."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         with pytest.raises(ValueError, match=const.ERR_CORRELATION_ID_UNSAFE):
             objs.HttpxCorrelation(correlation_id=overlong_id)
 
@@ -88,7 +88,7 @@ class TestHttpxCorrelationIsSafe:
 
     def test_is_safe_with_overlong_returns_false(self) -> None:
         """_is_safe() returns False for string exceeding 128 chars."""
-        overlong = "a" * 129
+        overlong = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         assert objs.HttpxCorrelation._is_safe(overlong) is False
 
     @pytest.mark.parametrize("unsafe_char", ["\r", "\n", "\0"])

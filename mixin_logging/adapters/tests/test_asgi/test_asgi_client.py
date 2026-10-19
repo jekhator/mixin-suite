@@ -118,8 +118,8 @@ class TestCorrelationIdMiddlewareCall:
         middleware = asgi_client.CorrelationIdMiddleware(recording_app)
         await middleware(basic_http_scope, mock_receive, mock_send)
         assert set_value is not None
-        assert len(set_value) == 12
-        assert all(char in "0123456789abcdef" for char in set_value)
+        assert len(set_value) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in set_value)
 
     async def test_middleware_injects_header_on_response_start(
         self,
@@ -138,14 +138,14 @@ class TestCorrelationIdMiddlewareCall:
         assert len(messages) == 1
         response_msg = messages[0]
         assert response_msg[const.TYPE_KEY] == test_const.HTTP_EVENT_RESPONSE_START
-        headers = response_msg[const.HEADERS_KEY]
-        correlation_header_found = False
-        for header_name, header_value in headers:
-            if header_name == const.CORRELATION_ID_HEADER:
-                correlation_header_found = True
-                assert isinstance(header_value, bytes)
-                break
-        assert correlation_header_found
+        values = [
+            header_value
+            for header_name, header_value in response_msg[const.HEADERS_KEY]
+            if header_name == const.CORRELATION_ID_HEADER
+        ]
+        assert len(values) == 1
+        assert isinstance(values[0], bytes)
+        assert len(values[0]) == test_const.GENERATED_ID_LENGTH
 
     async def test_middleware_clears_context_after_exit(
         self,

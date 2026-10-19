@@ -3,23 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
-from typing import Final
 
-from mixin_sensitivity.services.classify import Sensitivity
-
-ERR_SENSITIVE_MASKED_REPR: Final = "***MASKED***"
-ERR_SENSITIVE_REPR_NOT_OVERRIDDEN: Final = (
-    "SensitiveRepr adopter must use @dataclass(..., repr=False) "
-    "to avoid silent repr shadowing. "
-    "If the adopter has __post_init__, call SensitiveRepr.__post_init__(self) "
-    "(explicit call required: slots dataclass re-creation breaks zero-arg super on 3.11)."
+from mixin_sensitivity.common.constants import (
+    masking as const,
+    metadata as metadata_const,
 )
 
 
 class SensitiveDeclarationError(Exception):
     """Raised when SensitiveRepr is adopted without proper repr=False setting."""
-
-    pass
 
 
 class SensitiveRepr:
@@ -55,29 +47,24 @@ class SensitiveRepr:
         generated its own __repr__ instead of using SensitiveRepr's.
         """
         if type(self).__repr__ is not SensitiveRepr.__repr__:
-            raise SensitiveDeclarationError(ERR_SENSITIVE_REPR_NOT_OVERRIDDEN)
+            raise SensitiveDeclarationError(const.ERR_SENSITIVE_REPR_NOT_OVERRIDDEN)
 
     def __repr__(self) -> str:
         """Repr with sensitive fields masked.
 
-        Reads field(metadata={"sensitivity": Sensitivity.X}) markers.
-        Replaced marked values with ERR_SENSITIVE_MASKED_REPR token.
-        Field metadata remains introspectable unchanged.
+        Any field carrying a sensitivity marker is masked, whether the marker is a
+        Sensitivity member or its plain string value (fail-closed). Field metadata
+        remains introspectable unchanged.
         """
         if not is_dataclass(self):
             return object.__repr__(self)
 
-        parts = []
+        parts: list[str] = []
         for field_obj in fields(self):
-            value = getattr(self, field_obj.name)
-            metadata = field_obj.metadata or {}
-            sensitivity = metadata.get("sensitivity")
-
-            if sensitivity is not None and isinstance(sensitivity, Sensitivity):
-                display_value = ERR_SENSITIVE_MASKED_REPR
+            if field_obj.metadata.get(metadata_const.SENSITIVITY_KEY) is not None:
+                display_value = const.SENSITIVE_MASK_TOKEN
             else:
-                display_value = repr(value)
-
+                display_value = repr(getattr(self, field_obj.name))
             parts.append(f"{field_obj.name}={display_value}")
 
         class_name = type(self).__name__

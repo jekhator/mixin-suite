@@ -50,7 +50,7 @@ Total: 804 LOC across 8 files, with 2 files at/near 694-line cap (conftest 218 L
 - `asgi_client.py` contains executable middleware: ASGIApp (wrapper) and CorrelationIdMiddleware (setup + cleanup + response injection).
 - `__init__.py` is module-docstring-only, one-liner scope statement.
 
-**Evidence:** asgi_objects.py, asgi_client.py structure matches canonical pattern.
+**Evidence:** asgi_objects.py, asgi_client.py structure matches reference pattern.
 
 ---
 
@@ -116,7 +116,7 @@ Total: 804 LOC across 8 files, with 2 files at/near 694-line cap (conftest 218 L
 **PASS**
 
 - File docstrings scoped to file only: asgi_objects.py (line 1) describes 'ASGI scope/message/app type aliases + AsgiCorrelation value object', asgi_client.py (line 1) describes 'ASGIApp + CorrelationIdMiddleware: ASGI middleware for correlation ID propagation'.
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>' or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies the module scope.
 
 **Evidence:** asgi_objects.py line 1, asgi_client.py line 1, __init__.py line 1.
@@ -263,10 +263,10 @@ All checklist items pass. Code is production-ready with three recommended improv
 
 **Overall assessment:**
 - DTOs follow frozen/slots/docstring golden standard (with noted empty-string validation gap).
-- Middleware pattern adheres to canonical ASGI design.
+- Middleware pattern adheres to reference ASGI design.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 30+ scenarios across extraction, middleware, response injection, and error paths.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC within cap (max 221 LOC on largest test file).
 - Security audit confirms no code security defects; three robustness/consistency improvements recommended.
 

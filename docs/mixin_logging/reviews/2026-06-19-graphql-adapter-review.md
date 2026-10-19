@@ -9,7 +9,7 @@
 
 ## Review Summary
 
-The GraphQL adapter is a lightweight inbound/context-injection surface that exposes correlation IDs (already set and validated upstream by ASGI/WSGI middleware) to GraphQL resolver code. The design separates value-object logic (`GraphQLCorrelation`) from injection middleware (`CorrelationContextInjector`), providing a simple static method for context merging. The implementation follows the canonical frozen-dataclass pattern and includes 100% test coverage across both objects and client code.
+The GraphQL adapter is a lightweight inbound/context-injection surface that exposes correlation IDs (already set and validated upstream by ASGI/WSGI middleware) to GraphQL resolver code. The design separates value-object logic (`GraphQLCorrelation`) from injection middleware (`CorrelationContextInjector`), providing a simple static method for context merging. The implementation follows the reference frozen-dataclass pattern and includes 100% test coverage across both objects and client code.
 
 **Scope of review:**
 - `mixin_logging/adapters/graphql/graphql_objects.py` (15 LOC)
@@ -110,7 +110,7 @@ Total: 178 LOC across 8 files, all under 300-line cap per LOC gate.
 
 - File docstrings scoped to file only: graphql_objects.py (line 1) describes 'GraphQLCorrelation value object', graphql_client.py (line 1) describes 'CorrelationContextInjector: GraphQL resolver-context entry surface'.
 - All method/classmethod docstrings are one-liners describing behavior: `from_context()` line 22, `as_context_dict()` line 26, `inject()` line 17.
-- No cross-system refs (no 'mirrors httpx', no 'per qhcg pattern'): all text is standalone.
+- No cross-system refs (no 'mirrors httpx' style framing): all text is standalone.
 - __init__.py docstring (line 1) correctly identifies scope.
 
 **Evidence:** graphql_objects.py lines 1-27, graphql_client.py lines 1-19, __init__.py lines 1-14.
@@ -156,7 +156,7 @@ Total: 178 LOC across 8 files, all under 300-line cap per LOC gate.
   - `TestCorrelationContextInjectorInject` (lines 13-60): inject with set (line 16), unset (line 24), new-dict (line 31), multi-key (line 40), empty (line 54).
 
 - **Total: 9 tests** across 3 domain paths (GraphQLCorrelation.from_context, .as_context_dict, CorrelationContextInjector.inject).
-- Coverage report (from impl agent): 100% statements on graphql_objects.py (14 LOC), 100% on graphql_client.py (9 LOC), 100% on __init__.py (3 LOC).
+- Coverage report (from implementation author): 100% statements on graphql_objects.py (14 LOC), 100% on graphql_client.py (9 LOC), 100% on __init__.py (3 LOC).
 
 **Evidence:** test_graphql_objects.py lines 13-47 (4 tests), test_graphql_client.py lines 13-60 (5 tests), pytest coverage output shows 100% across both files.
 
@@ -215,7 +215,7 @@ All checklist items pass. Code is production-ready:
 - CorrelationContextInjector is stateless and pure; safe for concurrent use.
 - Constants use Final and section dividers per standing rule.
 - Tests cover 9 scenarios across both objects and client, 100% coverage, airtight isolation.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 60 LOC in tests; source files 9-15 LOC).
 - Security audit confirms no code defects; all threat questions pass.
 

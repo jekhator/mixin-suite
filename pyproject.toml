@@ -49,8 +49,7 @@ all = [
     "grpcio",
     "httpx",
     "requests",
-    "ses",
-    "sns",
+    "boto3>=1.28.0",
     "urllib3"
 ]
 

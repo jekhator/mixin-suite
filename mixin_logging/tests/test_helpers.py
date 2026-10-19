@@ -1,11 +1,11 @@
-"""Tests for _RecordCollector: in-memory log handler for capture-and-assert fixtures."""
+"""Tests for RecordCollector: in-memory log handler for capture-and-assert fixtures."""
 
 from __future__ import annotations
 
 import logging
 
 from mixin_logging.common.constants import tests as test_const
-from mixin_logging.tests.helpers import _RecordCollector
+from mixin_logging.tests.helpers import RecordCollector
 
 
 class TestRecordCollectorInit:
@@ -13,13 +13,13 @@ class TestRecordCollectorInit:
 
     def test_init_creates_empty_records_list(self) -> None:
         """A fresh collector starts with no records."""
-        collector = _RecordCollector()
-        assert collector.records == []  # noqa: S101
+        collector = RecordCollector()
+        assert collector.records == []
 
     def test_init_inherits_handler_interface(self) -> None:
         """Collector is a logging.Handler subclass."""
-        collector = _RecordCollector()
-        assert isinstance(collector, logging.Handler)  # noqa: S101
+        collector = RecordCollector()
+        assert isinstance(collector, logging.Handler)
 
 
 class TestRecordCollectorEmit:
@@ -27,7 +27,7 @@ class TestRecordCollectorEmit:
 
     def test_emit_appends_single_record(self) -> None:
         """Emitting one record results in a one-element records list."""
-        collector = _RecordCollector()
+        collector = RecordCollector()
         record = logging.LogRecord(
             name=test_const.LOGGER_NAME_TEST,
             level=logging.INFO,
@@ -38,12 +38,12 @@ class TestRecordCollectorEmit:
             exc_info=None,
         )
         collector.emit(record)
-        assert len(collector.records) == 1  # noqa: S101
-        assert collector.records[0] is record  # noqa: S101
+        assert len(collector.records) == 1
+        assert collector.records[0] is record
 
     def test_emit_accumulates_multiple_records(self) -> None:
         """Multiple emits accumulate in order."""
-        collector = _RecordCollector()
+        collector = RecordCollector()
         records = [
             logging.LogRecord(
                 name=test_const.LOGGER_NAME_TEST,
@@ -58,11 +58,11 @@ class TestRecordCollectorEmit:
         ]
         for record in records:
             collector.emit(record)
-        assert collector.records == records  # noqa: S101
+        assert collector.records == records
 
     def test_emit_preserves_record_fields(self) -> None:
         """Captured record retains original level, message, and module."""
-        collector = _RecordCollector()
+        collector = RecordCollector()
         record = logging.LogRecord(
             name=test_const.LOGGER_NAME_CUSTOM,
             level=logging.WARNING,
@@ -73,10 +73,10 @@ class TestRecordCollectorEmit:
             exc_info=None,
         )
         collector.emit(record)
-        assert collector.records[0].name == test_const.LOGGER_NAME_CUSTOM  # noqa: S101
-        assert collector.records[0].levelname == test_const.LOG_LEVEL_WARNING  # noqa: S101
-        assert collector.records[0].msg == test_const.RECORD_MSG_WARNING_TEXT  # noqa: S101
-        assert collector.records[0].lineno == test_const.RECORD_LINE_NO_42  # noqa: S101
+        assert collector.records[0].name == test_const.LOGGER_NAME_CUSTOM
+        assert collector.records[0].levelname == test_const.LOG_LEVEL_WARNING
+        assert collector.records[0].msg == test_const.RECORD_MSG_WARNING_TEXT
+        assert collector.records[0].lineno == test_const.RECORD_LINE_NO_42
 
 
 class TestRecordCollectorWithLogger:
@@ -84,7 +84,7 @@ class TestRecordCollectorWithLogger:
 
     def test_attached_handler_captures_logger_emissions(self) -> None:
         """Logger.info() routed through the collector ends up in records."""
-        collector = _RecordCollector()
+        collector = RecordCollector()
         logger = logging.getLogger(test_const.LOGGER_NAME_RECORD_COLLECTOR_ATTACHED)
         logger.setLevel(logging.DEBUG)
         logger.addHandler(collector)
@@ -92,6 +92,6 @@ class TestRecordCollectorWithLogger:
             logger.info(test_const.RECORD_MSG_CAPTURED)
         finally:
             logger.removeHandler(collector)
-        assert len(collector.records) == 1  # noqa: S101
-        assert collector.records[0].msg == test_const.RECORD_MSG_CAPTURED  # noqa: S101
-        assert collector.records[0].levelname == test_const.LOG_LEVEL_INFO  # noqa: S101
+        assert len(collector.records) == 1
+        assert collector.records[0].msg == test_const.RECORD_MSG_CAPTURED
+        assert collector.records[0].levelname == test_const.LOG_LEVEL_INFO

@@ -38,4 +38,4 @@ class Urllib3Correlation:
         """Return True if value is non-empty, within length cap, CRLF/null-free."""
         if not value or len(value) > const.CORRELATION_ID_MAX_LENGTH:
             return False
-        return not any(char in const.UNSAFE_HEADER_CHARS for char in value)
+        return const.UNSAFE_HEADER_CHARS.isdisjoint(value)

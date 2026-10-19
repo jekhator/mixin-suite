@@ -6,30 +6,17 @@ import logging
 
 from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_logging.ambient.ambient_client import AmbientLogger
-
-
-class _RecordCapturingHandler(logging.Handler):
-    """Test handler that captures log records."""
-
-    def __init__(self) -> None:
-        """Initialize with empty records list."""
-        super().__init__()
-        self.records: list[logging.LogRecord] = []
-
-    def emit(self, record: logging.LogRecord) -> None:
-        """Capture the record."""
-        self.records.append(record)
+from mixin_logging.tests.helpers import LoggerFactory
 
 
 class TestAmbientLoggerCorrelationInjection:
     """Tests for correlation_id auto-injection."""
 
-    def test_log_debug_injects_correlation_id(self) -> None:
+    def test_log_debug_injects_correlation_id(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """log_debug() auto-injects correlation_id from ContextVar."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.debug")
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger, handler = ambient_logger("test.ambient.debug", logging.DEBUG)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("flow-123")
@@ -38,12 +25,11 @@ class TestAmbientLoggerCorrelationInjection:
         assert len(handler.records) == 1
         assert handler.records[0].__dict__["correlation_id"] == "flow-123"
 
-    def test_log_info_injects_correlation_id(self) -> None:
+    def test_log_info_injects_correlation_id(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """log_info() auto-injects correlation_id from ContextVar."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.info")
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger, handler = ambient_logger("test.ambient.info", logging.INFO)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("flow-456")
@@ -52,12 +38,11 @@ class TestAmbientLoggerCorrelationInjection:
         assert len(handler.records) == 1
         assert handler.records[0].__dict__["correlation_id"] == "flow-456"
 
-    def test_log_warning_injects_correlation_id(self) -> None:
+    def test_log_warning_injects_correlation_id(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """log_warning() auto-injects correlation_id from ContextVar."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.warning")
-        logger.addHandler(handler)
-        logger.setLevel(logging.WARNING)
+        logger, handler = ambient_logger("test.ambient.warning", logging.WARNING)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("flow-789")
@@ -66,12 +51,11 @@ class TestAmbientLoggerCorrelationInjection:
         assert len(handler.records) == 1
         assert handler.records[0].__dict__["correlation_id"] == "flow-789"
 
-    def test_log_error_injects_correlation_id(self) -> None:
+    def test_log_error_injects_correlation_id(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """log_error() auto-injects correlation_id from ContextVar."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.error")
-        logger.addHandler(handler)
-        logger.setLevel(logging.ERROR)
+        logger, handler = ambient_logger("test.ambient.error", logging.ERROR)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("flow-abc")
@@ -80,12 +64,11 @@ class TestAmbientLoggerCorrelationInjection:
         assert len(handler.records) == 1
         assert handler.records[0].__dict__["correlation_id"] == "flow-abc"
 
-    def test_log_exception_injects_correlation_id(self) -> None:
+    def test_log_exception_injects_correlation_id(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """log_exception() auto-injects correlation_id from ContextVar."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.exception")
-        logger.addHandler(handler)
-        logger.setLevel(logging.ERROR)
+        logger, handler = ambient_logger("test.ambient.exception", logging.ERROR)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("flow-xyz")
@@ -99,12 +82,11 @@ class TestAmbientLoggerCorrelationInjection:
         assert handler.records[0].__dict__["correlation_id"] == "flow-xyz"
         assert handler.records[0].exc_info is not None
 
-    def test_unset_correlation_id_defaults_to_dash(self) -> None:
+    def test_unset_correlation_id_defaults_to_dash(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """When correlation_id is unset, defaults to '-'."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.unset")
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger, handler = ambient_logger("test.ambient.unset", logging.DEBUG)
 
         clear_correlation_id()
         ambient = AmbientLogger(_logger=logger)
@@ -117,12 +99,11 @@ class TestAmbientLoggerCorrelationInjection:
 class TestAmbientLoggerFieldsPassthrough:
     """Tests for custom fields pass-through."""
 
-    def test_additional_fields_passed_to_logger(self) -> None:
+    def test_additional_fields_passed_to_logger(
+        self, ambient_logger: LoggerFactory
+    ) -> None:
         """log_* methods pass through additional fields."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.fields")
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger, handler = ambient_logger("test.ambient.fields", logging.INFO)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("flow-123")
@@ -133,12 +114,9 @@ class TestAmbientLoggerFieldsPassthrough:
         assert handler.records[0].__dict__["user_id"] == "user-1"
         assert handler.records[0].__dict__["action"] == "login"
 
-    def test_fields_work_with_all_levels(self) -> None:
+    def test_fields_work_with_all_levels(self, ambient_logger: LoggerFactory) -> None:
         """Fields pass through at all log levels."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.all.levels")
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger, handler = ambient_logger("test.ambient.all.levels", logging.DEBUG)
 
         ambient = AmbientLogger(_logger=logger)
 
@@ -157,12 +135,9 @@ class TestAmbientLoggerFieldsPassthrough:
 class TestAmbientLoggerLevels:
     """Tests for correct log levels."""
 
-    def test_log_levels_are_correct(self) -> None:
+    def test_log_levels_are_correct(self, ambient_logger: LoggerFactory) -> None:
         """Each method emits at the correct level."""
-        handler = _RecordCapturingHandler()
-        logger = logging.getLogger("test.ambient.levels")
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger, handler = ambient_logger("test.ambient.levels", logging.DEBUG)
 
         ambient = AmbientLogger(_logger=logger)
         set_correlation_id("test")

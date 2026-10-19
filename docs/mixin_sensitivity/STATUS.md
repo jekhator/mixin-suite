@@ -1,55 +1,43 @@
-# Project Status: sensitivity-mixin 0.3.0
+# Project Status: mixin-sensitivity 0.7.0
 
 ## Overview
 
-**sensitivity-mixin** is a Python library providing taxonomy-driven sensitivity classification and masking for frozen dataclasses.
+mixin-sensitivity is a stdlib-only Python package for classifying the sensitive fields of dataclasses and masking them in `repr()`. It is one of the five roots of the mixin-suite distribution.
 
-- **Package:** `sensitivity_mixin` (Apache-2.0, Python 3.11+)
-- **Current version:** 0.3.0 (unreleased)
+- **Package:** `mixin_sensitivity` (Apache-2.0, Python 3.12 or newer)
+- **Current version:** 0.7.0 (matches `mixin_sensitivity/config/_version.py`)
+- **Dependencies:** none
 
-## What's Implemented
+## Public API
 
-### Core Features
-- **Sensitivity taxonomy:** Four classification levels: `Sensitivity` enum with `PHI` (Protected Health Information), `PII` (Personally Identifiable Information), `PCI` (Payment Card Industry data), `SECRET` (API tokens, passwords, credentials)
-- **`classify(instance)` function:** Returns `SensitivityProfile` documenting field-level sensitivity for compliance auditing and governance
-- **`@sensitive` decorator:** Injects a sensitivity-aware `__repr__()` that masks sensitive fields in string representation (repr, str, logging the object)
-  - Default instance uses `DEFAULT_PLACEHOLDER` (`***`) for all tagged fields
-  - Optional `policies` parameter on `SensitiveDecorator` enables per-class masking customization
-- **Per-class policy contracts:** `Compliance` enum + `ClassMakerAware` protocol for custom masking strategies
-- **Four policy value objects:** `PhiPolicyAware`, `PiiPolicyAware`, `PciPolicyAware`, `SecretPolicyAware` - frozen dataclasses with `mask()` and `looks_sensitive()` methods for per-class customization
+Exported from `mixin_sensitivity` (see `PUBLIC_API`):
 
-### Architecture
-- **Classification layer** (`services/classify/`): `Sensitivity` enum + `SensitivityProfile` + `classify()` function
-- **Decorator layer** (`decorators/sensitive/`): `SensitiveDecorator` + `SensitiveFieldSet` + default `sensitive` instance
-- **Compliance contract** (`decorators/classes/compliance/`): `Compliance` enum + `ClassMakerAware` protocol
-- **Policy value objects** (`decorators/classes/{phi,pii,pci,secret}_aware/`): Four interchangeable policy implementations
-- **Constants** (`decorators/constants/sensitive.py`): `DEFAULT_PLACEHOLDER`, error messages
-- **Public API** (`__init__.py`): Re-exports `sensitive`, `Sensitivity`, `SensitivityProfile`, `classify`, `__version__`
+- `Sensitivity`: StrEnum taxonomy with `PHI`, `PII`, `PCI` and `SECRET`
+- `SensitivityProfile`: frozen value object describing which fields carry which class
+- `classify(target)`: alias of `SensitivityProfile.from_dataclass`; takes a dataclass type
+- `SensitiveRepr`: adoption mixin that masks sensitive fields in `__repr__`
+- `SensitiveDeclarationError`: raised when `SensitiveRepr` is adopted without `repr=False`
+- `__version__`, `PUBLIC_API`
 
-### Test Coverage
-- 133 tests across all layers with 100% coverage on decorator + classify layers
-- Coverage includes: Sensitivity enum, SensitivityProfile queries, SensitiveFieldSet masking, SensitiveDecorator application, all four policies, Compliance enum, ClassMakerAware validation
-- Edge cases: untagged fields, empty profiles, policy lookup, no-policy scenarios
+## What Is Implemented
 
-## Security Boundary
+- Field-level classification through `field(metadata={"sensitivity": Sensitivity.X})`
+- A plain string marker (for example `"phi"`) is also masked, so the masking fails closed
+- `SensitiveRepr.__repr__` replaces each marked value with `***MASKED***`; unmarked fields print normally
+- Fail-fast guard: a subclass whose `@dataclass` generated its own `__repr__` raises `SensitiveDeclarationError` on construction
+- Field metadata stays introspectable; `classify()` reads it without change
 
-The `@sensitive` decorator provides **repr-layer masking only**. It protects sensitive fields in string representation (logging the object) but does not protect:
-- Direct field access (`obj.field` returns full value)
-- Serialization (`dataclasses.asdict()`, JSON encoding)
-- Field-level logging
+## Removed in Earlier Releases
 
-See `docs/apps/decorators/sensitive.md` for detailed security boundary documentation and safe usage patterns.
+- The `@sensitive` decorator, the policy value objects and the compliance layer were removed in 0.5.0. Field metadata plus `SensitiveRepr` replaces them.
+- Earlier releases used the import name `sensitivity_mixin`; the import name is `mixin_sensitivity`.
 
-## Planned Features
+## Verification
 
-- **Serialization masking:** Extend masking beyond repr to `to_dict()` / `to_json()` methods
-- **Untagged field detection:** Lint/CI gate to catch sensitive-sounding field names without explicit metadata tags
-- **Custom policy builders:** High-level factory functions to construct policies from templates (e.g., "PII with GDPR compliance")
+- Run-verified examples: see [architecture/architecture.md](architecture/architecture.md) and the README-level examples in the flow trace.
+- Gates on the 0.7.0 tree: pytest with 100 percent coverage on Python 3.12, mypy and ruff, and the strict-module check on Python 3.14.
 
-## Documentation
+## Records
 
-- **README.md**: Installation, quick start, API reference, policy-driven masking examples, migration guide
-- **docs/architecture/architecture.md**: File organization, container types, public API, integration patterns (default + policies + introspection)
-- **docs/apps/decorators/sensitive.md**: `@sensitive` decorator feature brief, usage examples, security boundary, integration notes
-- **docs/apps/decorators/compliance.md**: `Compliance` enum and `ClassMakerAware` protocol documentation
-- **docs/apps/decorators/policies.md**: Four policy value objects with per-class usage examples and customization patterns
+- Dated audits and reviews live under `audits/` and `reviews/`. They record the verdicts at the time they were written.
+- Release history: [CHANGELOG-history.md](CHANGELOG-history.md).

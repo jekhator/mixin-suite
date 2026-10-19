@@ -38,7 +38,7 @@ class TestAiohttpCorrelationFromContext:
 
     def test_from_context_with_overlong_value_returns_none(self) -> None:
         """from_context() returns None when correlation_id exceeds length cap."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         set_correlation_id(overlong_id)
         correlation = objs.AiohttpCorrelation.from_context()
         assert correlation is None
@@ -59,7 +59,7 @@ class TestAiohttpCorrelationConstruction:
 
     def test_construct_with_overlong_raises_value_error(self) -> None:
         """AiohttpCorrelation constructor raises ValueError for overlong correlation_id."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         with pytest.raises(ValueError, match=const.ERR_CORRELATION_ID_UNSAFE):
             objs.AiohttpCorrelation(correlation_id=overlong_id)
 
@@ -90,12 +90,12 @@ class TestAiohttpCorrelationIsSafe:
 
     def test_is_safe_with_overlong_returns_false(self) -> None:
         """_is_safe() returns False for string exceeding 128 chars."""
-        overlong = "a" * 129
+        overlong = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         assert objs.AiohttpCorrelation._is_safe(overlong) is False
 
     def test_is_safe_with_exactly_max_length_returns_true(self) -> None:
         """_is_safe() returns True for string at exactly max length."""
-        max_length = "a" * 128
+        max_length = "a" * const.CORRELATION_ID_MAX_LENGTH
         assert objs.AiohttpCorrelation._is_safe(max_length) is True
 
     @pytest.mark.parametrize("unsafe_char", ["\r", "\n", "\0"])

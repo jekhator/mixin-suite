@@ -1,4 +1,4 @@
-# Proposed Adapters for `logging-mixin`
+# Proposed Adapters for `mixin-logging`
 
 Looking at the existing 8 adapters, here are some natural additions grouped by category.
 
@@ -22,7 +22,7 @@ Looking at the existing 8 adapters, here are some natural additions grouped by c
 
 ## Task / Message Queues
 
-- **RQ (Redis Queue)** :  popular lightweight alternative to Celery; same enqueue→worker propagation pattern
+- **RQ (Redis Queue)** :  popular lightweight alternative to Celery; same enqueue->worker propagation pattern
 - **Dramatiq** :  growing adoption; has a middleware system that maps naturally to your adapter pattern
 - **arq** :  async-native Redis task queue for asyncio stacks
 - **Kafka (`confluent-kafka` / `aiokafka`)** :  producer injects ID into message headers; consumer extracts on the other side
@@ -40,7 +40,7 @@ Looking at the existing 8 adapters, here are some natural additions grouped by c
 
 ## Observability / Structured Logging
 
-- **OpenTelemetry** :  bridge your correlation ID into/out of the OTel `traceparent` / W3C Trace Context format; makes `logging-mixin` interoperable with Jaeger, Zipkin, Datadog, etc. :  probably the highest-value addition
+- **OpenTelemetry** :  bridge your correlation ID into/out of the OTel `traceparent` / W3C Trace Context format; makes `mixin-logging` interoperable with Jaeger, Zipkin, Datadog, etc. :  probably the highest-value addition
 - **structlog** :  many teams use structlog instead of stdlib logging; a processor that stamps `correlation_id` into the event dict
 
 ---
