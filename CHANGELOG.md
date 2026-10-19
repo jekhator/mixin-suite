@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- mixin_notifications ships its py.typed marker like the other roots.
 - **all extra**: The `[all]` extra pulled two unrelated packages named `ses` and `sns`. It now installs `boto3` like the `[ses]` and `[sns]` extras.
 - **Correlation context in new threads**: The correlation context variable now has a default, so the first log call in a thread or context that never set a correlation ID no longer raises LookupError.
 - **WSGI empty correlation header**: An empty X-Correlation-ID request header is treated as absent and a new identifier is generated, instead of failing the request with ValueError.
