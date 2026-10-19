@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from mixin_logging import clear_correlation_id
+from mixin_logging.adapters.asgi.asgi_objects import App, Message, Receive, Scope, Send
 from mixin_logging.adapters.constants import websocket as const
 from mixin_logging.common.constants import tests as test_const
 
@@ -119,33 +120,33 @@ def http_scope() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_receive() -> Any:
+def mock_receive() -> Receive:
     """Mock ASGI receive callable for WebSocket."""
 
-    async def receive() -> dict[str, Any]:
+    async def receive() -> Message:
         return {"type": "websocket.connect"}
 
     return receive
 
 
 @pytest.fixture
-def mock_send() -> Any:
+def mock_send() -> Send:
     """Mock ASGI send callable that discards messages."""
 
-    async def send(message: dict[str, Any]) -> None:
+    async def send(message: Message) -> None:
         return None
 
     return send
 
 
 @pytest.fixture
-def mock_app() -> Any:
+def mock_app() -> App:
     """Mock ASGI app that does nothing."""
 
     async def app(
-        scope: dict[str, Any],
-        receive: Any,
-        send: Any,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> None:
         return None
 
