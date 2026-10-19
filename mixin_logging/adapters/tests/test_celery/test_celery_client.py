@@ -38,9 +38,10 @@ class TestCorrelationSignalsInjectOnPublish:
         assert const.CORRELATION_ID_HEADER not in headers
 
     def test_inject_on_publish_with_none_headers_is_noop(self) -> None:
-        """inject_on_publish() does nothing when headers is None."""
+        """inject_on_publish() does nothing when headers is None and leaves the context unchanged."""
         set_correlation_id(test_const.CORRELATION_ID_VALID_ID_123)
         celery_client.CorrelationSignals.inject_on_publish(headers=None)
+        assert get_correlation_id() == test_const.CORRELATION_ID_VALID_ID_123
 
     def test_inject_on_publish_overwrites_existing_header(self) -> None:
         """inject_on_publish() overwrites a pre-existing header."""
@@ -147,10 +148,10 @@ class TestCorrelationSignalsRealCeleryIntegration:
     def test_real_celery_publish_prerun_postrun_roundtrip(
         self,
         celery_app: Any,
+        connected_celery_signals: None,
     ) -> None:
         """Real celery app with CorrelationSignals drives correlation_id through publish→prerun→postrun."""
         app = celery_app()
-        celery_client.CorrelationSignals.connect()
         context_values: list[str | None] = []
 
         @app.task
@@ -166,10 +167,10 @@ class TestCorrelationSignalsRealCeleryIntegration:
     def test_real_celery_no_context_on_publish_skips_injection(
         self,
         celery_app: Any,
+        connected_celery_signals: None,
     ) -> None:
         """Real celery app with no context does not inject header on publish."""
         app = celery_app()
-        celery_client.CorrelationSignals.connect()
         context_values: list[str | None] = []
 
         @app.task
@@ -180,22 +181,21 @@ class TestCorrelationSignalsRealCeleryIntegration:
         untracked_task.apply_async()
         assert context_values[0] is None
 
-    def test_real_celery_signal_isolation_between_tests(
+    def test_real_celery_task_receives_publisher_correlation_id(
         self,
         celery_app: Any,
+        connected_celery_signals: None,
     ) -> None:
-        """Real celery signals do not leak between test tasks via fresh app."""
-        app1 = celery_app()
-        celery_client.CorrelationSignals.connect()
-
+        """A task in a fresh app receives the correlation ID set by its publisher."""
+        app = celery_app()
         context_values: list[str | None] = []
 
-        @app1.task
+        @app.task
         def task_one() -> None:
-            """First task."""
+            """Record the correlation ID seen inside the task."""
             context_values.append(get_correlation_id())
 
         set_correlation_id(test_const.CORRELATION_ID_TRACE)
         task_one.apply_async()
-        app1.connection().close()
+        app.connection().close()
         assert context_values[0] == test_const.CORRELATION_ID_TRACE
