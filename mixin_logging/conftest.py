@@ -37,10 +37,17 @@ def service_class() -> type[LoggingMixin]:
 @pytest.fixture
 def log_capture(
     service_class: type[LoggingMixin],
-) -> tuple[LoggingMixin, RecordCollector]:
-    """Service instance + collector handler attached at DEBUG level."""
+) -> Iterator[tuple[LoggingMixin, RecordCollector]]:
+    """Service instance + collector handler attached at DEBUG level, detached after the test.
+
+    Every service class built by service_class shares one logger name, so the handler
+    and level are removed on teardown to keep one test's capture out of the next.
+    """
     svc = service_class()
     collector = RecordCollector()
+    previous_level = svc._logger.level
     svc._logger.addHandler(collector)
     svc._logger.setLevel(logging.DEBUG)
-    return svc, collector
+    yield svc, collector
+    svc._logger.removeHandler(collector)
+    svc._logger.setLevel(previous_level)
