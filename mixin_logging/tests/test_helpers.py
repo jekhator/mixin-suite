@@ -14,12 +14,12 @@ class TestRecordCollectorInit:
     def test_init_creates_empty_records_list(self) -> None:
         """A fresh collector starts with no records."""
         collector = RecordCollector()
-        assert collector.records == []  # noqa: S101
+        assert collector.records == []
 
     def test_init_inherits_handler_interface(self) -> None:
         """Collector is a logging.Handler subclass."""
         collector = RecordCollector()
-        assert isinstance(collector, logging.Handler)  # noqa: S101
+        assert isinstance(collector, logging.Handler)
 
 
 class TestRecordCollectorEmit:
@@ -38,8 +38,8 @@ class TestRecordCollectorEmit:
             exc_info=None,
         )
         collector.emit(record)
-        assert len(collector.records) == 1  # noqa: S101
-        assert collector.records[0] is record  # noqa: S101
+        assert len(collector.records) == 1
+        assert collector.records[0] is record
 
     def test_emit_accumulates_multiple_records(self) -> None:
         """Multiple emits accumulate in order."""
@@ -58,7 +58,7 @@ class TestRecordCollectorEmit:
         ]
         for record in records:
             collector.emit(record)
-        assert collector.records == records  # noqa: S101
+        assert collector.records == records
 
     def test_emit_preserves_record_fields(self) -> None:
         """Captured record retains original level, message, and module."""
@@ -73,10 +73,10 @@ class TestRecordCollectorEmit:
             exc_info=None,
         )
         collector.emit(record)
-        assert collector.records[0].name == test_const.LOGGER_NAME_CUSTOM  # noqa: S101
-        assert collector.records[0].levelname == test_const.LOG_LEVEL_WARNING  # noqa: S101
-        assert collector.records[0].msg == test_const.RECORD_MSG_WARNING_TEXT  # noqa: S101
-        assert collector.records[0].lineno == test_const.RECORD_LINE_NO_42  # noqa: S101
+        assert collector.records[0].name == test_const.LOGGER_NAME_CUSTOM
+        assert collector.records[0].levelname == test_const.LOG_LEVEL_WARNING
+        assert collector.records[0].msg == test_const.RECORD_MSG_WARNING_TEXT
+        assert collector.records[0].lineno == test_const.RECORD_LINE_NO_42
 
 
 class TestRecordCollectorWithLogger:
@@ -92,6 +92,6 @@ class TestRecordCollectorWithLogger:
             logger.info(test_const.RECORD_MSG_CAPTURED)
         finally:
             logger.removeHandler(collector)
-        assert len(collector.records) == 1  # noqa: S101
-        assert collector.records[0].msg == test_const.RECORD_MSG_CAPTURED  # noqa: S101
-        assert collector.records[0].levelname == test_const.LOG_LEVEL_INFO  # noqa: S101
+        assert len(collector.records) == 1
+        assert collector.records[0].msg == test_const.RECORD_MSG_CAPTURED
+        assert collector.records[0].levelname == test_const.LOG_LEVEL_INFO

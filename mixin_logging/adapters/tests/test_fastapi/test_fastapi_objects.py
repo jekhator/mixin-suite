@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-# ruff: noqa: S101
 import pytest
 
 from mixin_logging.adapters.constants import fastapi as const
