@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from unittest.mock import patch
 
 import pytest
 
-from mixin_retry.common.constants import errors as const
+from mixin_retry.common.constants import backoff as backoff_const, errors as const
 from mixin_retry.executor import RetryExecutor
 from mixin_retry.policy import RetryPolicy
 
@@ -342,8 +343,6 @@ class TestRetryExecutor:
 
     def test_wrap_sync_zero_backoff_retries_immediately(self) -> None:
         """Wrap with zero backoff retries immediately (no sleep delay)."""
-        import time as time_module
-
         executor = RetryExecutor()
         policy = RetryPolicy(
             max_attempts=3,
@@ -355,7 +354,7 @@ class TestRetryExecutor:
         )
 
         call_count = 0
-        start_time = time_module.perf_counter()
+        start_time = time.perf_counter()
 
         def fails_twice() -> str:
             nonlocal call_count
@@ -366,7 +365,7 @@ class TestRetryExecutor:
 
         wrapped = executor.wrap(fails_twice, policy=policy)
         result = wrapped()
-        elapsed = time_module.perf_counter() - start_time
+        elapsed = time.perf_counter() - start_time
 
         assert result == "ok"
         assert call_count == 3
@@ -379,7 +378,7 @@ class TestRetryExecutor:
         def dummy_fn() -> None:
             pass
 
-        with pytest.raises(ValueError, match="policy is required"):
+        with pytest.raises(ValueError, match=const.ERR_RETRY_POLICY_REQUIRED):
             executor.call(dummy_fn)
 
     def test_call_with_policy_sync(self) -> None:
@@ -433,6 +432,32 @@ class TestRetryExecutor:
         assert executor._calculate_backoff(2, policy) == 3.0
         assert executor._calculate_backoff(3, policy) == 3.0
 
+    def test_backoff_overflowing_growth_term_is_capped(self) -> None:
+        """A growth term beyond float range yields the cap, not OverflowError."""
+        executor = RetryExecutor()
+        policy = RetryPolicy(
+            max_attempts=2000,
+            backoff_base_seconds=1.0,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=5.0,
+            jitter=False,
+        )
+
+        assert executor._calculate_backoff(1100, policy) == 5.0
+
+    def test_backoff_overflow_with_zero_base_is_zero(self) -> None:
+        """A zero base stays zero even when the growth term overflows."""
+        executor = RetryExecutor()
+        policy = RetryPolicy(
+            max_attempts=2000,
+            backoff_base_seconds=0.0,
+            backoff_multiplier=2.0,
+            backoff_max_seconds=5.0,
+            jitter=False,
+        )
+
+        assert executor._calculate_backoff(1100, policy) == 0.0
+
     def test_backoff_with_jitter_in_bounds(self) -> None:
         """Backoff with jitter stays within bounds."""
         executor = RetryExecutor()
@@ -446,7 +471,8 @@ class TestRetryExecutor:
 
         for _ in range(10):
             backoff = executor._calculate_backoff(0, policy)
-            assert 0.9 <= backoff <= 1.1
+            assert backoff_const.JITTER_MIN_FACTOR <= backoff
+            assert backoff <= backoff_const.JITTER_MAX_FACTOR
 
     def test_wrap_async_no_retry_on_excluded_exception(self) -> None:
         """Wrap async that raises non-retryable exception."""
