@@ -12,6 +12,7 @@ from mixin_sensitivity import (
     Sensitivity,
     classify,
 )
+from mixin_sensitivity.common.constants import masking as const
 
 
 class TestSensitiveRepr:
@@ -47,7 +48,7 @@ class TestSensitiveRepr:
         repr_str = repr(p)
 
         assert "name='Alice'" in repr_str
-        assert "***MASKED***" in repr_str
+        assert const.SENSITIVE_MASK_TOKEN in repr_str
         assert "123-45-6789" not in repr_str
 
     def test_repr_with_multiple_sensitive_fields(self) -> None:
@@ -63,7 +64,7 @@ class TestSensitiveRepr:
         repr_str = repr(a)
 
         assert "username='alice'" in repr_str
-        assert repr_str.count("***MASKED***") == 2
+        assert repr_str.count(const.SENSITIVE_MASK_TOKEN) == 2
         assert "secret123" not in repr_str
         assert "key456" not in repr_str
 
@@ -80,7 +81,7 @@ class TestSensitiveRepr:
 
         assert "name='Bob'" in repr_str
         assert "email='bob@example.com'" in repr_str
-        assert "***MASKED***" not in repr_str
+        assert const.SENSITIVE_MASK_TOKEN not in repr_str
 
     def test_repr_mixed_sensitivity_levels(self) -> None:
         """SensitiveRepr handles mixed sensitivity levels."""
@@ -104,7 +105,7 @@ class TestSensitiveRepr:
         assert "pii_value" not in repr_str
         assert "phi_value" not in repr_str
         assert "secret_value" not in repr_str
-        assert repr_str.count("***MASKED***") == 3
+        assert repr_str.count(const.SENSITIVE_MASK_TOKEN) == 3
 
     def test_metadata_introspection_unchanged(self) -> None:
         """Field metadata remains introspectable after repr()."""
@@ -135,7 +136,7 @@ class TestSensitiveRepr:
         repr_str = repr(o)
 
         first_pos = repr_str.find("first")
-        second_pos = repr_str.find("***MASKED***")
+        second_pos = repr_str.find(const.SENSITIVE_MASK_TOKEN)
         third_pos = repr_str.find("third")
 
         assert first_pos < second_pos < third_pos
@@ -153,7 +154,20 @@ class TestSensitiveRepr:
 
         assert "id=1" in repr_str
         assert "4111111111111111" not in repr_str
-        assert "***MASKED***" in repr_str
+        assert const.SENSITIVE_MASK_TOKEN in repr_str
+
+    def test_plain_string_marker_is_masked(self) -> None:
+        """A plain string sensitivity marker masks the field like a Sensitivity member."""
+
+        @dataclass(frozen=True, slots=True, repr=False)
+        class StringMarked(SensitiveRepr):
+            name: str
+            ssn: str = field(metadata={"sensitivity": "phi"})
+
+        repr_str = repr(StringMarked(name="Alice", ssn="123-45-6789"))
+
+        assert "123-45-6789" not in repr_str
+        assert f"ssn={const.SENSITIVE_MASK_TOKEN}" in repr_str
 
     def test_repr_class_name_correct(self) -> None:
         """SensitiveRepr includes correct class name in repr."""
@@ -185,7 +199,7 @@ class TestSensitiveRepr:
         repr_str = repr(p)
 
         assert "name='Alice'" in repr_str
-        assert "***MASKED***" in repr_str
+        assert const.SENSITIVE_MASK_TOKEN in repr_str
         assert "123-45-6789" not in repr_str
         assert p._initialized is True
 
