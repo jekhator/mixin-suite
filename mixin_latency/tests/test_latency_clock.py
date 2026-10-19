@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import time
-
 import pytest
 
 from mixin_latency import LatencyClock, LatencyMeasurement
-from mixin_latency.common.constants.clock import LATENCY_ROUNDING_DECIMALS
+from mixin_latency.common.constants import clock as const
+from mixin_latency.tests.fakes import FakePerfCounter
 
 
 class TestLatencyClock:
@@ -24,31 +23,30 @@ class TestLatencyClock:
         measurement = clock.stop()
         assert isinstance(measurement, LatencyMeasurement)
 
-    def test_stop_measures_duration(self) -> None:
-        """stop() correctly measures elapsed time."""
+    def test_stop_measures_duration(self, fake_perf_counter: FakePerfCounter) -> None:
+        """stop() reports the elapsed time between start and stop."""
         clock = LatencyClock.start()
-        time.sleep(0.05)
+        fake_perf_counter.advance(0.05)
         measurement = clock.stop()
 
-        assert measurement.duration_ms >= 50.0
-        assert measurement.duration_ms < 200.0
+        assert measurement.duration_ms == pytest.approx(50.0)
 
-    def test_measurement_rounding(self) -> None:
+    def test_measurement_rounding(self, fake_perf_counter: FakePerfCounter) -> None:
         """Measurements are rounded to LATENCY_ROUNDING_DECIMALS."""
         clock = LatencyClock.start()
-        time.sleep(0.01)
+        fake_perf_counter.advance(0.0123456)
         measurement = clock.stop()
 
-        decimal_places = len(str(measurement.duration_ms).split(".")[-1])
-        assert decimal_places <= LATENCY_ROUNDING_DECIMALS
+        assert measurement.duration_ms == round(
+            12.3456, const.LATENCY_ROUNDING_DECIMALS
+        )
 
-    def test_fast_operation_duration(self) -> None:
-        """Fast operation has near-zero duration."""
+    def test_fast_operation_duration(self, fake_perf_counter: FakePerfCounter) -> None:
+        """An operation that advances no time reports zero duration."""
         clock = LatencyClock.start()
         measurement = clock.stop()
 
-        assert measurement.duration_ms >= 0
-        assert measurement.duration_ms < 10.0
+        assert measurement.duration_ms == 0.0
 
     def test_measurement_frozen(self) -> None:
         """LatencyMeasurement is frozen."""
@@ -67,45 +65,49 @@ class TestLatencyClock:
             measurement.__dict__
 
     def test_context_manager_form(self) -> None:
-        """Context manager form measures duration on exit."""
+        """Context manager form yields a started LatencyClock."""
         with LatencyClock.measure() as clock:
-            time.sleep(0.01)
             assert isinstance(clock, LatencyClock)
 
-    def test_context_manager_captures_duration(self) -> None:
-        """Context manager can capture duration after exit."""
-        clock = None
-        with LatencyClock.measure() as c:
-            clock = c
-            time.sleep(0.02)
+    def test_context_manager_captures_duration(
+        self, fake_perf_counter: FakePerfCounter
+    ) -> None:
+        """A clock from the context manager reports duration after exit."""
+        with LatencyClock.measure() as clock:
+            fake_perf_counter.advance(0.02)
 
         measurement = clock.stop()
-        assert measurement.duration_ms >= 20.0
+        assert measurement.duration_ms == pytest.approx(20.0)
 
     def test_rounding_decimals_constant(self) -> None:
-        """LATENCY_ROUNDING_DECIMALS is imported correctly."""
-        assert isinstance(LATENCY_ROUNDING_DECIMALS, int)
-        assert LATENCY_ROUNDING_DECIMALS == 2
+        """LATENCY_ROUNDING_DECIMALS is the documented two decimal places."""
+        assert isinstance(const.LATENCY_ROUNDING_DECIMALS, int)
+        assert const.LATENCY_ROUNDING_DECIMALS == 2
 
-    def test_multiple_measurements_independent(self) -> None:
+    def test_multiple_measurements_independent(
+        self, fake_perf_counter: FakePerfCounter
+    ) -> None:
         """Multiple clocks measure independently."""
         clock1 = LatencyClock.start()
-        time.sleep(0.01)
+        fake_perf_counter.advance(0.01)
         measurement1 = clock1.stop()
 
         clock2 = LatencyClock.start()
-        time.sleep(0.02)
+        fake_perf_counter.advance(0.02)
         measurement2 = clock2.stop()
 
-        assert measurement2.duration_ms > measurement1.duration_ms
+        assert measurement1.duration_ms == pytest.approx(10.0)
+        assert measurement2.duration_ms == pytest.approx(20.0)
 
-    def test_measurement_dataclass_properties(self) -> None:
+    def test_measurement_dataclass_properties(
+        self, fake_perf_counter: FakePerfCounter
+    ) -> None:
         """LatencyMeasurement dataclass is properly structured."""
         clock = LatencyClock.start()
-        time.sleep(0.01)
+        fake_perf_counter.advance(0.01)
         measurement = clock.stop()
 
-        assert hasattr(measurement, "duration_ms")
+        assert hasattr(measurement, const.LATENCY_DURATION_MS_FIELD)
         assert isinstance(measurement.duration_ms, float)
 
     def test_measurement_repr(self) -> None:
@@ -114,5 +116,5 @@ class TestLatencyClock:
         measurement = clock.stop()
         repr_str = repr(measurement)
 
-        assert "LatencyMeasurement" in repr_str
-        assert "duration_ms" in repr_str
+        assert LatencyMeasurement.__name__ in repr_str
+        assert const.LATENCY_DURATION_MS_FIELD in repr_str
