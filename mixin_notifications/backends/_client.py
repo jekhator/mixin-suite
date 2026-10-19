@@ -3,11 +3,25 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
+from typing import Final
 
 from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
-from mixin_notifications.events._objects import NotificationEvent
-from mixin_retry import RetryPolicy
+from mixin_notifications.common.constants import backends as const
+from mixin_notifications.events._objects import NotificationEvent, Severity
+from mixin_retry import RetryExecutor, RetryPolicy
+
+_LOGGER = logging.getLogger("mixin_notifications")
+
+
+class _RetryableDeliveryError(Exception):
+    """Signal that the wrapped backend reported a retryable delivery failure."""
+
+    def __init__(self, result: DeliveryResult) -> None:
+        """Keep the delivery result that asked for a retry."""
+        super().__init__(result.detail)
+        self.result = result
 
 
 class NullBackend:
@@ -53,7 +67,13 @@ class CollectingBackend:
 class LoggingBackend:
     """Emits notifications via stdlib logging."""
 
-    def __init__(self, logger_name: str = "mixin_notifications"):
+    _LEVEL_BY_SEVERITY: Final[Mapping[Severity, int]] = {
+        Severity.INFO: logging.INFO,
+        Severity.WARNING: logging.WARNING,
+        Severity.CRITICAL: logging.CRITICAL,
+    }
+
+    def __init__(self, logger_name: str = "mixin_notifications") -> None:
         """Initialize with a logger.
 
         Args:
@@ -68,11 +88,7 @@ class LoggingBackend:
 
     def send(self, event: NotificationEvent) -> DeliveryResult:
         """Emit the event via logging."""
-        log_level = {
-            "INFO": logging.INFO,
-            "WARNING": logging.WARNING,
-            "CRITICAL": logging.CRITICAL,
-        }.get(event.severity.value, logging.INFO)
+        log_level = self._LEVEL_BY_SEVERITY.get(event.severity, logging.INFO)
 
         self.logger.log(
             log_level,
@@ -107,107 +123,64 @@ class RetryingBackend:
         return self.inner.external_egress
 
     def send(self, event: NotificationEvent) -> DeliveryResult:
-        """Deliver with retry logic, exhaustion → dead_letter fallback."""
-        from mixin_retry import RetryExecutor
-
-        class RetryableDeliveryError(Exception):
-            """Exception to signal a retryable delivery failure."""
-
-            def __init__(self, result: DeliveryResult):
-                self.result = result
-                super().__init__(result.detail)
-
-        logger = logging.getLogger("mixin_notifications")
+        """Deliver with retry logic; exhaustion and failures fall back to dead_letter."""
         executor = RetryExecutor()
+        policy = replace(self.policy, should_retry=self._should_retry)
 
         def attempt_send() -> DeliveryResult:
             result = self.inner.send(event)
             if result.retryable:
-                raise RetryableDeliveryError(result)
+                raise _RetryableDeliveryError(result)
             return result
-
-        def should_retry(error: BaseException) -> bool:
-            if isinstance(error, RetryableDeliveryError):
-                return True
-            if self.policy.should_retry is not None:
-                return self.policy.should_retry(error)
-            if self.policy.retry_on:
-                return isinstance(error, self.policy.retry_on)
-            return False
-
-        policy_with_predicate = RetryPolicy(
-            max_attempts=self.policy.max_attempts,
-            backoff_base_seconds=self.policy.backoff_base_seconds,
-            backoff_multiplier=self.policy.backoff_multiplier,
-            backoff_max_seconds=self.policy.backoff_max_seconds,
-            jitter=self.policy.jitter,
-            should_retry=should_retry,
-        )
 
         try:
-            result = executor.call(attempt_send, policy=policy_with_predicate)
-            return result
-        except RetryableDeliveryError as error:
-            exhaustion_error = error
-            if self.dead_letter is not None:
-                try:
-                    dead_result = self.dead_letter.send(event)
-                    return DeliveryResult(
-                        delivered=dead_result.delivered,
-                        backend_name=f"RetryingBackend(dead_letter={self.dead_letter.__class__.__name__})",
-                        detail=f"exhausted retries, dead_letter outcome: {dead_result.detail}",
-                        retryable=False,
-                    )
-                except Exception as error:
-                    logger.warning(
-                        "Dead-letter backend failed during exhaustion fallback",
-                        exc_info=error,
-                    )
-                    return DeliveryResult(
-                        delivered=False,
-                        backend_name="RetryingBackend",
-                        detail="exhausted retries and dead_letter failed",
-                        retryable=False,
-                    )
-            return DeliveryResult(
-                delivered=False,
-                backend_name="RetryingBackend",
-                detail=f"exhausted retries: {exhaustion_error.result.detail}",
-                retryable=False,
+            return executor.call(attempt_send, policy=policy)
+        except _RetryableDeliveryError as error:
+            return self._fallback(
+                event, const.RETRY_EXHAUSTED_DETAIL, error.result.detail
             )
         except Exception as error:
-            outer_error = error
-            is_retryable_exception = should_retry(outer_error)
-            detail_prefix = (
-                "exhausted retries"
-                if is_retryable_exception
-                else "non-retryable exception"
-            )
+            if self._should_retry(error):
+                prefix = const.RETRY_EXHAUSTED_DETAIL
+            else:
+                prefix = const.RETRY_NON_RETRYABLE_DETAIL
+            return self._fallback(event, prefix, error.__class__.__name__)
 
-            if self.dead_letter is not None:
-                try:
-                    dead_result = self.dead_letter.send(event)
-                    return DeliveryResult(
-                        delivered=dead_result.delivered,
-                        backend_name=f"RetryingBackend(dead_letter={self.dead_letter.__class__.__name__})",
-                        detail=f"{detail_prefix}, dead_letter outcome: {dead_result.detail}",
-                        retryable=False,
-                    )
-                except Exception as error:
-                    logger.warning(
-                        f"Dead-letter backend failed ({detail_prefix})",
-                        exc_info=error,
-                    )
-                    return DeliveryResult(
-                        delivered=False,
-                        backend_name="RetryingBackend",
-                        detail=f"{detail_prefix} and dead_letter failed",
-                        retryable=False,
-                    )
+    def _should_retry(self, error: BaseException) -> bool:
+        """Decide whether a failure from the inner backend is retryable."""
+        if isinstance(error, _RetryableDeliveryError):
+            return True
+        if self.policy.should_retry is not None:
+            return self.policy.should_retry(error)
+        if self.policy.retry_on:
+            return isinstance(error, self.policy.retry_on)
+        return False
 
+    def _fallback(
+        self, event: NotificationEvent, prefix: str, failure_detail: str
+    ) -> DeliveryResult:
+        """Hand the event to dead_letter once retries end, or report the failure."""
+        if self.dead_letter is None:
             return DeliveryResult(
                 delivered=False,
-                backend_name="RetryingBackend",
-                detail=f"{detail_prefix}: {outer_error.__class__.__name__}",
+                backend_name=const.RETRYING_BACKEND_NAME,
+                detail=f"{prefix}: {failure_detail}",
                 retryable=False,
             )
+        try:
+            dead_result = self.dead_letter.send(event)
+        except Exception as error:
+            _LOGGER.warning(f"Dead-letter backend failed ({prefix})", exc_info=error)
+            return DeliveryResult(
+                delivered=False,
+                backend_name=const.RETRYING_BACKEND_NAME,
+                detail=f"{prefix} and {const.DEAD_LETTER_FAILED_DETAIL}",
+                retryable=False,
+            )
+        dead_letter_name = self.dead_letter.__class__.__name__
+        return DeliveryResult(
+            delivered=dead_result.delivered,
+            backend_name=f"{const.RETRYING_BACKEND_NAME}(dead_letter={dead_letter_name})",
+            detail=f"{prefix}, {const.DEAD_LETTER_OUTCOME_DETAIL}: {dead_result.detail}",
+            retryable=False,
+        )

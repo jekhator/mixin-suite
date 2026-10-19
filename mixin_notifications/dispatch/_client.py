@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass, field
 
 from mixin_notifications.backends._objects import DeliveryResult, NotificationBackend
+from mixin_notifications.common.constants import events as const
 from mixin_notifications.dispatch._objects import DispatchResult
 from mixin_notifications.events._objects import NotificationEvent
 from mixin_notifications.suppression._objects import (
@@ -28,7 +29,7 @@ class Dispatcher:
 
     def __post_init__(self) -> None:
         """Initialize suppression tracker if policy provided."""
-        if self.suppression_policy:
+        if self.suppression_policy is not None:
             object.__setattr__(
                 self,
                 "_suppression_tracker",
@@ -46,7 +47,7 @@ class Dispatcher:
         """
         current_time = time.time()
 
-        if self._suppression_tracker and self._suppression_tracker.is_suppressed(
+        if self._suppression_tracker is not None and self._suppression_tracker.is_suppressed(
             event.category,
             event.fingerprint,
             current_time,
@@ -57,7 +58,7 @@ class Dispatcher:
                 suppressed=True,
             )
 
-        if self._suppression_tracker:
+        if self._suppression_tracker is not None:
             self._suppression_tracker.record(
                 event.category,
                 event.fingerprint,
@@ -108,10 +109,7 @@ class Dispatcher:
         if not backend.external_egress:
             return event
 
-        from mixin_notifications.common.constants import events as const
-
         metadata_counts = len(event.metadata)
-        masked_body = "[content redacted for external delivery]"
         derived_title = const.EGRESS_TITLE_TEMPLATE.format(
             category=event.category,
             severity=event.severity.value,
@@ -123,10 +121,10 @@ class Dispatcher:
             category=event.category,
             severity=event.severity,
             title=derived_title,
-            body=masked_body,
+            body=const.EGRESS_REDACTED_BODY,
             fingerprint=event.fingerprint,
             occurred_at=event.occurred_at,
             correlation_id=event.correlation_id,
-            metadata=(("sensitive_count_metadata", str(metadata_counts)),),
+            metadata=((const.EGRESS_COUNT_METADATA_KEY, str(metadata_counts)),),
             attachments=safe_attachments,
         )

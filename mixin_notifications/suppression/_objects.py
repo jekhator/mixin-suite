@@ -33,12 +33,8 @@ class SuppressionTracker:
         Returns:
             True if within window and seen recently; False otherwise.
         """
-        key = (category, fingerprint)
-        if key in self._seen:
-            last_seen = self._seen[key]
-            if current_time - last_seen < self.window_seconds:
-                return True
-        return False
+        last_seen = self._seen.get((category, fingerprint))
+        return last_seen is not None and current_time - last_seen < self.window_seconds
 
     def record(self, category: str, fingerprint: str, current_time: float) -> None:
         """Record a (category, fingerprint) seen at current_time.
@@ -49,8 +45,9 @@ class SuppressionTracker:
             current_time: Current time in seconds.
         """
         key = (category, fingerprint)
+        # Re-inserting moves the key to the end, so the first key is the least recent.
+        self._seen.pop(key, None)
         self._seen[key] = current_time
 
         if len(self._seen) > self.max_capacity:
-            oldest_key = min(self._seen.keys(), key=lambda k: self._seen[k])
-            del self._seen[oldest_key]
+            del self._seen[next(iter(self._seen))]
