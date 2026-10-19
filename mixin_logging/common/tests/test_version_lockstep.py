@@ -49,4 +49,4 @@ class TestVersionLockstep:
         """The mixin_logging version equals the release pin for this distribution."""
         from mixin_logging import __version__
 
-        assert __version__ == "0.6.0"
+        assert __version__ == "0.7.0"
