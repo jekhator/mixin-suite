@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
-from typing import Any
+from collections.abc import Callable, Generator, Iterator
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import grpc
@@ -15,6 +15,27 @@ from mixin_logging.adapters.grpc import grpc_client
 from mixin_logging.common.constants import tests as test_const
 
 HEX_CHARS = "0123456789abcdef"
+
+
+def _context() -> grpc.ServicerContext:
+    """Return a mock servicer context for calling handler callables directly."""
+    return MagicMock(spec=grpc.ServicerContext)
+
+
+def _unary(handler: grpc.RpcMethodHandler) -> Callable[..., object]:
+    """Return the unary-unary callable of a handler, failing the test if it is absent."""
+    method = handler.unary_unary
+    assert method is not None
+    return method
+
+
+def _stream(
+    handler: grpc.RpcMethodHandler,
+) -> Callable[..., Iterator[object]]:
+    """Return the unary-stream callable of a handler, failing the test if it is absent."""
+    method = handler.unary_stream
+    assert method is not None
+    return method
 
 
 def _details(metadata: tuple[tuple[str, str], ...]) -> grpc.HandlerCallDetails:
@@ -122,7 +143,7 @@ class TestCorrelationInterceptorIntercept:
         )
 
         assert handler is not None
-        handler.unary_unary(b"", None)  # type: ignore[misc]
+        _unary(handler)(b"", _context())
 
         assert len(seen) == 1
         assert seen[0] is not None
@@ -139,7 +160,7 @@ class TestCorrelationInterceptorIntercept:
         )
 
         assert handler is not None
-        handler.unary_unary(b"", None)  # type: ignore[misc]
+        _unary(handler)(b"", _context())
 
         assert len(seen) == 1
         assert seen[0] is not None
@@ -154,7 +175,7 @@ class TestCorrelationInterceptorIntercept:
         )
 
         assert handler is not None
-        handler.unary_unary(b"", None)  # type: ignore[misc]
+        _unary(handler)(b"", _context())
 
         assert seen[0] is not None
         assert len(seen[0]) == const.GENERATED_ID_LENGTH
@@ -178,7 +199,7 @@ class TestCorrelationInterceptorBinding:
         )
 
         assert handler is not None
-        assert handler.unary_unary(b"payload", None) == b"payload"  # type: ignore[misc]
+        assert _unary(handler)(b"payload", _context()) == b"payload"
 
         assert seen == [test_const.CORRELATION_ID_VALID_ID_123]
         assert get_correlation_id() is None
@@ -198,7 +219,7 @@ class TestCorrelationInterceptorBinding:
 
         assert handler is not None
         with pytest.raises(RuntimeError, match=test_const.ERR_TEST_HANDLER_FAILED):
-            handler.unary_unary(b"", None)  # type: ignore[misc]
+            _unary(handler)(b"", _context())
 
         assert get_correlation_id() is None
 
@@ -212,7 +233,7 @@ class TestCorrelationInterceptorBinding:
         )
 
         assert handler is not None
-        produced = list(handler.unary_stream(b"", None))  # type: ignore[misc]
+        produced = list(_stream(handler)(b"", _context()))
 
         assert produced == [b"0", b"1", b"2"]
         assert seen == [test_const.CORRELATION_ID_VALID_ID_123] * 3
@@ -228,7 +249,7 @@ class TestCorrelationInterceptorBinding:
         )
 
         assert handler is not None
-        stream: Iterator[Any] = handler.unary_stream(b"", None)  # type: ignore[misc]
+        stream = _stream(handler)(b"", _context())
         next(stream)
 
         assert get_correlation_id() is None
@@ -244,7 +265,7 @@ class TestCorrelationInterceptorBinding:
         )
 
         assert handler is not None
-        stream = handler.unary_stream(b"", None)  # type: ignore[misc]
+        stream = cast(Generator[object, None, None], _stream(handler)(b"", _context()))
         next(stream)
         stream.close()
 
@@ -275,7 +296,9 @@ class TestCorrelationInterceptorServer:
         port = grpc_server_factory({"/test.Service/Method": _unary_handler(seen)})
 
         with grpc.insecure_channel(f"localhost:{port}") as channel:
-            call = channel.unary_unary("/test.Service/Method")
+            call: grpc.UnaryUnaryMultiCallable = channel.unary_unary(
+                "/test.Service/Method"
+            )
             reply = call(
                 b"ping",
                 metadata=(

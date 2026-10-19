@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable
 
 import grpc
 
@@ -52,12 +52,12 @@ class CorrelationInterceptor(grpc.ServerInterceptor):
 
     def _bind_stream(
         self, method: Callable[..., Iterable[object]] | None, correlation_id: str
-    ) -> Callable[..., Iterator[object]] | None:
+    ) -> Callable[..., Generator[object, None, None]] | None:
         """Wrap a handler that returns a response iterator so each step runs with the context set."""
         if method is None:
             return None
 
-        def bound(*args: object) -> Iterator[object]:
+        def bound(*args: object) -> Generator[object, None, None]:
             """Yield the handler's responses, setting the context only while each one is produced."""
             set_correlation_id(correlation_id)
             try:
