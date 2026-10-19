@@ -2,23 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from typing import Any
 
 import pytest
 
-from mixin_logging import clear_correlation_id
 from mixin_logging.adapters.asgi.asgi_objects import App, Message, Receive, Scope, Send
 from mixin_logging.adapters.constants import websocket as const
 from mixin_logging.common.constants import tests as test_const
-
-
-@pytest.fixture(autouse=True)
-def reset_correlation() -> Iterator[None]:
-    """Clear correlation context before and after each test for isolation."""
-    clear_correlation_id()
-    yield
-    clear_correlation_id()
 
 
 @pytest.fixture

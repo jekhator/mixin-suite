@@ -12,16 +12,7 @@ from concurrent import futures
 import grpc
 import pytest
 
-from mixin_logging import clear_correlation_id
 from mixin_logging.adapters.grpc import grpc_client
-
-
-@pytest.fixture(autouse=True)
-def reset_correlation() -> Iterator[None]:
-    """Clear correlation context before and after each test for isolation."""
-    clear_correlation_id()
-    yield
-    clear_correlation_id()
 
 
 @pytest.fixture
