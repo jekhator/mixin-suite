@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 
 class RecordCollector(logging.Handler):
@@ -34,3 +35,6 @@ class FakeClock:
     def advance(self, seconds: float) -> None:
         """Move the fake time forward by the given number of seconds."""
         self.now += seconds
+
+
+LoggerFactory = Callable[[str, int], tuple[logging.Logger, RecordCollector]]
