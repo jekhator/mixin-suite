@@ -16,20 +16,20 @@ The package is deliberately designed with a **clear security boundary**:
 
 - **Package responsibility** (PASS): The library logs **only** `correlation_id` and **caller-supplied `**extra` kwargs**. It performs **zero masking, redaction, or sensitive-data detection** internally.
   - `LoggingMixin._log_extra()` at `mixin_logging/mixin/mixin.py:21-26` builds the log dict from `correlation_id + extra` only.
-  - The `@logged` decorator at `mixin_logging/decorators/logged/logged_client.py:32-36` logs only `error_type` (the exception class name) + `code` (a field from the exception object if present). It **never** calls `str(error)`, logs exception message text, or introspects exception attributes beyond `.code`.
+  - The `@logged` decorator, removed in 0.5.0, logged only `error_type` (the exception class name) + `code` (a field from the exception object if present). Its review is kept under the Removed in 0.5.0 heading below.
   - **No mutable state stored**: the library holds no credentials, PII, or sensitive configuration. CorrelationContext at `mixin_logging/context/correlation/correlation_objects.py:9-18` stores only a string ID in a ContextVar.
 
 - **Correlation ID risk** (PASS): The correlation ID itself is a string passed by the caller via `set_correlation_id()`. The library enforces **no validation or format restrictions**, it accepts any string (UUID, opaque hash, etc.) from the caller. Risk is **caller-controlled**: if a caller sets a correlation ID containing PII (e.g., a phone number as the ID), the ID will be logged. This is a **caller error**, not a library defect. Best practice: correlation IDs should be opaque identifiers (UUIDs, random hashes), never PII.
 
 ### Caller Responsibility Note
 
-**Logging masking is decoupled from this library.** The `log_*()` and `@logged` interfaces deliberately do not inspect, redact, or mask the `**extra` kwargs or exception attributes passed by callers. This gives consumers full flexibility to implement domain-specific masking (e.g., via logging formatters, filters, or wrapper functions).
+**Logging masking is decoupled from this library.** The `log_*()` interfaces (and, before 0.5.0, `@logged`) deliberately do not inspect, redact, or mask the `**extra` kwargs or exception attributes passed by callers. This gives consumers full flexibility to implement domain-specific masking (e.g., via logging formatters, filters, or wrapper functions).
 
 **Consumers MUST NOT pass secrets or PII as:**
 - Keys or values in the `**extra` kwargs to `log_debug()`, `log_info()`, `log_warning()`, `log_error()`, or `log_exception()`.
   - Bad: `svc.log_info("user created", password="hunter2", ssn="123-45-6789")`
   - Good: `svc.log_info("user created", user_id="user-42", action="signup")`
-- Exception messages or attributes that are logged via `@logged`.
+- Exception messages or attributes that are logged via `log_exception()` or `log_error()`.
   - Bad: `raise ValueError(f"Failed to process credit card {card_number}")`
   - Good: `raise ValueError("Failed to process payment")`
 - Correlation ID values (should be opaque identifiers only).
@@ -38,7 +38,7 @@ The package is deliberately designed with a **clear security boundary**:
 
 ---
 
-## Axis 2: `@logged` Decorator Safety
+## Removed in 0.5.0: `@logged` Decorator Safety (historical axis)
 
 **Status**: PASS
 
@@ -101,7 +101,7 @@ The mixin-logging package is a **library, not a service**. It has no multi-tenan
 | Axis | Status | Evidence |
 |------|--------|----------|
 | Secret/PII leakage | PASS | No internal masking; caller responsible for not passing secrets in `**extra` or exception messages. Correlation ID is opaque string only. |
-| `@logged` decorator | PASS | Logs only `error_type` + `code`; never logs exception message or args. No format-string risk. Re-raises unchanged. |
+| `@logged` decorator (removed in 0.5.0) | PASS (historical) | Logs only `error_type` + `code`; never logs exception message or args. No format-string risk. Re-raises unchanged. |
 | Dependency hygiene | PASS | Stdlib-only runtime. No risky imports (`eval`, `pickle`, etc.). |
 | Injection / format-string | PASS | Event strings are fixed literals or f-strings over decoration parameters. No caller-controlled data in format templates. |
 | Multi-tenancy | N/A | Library (not service). Tenant isolation is consumer responsibility. |
