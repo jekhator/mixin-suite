@@ -167,7 +167,7 @@ Lenses used: structure (Test classes, fixtures in conftest), determinism (clocks
 1. gRPC interceptor binding. The correlation context is now set while each handler callable runs (unary, streaming and streamed responses), not around the continuation call. The adapter document describes the actual behaviour. This is the only source behaviour change in this pass and is listed in the CHANGELOG under Fixed.
 2. Typing only. The websocket middleware aliases (Scope, Receive, Send, App) now refer to the ASGI adapter aliases instead of Any. No runtime change.
 
-Leg 1 candidates resolved in this pass: gRPC context lifetime (item 1 above) and WebSocket typing of the test fakes (item 2 above).
+Candidates from the source pass resolved in this pass: gRPC context lifetime (item 1 above) and WebSocket typing of the test fakes (item 2 above).
 
 ### Deferred candidates
 
@@ -176,7 +176,7 @@ Leg 1 candidates resolved in this pass: gRPC context lifetime (item 1 above) and
 - The FastAPI dependency error text lives in mixin_logging/adapters/fastapi/constants.py, outside the adapters constants package used by every other adapter. Moving it is a source layout change.
 - The per-adapter request and environ factories (make_request, make_environ, make_trace_params, make_prepared_request) build different library types. They stay per adapter.
 - Fixture parameters in the ASGI client tests are untyped. Annotating them adds churn with no behaviour effect, and mypy does not check untyped test functions.
-- Leg 1 candidates still open (source behaviour, outside this pass): the WebSocket identifier decode that ignores undecodable bytes; the redaction default key pattern that matches substrings; the WSGI middleware generator that sets the context only on iteration; the per-call logger lookup in the mixin.
+- Candidates from the source pass still open (source behaviour, outside this pass): the WebSocket identifier decode that ignores undecodable bytes; the redaction default key pattern that matches substrings; the WSGI middleware generator that sets the context only on iteration; the per-call logger lookup in the mixin.
 
 ### Gate results
 
@@ -188,7 +188,7 @@ Leg 1 candidates resolved in this pass: gRPC context lifetime (item 1 above) and
 
 ### Test-tree table
 
-Each test file from the start of the pass has one line. Changed means the file differs from the leg 1 head (2308cf2).
+Each test file from the start of the pass has one line. Changed means the file differs from the state after the source pass (commit 2308cf2).
 
 | Path | Findings | Changed | Note |
 | --- | --- | --- | --- |
