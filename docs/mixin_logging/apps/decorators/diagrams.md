@@ -1,10 +1,12 @@
 # mixin-logging. Decorators (Diagrams)
 
+> **WARNING REMOVED IN 0.5.0**: The `@logged` decorator and `LoggedClient` were removed in mixin-suite 0.5.0. Use `LoggingMixin` or the ambient `log_*` functions instead.
+> This page is archived for historical reference only. Its diagrams describe code that no longer exists.
 > **Location:** `docs/mixin_logging/apps/decorators/diagrams.md`
-> **Status:** Reference diagrams. Updated 2026-06-04.
-> **Sibling docs:** `docs/apps/decorators/logged.md`
+> **Status:** Archived. Diagrams last updated 2026-06-04, before the removal.
+> **Sibling docs:** `docs/mixin_logging/apps/decorators/logged.md` (archived)
 
-## `@logged` Subsystem Structure
+## Removed in 0.5.0: `@logged` Subsystem Structure
 
 > **File path:** `mixin_logging/decorators/logged/`
 
