@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 import pytest
 
 from mixin_notifications import (
     Attachment,
     CollectingBackend,
+    DeliveryResult,
     LoggingBackend,
     NotificationEvent,
     NullBackend,
@@ -15,9 +19,9 @@ from mixin_notifications import (
     Severity,
     SNSBackend,
 )
-from mixin_retry import (
-    RetryPolicy,
-)
+from mixin_notifications.backends.aws_errors import AwsErrorClassifier
+from mixin_notifications.common.constants import backends as backends_const
+from mixin_retry import RetryPolicy
 
 
 class TestNullBackend:
@@ -197,8 +201,6 @@ class TestRetryingBackend:
                 return True
 
             def send(self, event):
-                from mixin_notifications import DeliveryResult
-
                 return DeliveryResult(
                     delivered=True,
                     backend_name="ExternalBackend",
@@ -252,8 +254,6 @@ class TestRetryingBackend:
             def send(self, event):
                 nonlocal attempt_count
                 attempt_count += 1
-                from mixin_notifications import DeliveryResult
-
                 if attempt_count < 3:
                     return DeliveryResult(
                         delivered=False,
@@ -298,8 +298,6 @@ class TestRetryingBackend:
             def send(self, event):
                 nonlocal attempt_count
                 attempt_count += 1
-                from mixin_notifications import DeliveryResult
-
                 return DeliveryResult(
                     delivered=False,
                     backend_name="ImmediateFailBackend",
@@ -333,8 +331,6 @@ class TestRetryingBackend:
                 return False
 
             def send(self, event):
-                from mixin_notifications import DeliveryResult
-
                 return DeliveryResult(
                     delivered=False,
                     backend_name="AlwaysFailBackend",
@@ -355,7 +351,7 @@ class TestRetryingBackend:
         result = backend.send(test_event)
 
         assert result.delivered is False
-        assert "exhausted retries" in result.detail
+        assert backends_const.RETRY_EXHAUSTED_DETAIL in result.detail
 
     def test_retrying_backend_dead_letter_on_exhaustion(
         self, test_event: NotificationEvent
@@ -368,8 +364,6 @@ class TestRetryingBackend:
                 return False
 
             def send(self, event):
-                from mixin_notifications import DeliveryResult
-
                 return DeliveryResult(
                     delivered=False,
                     backend_name="AlwaysFailBackend",
@@ -405,8 +399,6 @@ class TestRetryingBackend:
                 return False
 
             def send(self, event):
-                from mixin_notifications import DeliveryResult
-
                 return DeliveryResult(
                     delivered=False,
                     backend_name="AlwaysFailBackend",
@@ -436,7 +428,7 @@ class TestRetryingBackend:
         result = backend.send(test_event)
 
         assert result.delivered is False
-        assert "dead_letter failed" in result.detail
+        assert backends_const.DEAD_LETTER_FAILED_DETAIL in result.detail
 
     def test_retrying_backend_inner_exception_dead_letter_success(
         self, test_event: NotificationEvent
@@ -466,7 +458,7 @@ class TestRetryingBackend:
 
         assert result.delivered is True
         assert len(dead_letter.events) == 1
-        assert "non-retryable exception" in result.detail
+        assert backends_const.RETRY_NON_RETRYABLE_DETAIL in result.detail
 
     def test_retrying_backend_inner_exception_dead_letter_exception(
         self, test_event: NotificationEvent
@@ -503,7 +495,7 @@ class TestRetryingBackend:
         result = backend.send(test_event)
 
         assert result.delivered is False
-        assert "dead_letter failed" in result.detail
+        assert backends_const.DEAD_LETTER_FAILED_DETAIL in result.detail
 
     def test_retrying_backend_inner_exception_no_dead_letter(
         self, test_event: NotificationEvent
@@ -531,7 +523,7 @@ class TestRetryingBackend:
         result = backend.send(test_event)
 
         assert result.delivered is False
-        assert "non-retryable exception" in result.detail
+        assert backends_const.RETRY_NON_RETRYABLE_DETAIL in result.detail
 
     def test_retrying_backend_raised_exception_with_retry_on_policy(
         self, test_event: NotificationEvent
@@ -636,10 +628,7 @@ class TestRetryingBackend:
         # REGRESSION: Non-retryable exceptions should attempt exactly once
         assert attempt_count == 1, f"Expected 1 attempt, got {attempt_count}"
         assert result.delivered is True  # DLQ accepted
-        assert (
-            "non-retryable exception" in result.detail
-            or "non-retryable" in result.detail
-        )
+        assert backends_const.RETRY_NON_RETRYABLE_DETAIL in result.detail
 
 
 class TestSNSBackend:
@@ -910,3 +899,149 @@ class TestSESBackend:
 
         assert result.delivered is False
         assert result.retryable is True
+
+
+class TestSNSMessageAttributes:
+    """Test the attributes SNSBackend publishes with each message."""
+
+    def test_publishes_category_severity_fingerprint_and_correlation(
+        self, test_event: NotificationEvent
+    ) -> None:
+        """Message attributes carry category, severity, fingerprint and correlation_id."""
+
+        class RecordingSNS:
+            def __init__(self) -> None:
+                self.published: dict[str, Any] = {}
+
+            def publish(self, **kwargs: object) -> dict[str, str]:
+                self.published.update(kwargs)
+                return {"MessageId": "test-msg-id"}
+
+        client = RecordingSNS()
+        backend = SNSBackend(
+            sns_client=client,
+            default_topic_arn="arn:aws:sns:us-east-1:123456789012:test",
+        )
+
+        backend.send(test_event)
+
+        attributes = client.published["MessageAttributes"]
+        assert attributes["category"]["StringValue"] == test_event.category
+        assert attributes["severity"]["StringValue"] == "INFO"
+        assert attributes["fingerprint"]["StringValue"] == test_event.fingerprint
+        assert attributes["correlation_id"]["StringValue"] == "test-corr"
+        assert client.published["Subject"] == test_event.title
+
+    def test_omits_correlation_attribute_when_absent(self) -> None:
+        """No correlation_id attribute is published when the event has none."""
+
+        class RecordingSNS:
+            def __init__(self) -> None:
+                self.published: dict[str, Any] = {}
+
+            def publish(self, **kwargs: object) -> dict[str, str]:
+                self.published.update(kwargs)
+                return {"MessageId": "test-msg-id"}
+
+        client = RecordingSNS()
+        backend = SNSBackend(
+            sns_client=client,
+            default_topic_arn="arn:aws:sns:us-east-1:123456789012:test",
+        )
+        event = NotificationEvent(
+            category="test",
+            severity=Severity.INFO,
+            title="Title",
+            body="Body",
+            fingerprint="fp-1",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+        )
+
+        backend.send(event)
+
+        attributes = client.published["MessageAttributes"]
+        assert "correlation_id" not in attributes
+
+
+class TestSESAttachmentHeader:
+    """Test the MIME headers SESBackend writes for attachments."""
+
+    def test_attachment_filename_is_quoted_in_content_disposition(self) -> None:
+        """A filename with spaces is quoted in the Content-Disposition header."""
+
+        class RecordingSES:
+            def __init__(self) -> None:
+                self.raw = ""
+
+            def send_raw_email(
+                self, *, RawMessage: Mapping[str, str]
+            ) -> dict[str, str]:
+                self.raw = RawMessage["Data"]
+                return {"MessageId": "test-msg-id"}
+
+        client = RecordingSES()
+        backend = SESBackend(
+            ses_client=client,
+            to_addresses=("test@example.com",),
+            from_address="sender@example.com",
+        )
+        event = NotificationEvent(
+            category="test",
+            severity=Severity.INFO,
+            title="Test Event",
+            body="Test body",
+            fingerprint="test-001",
+            occurred_at="2026-07-21T10:00:00+00:00",
+            correlation_id=None,
+            attachments=(
+                Attachment(
+                    filename="quarterly report.txt",
+                    content_type="text/plain",
+                    content=b"test content",
+                    egress_safe=True,
+                ),
+            ),
+        )
+
+        backend.send(event)
+
+        assert 'Content-Disposition: attachment; filename="quarterly report.txt"' in (
+            client.raw
+        )
+
+
+class TestAwsErrorClassifier:
+    """Test the error-code extraction shared by the AWS backends."""
+
+    def test_error_without_response_has_no_code(self) -> None:
+        """An exception without a response attribute yields an empty code."""
+        assert AwsErrorClassifier.error_code(RuntimeError("boom")) == ""
+
+    def test_non_mapping_response_has_no_code(self) -> None:
+        """A response attribute that is not a mapping yields an empty code."""
+        error = RuntimeError("boom")
+        error.response = None  # type: ignore[attr-defined]
+
+        assert AwsErrorClassifier.error_code(error) == ""
+
+    def test_non_mapping_error_section_has_no_code(self) -> None:
+        """An Error section that is not a mapping yields an empty code."""
+        error = RuntimeError("boom")
+        error.response = {"Error": "unexpected"}  # type: ignore[attr-defined]
+
+        assert AwsErrorClassifier.error_code(error) == ""
+
+    def test_non_string_code_has_no_code(self) -> None:
+        """A Code value that is not a string yields an empty code."""
+        error = RuntimeError("boom")
+        error.response = {"Error": {"Code": None}}  # type: ignore[attr-defined]
+
+        assert AwsErrorClassifier.error_code(error) == ""
+
+    def test_failure_detail_falls_back_to_exception_class(self) -> None:
+        """Without an error code the detail names the exception class."""
+        failure = AwsErrorClassifier.failure("SNSBackend", "sns_error", RuntimeError())
+
+        assert failure.detail == "sns_error: RuntimeError"
+        assert failure.retryable is False
