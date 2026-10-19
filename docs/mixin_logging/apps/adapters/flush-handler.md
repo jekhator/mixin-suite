@@ -2,7 +2,7 @@
 
 > **Location:** `logging-mixin/docs/apps/adapters/flush-handler.md`
 > **Status:** Implemented. Correlation-aware buffering with flush-on-WARNING behavior.
-> **Code location:** `mixin_logging/adapters/stdlib/` (`flush_handler_client.py`, `flush_handler_objects.py`); constants in `flush_handler_objects.py`.
+> **Code location:** `mixin_logging/adapters/stdlib/` (`flush_handler_client.py`, `flush_handler_objects.py`); constants in `mixin_logging/adapters/constants/stdlib.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Flush-on-Warning Handler pattern).
 > **Sibling docs:** `docs/apps/adapters/stdlib.md`, `docs/apps/context/correlation.md`.
 
@@ -43,7 +43,7 @@ Handler Wrapper (buffers and transforms records per correlation; sits in the log
 
 ## Constants
 
-`mixin_logging/adapters/stdlib/flush_handler_objects.py`:
+`mixin_logging/adapters/constants/stdlib.py` (imported as `const`):
 
 - `DEFAULT_FLUSH_LEVEL = logging.WARNING`
 - `DEFAULT_TTL_SECONDS = 300`

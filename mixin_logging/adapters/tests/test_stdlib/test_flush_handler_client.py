@@ -10,7 +10,6 @@ import pytest
 from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_logging.adapters.constants import stdlib as const
 from mixin_logging.adapters.stdlib.flush_handler_client import (
-    NULL_CORRELATION_ID,
     FlushOnWarningHandler,
 )
 from mixin_logging.adapters.stdlib.flush_handler_objects import (
@@ -449,7 +448,7 @@ class TestFlushOnWarningHandlerNullCorrelation:
         record.correlation_id = const.UNSET_CORRELATION_ID
         handler.emit(record)
 
-        assert NULL_CORRELATION_ID in handler._buffers
+        assert const.NULL_CORRELATION_ID in handler._buffers
         assert test_const.CORRELATION_ID_VALID_ID_123 not in handler._buffers
 
 
@@ -481,8 +480,8 @@ class TestFlushOnWarningHandlerThreadSafety:
 class TestFlushOnWarningHandlerEdgeCases:
     """Tests for edge cases and defensive code paths."""
 
-    def test_evict_oldest_with_empty_correlation_order(self) -> None:
-        """Evict oldest handles empty _correlation_order (defensive path)."""
+    def test_evict_oldest_keeps_max_correlations(self) -> None:
+        """Evict oldest keeps the buffer count at max_correlations."""
         target = _RecordCapturingHandler()
         config = FlushOnWarningConfig(
             target_handler=target,
@@ -505,8 +504,6 @@ class TestFlushOnWarningHandlerEdgeCases:
 
         assert test_const.CORRELATION_ID_VALID_ID_123 in handler._buffers
 
-        handler._correlation_order.clear()
-
         set_correlation_id(test_const.CORRELATION_ID_TRACE)
         record2 = logging.LogRecord(
             name="test",
@@ -520,4 +517,4 @@ class TestFlushOnWarningHandlerEdgeCases:
         record2.correlation_id = test_const.CORRELATION_ID_TRACE
         handler.emit(record2)
 
-        assert len(handler._buffers) >= 1
+        assert list(handler._buffers) == [test_const.CORRELATION_ID_TRACE]
