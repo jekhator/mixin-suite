@@ -1,6 +1,6 @@
-# logging-mixin. Urllib3 Adapter
+# mixin-logging. Urllib3 Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/urllib3.md`
+> **Location:** `docs/mixin_logging/apps/adapters/urllib3.md`
 > **Status:** Implemented. Outbound correlation-ID propagation via the urllib3 library `PoolManager.urlopen()` hook.
 > **Code location:** `mixin_logging/adapters/urllib3/` (`urllib3_objects.py` + `urllib3_client.py`); constants in `mixin_logging/adapters/constants/urllib3.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).

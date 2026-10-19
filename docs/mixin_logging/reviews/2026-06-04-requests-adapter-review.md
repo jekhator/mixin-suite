@@ -49,7 +49,7 @@ Total: 397 LOC across 8 files, all under 694-line cap per LOC gate.
 - `requests_client.py` contains executable middleware: CorrelationHTTPAdapter (extends HTTPAdapter, overrides add_headers).
 - `__init__.py` is module-docstring-only, one-liner scope statement.
 
-**Evidence:** requests_objects.py, requests_client.py structure matches httpx canonical pattern.
+**Evidence:** requests_objects.py, requests_client.py structure matches httpx reference pattern.
 
 ---
 
@@ -109,7 +109,7 @@ Total: 397 LOC across 8 files, all under 694-line cap per LOC gate.
 **PASS**
 
 - File docstrings scoped to file only: requests_objects.py (line 1) describes 'RequestsCorrelation value object for requests adapter', requests_client.py (line 1) describes 'CorrelationHTTPAdapter: requests HTTPAdapter for correlation-ID propagation'.
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>' or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies the module scope.
 
 **Evidence:** requests_objects.py line 1, requests_client.py line 1, __init__.py line 1.
@@ -150,7 +150,7 @@ Total: 397 LOC across 8 files, all under 694-line cap per LOC gate.
 - `test_requests_objects.py`: 12 test methods covering RequestsCorrelation across 4 test classes:
   - from_context: set/unset/unsafe-char/overlong (4 tests).
   - construction: unsafe-char/empty/overlong raises ValueError (3 tests).
-  - header_tuple: returns canonical pair (1 test).
+  - header_tuple: returns reference pair (1 test).
   - _is_safe: valid/empty/overlong/unsafe-char (4 tests).
 
 - `test_requests_client.py`: 11 test methods covering CorrelationHTTPAdapter across 3 test classes:
@@ -214,10 +214,10 @@ Cross-referencing with `docs/audits/2026-06-04-requests-adapter-security-audit.m
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- HTTPAdapter subclass adheres to canonical pattern.
+- HTTPAdapter subclass adheres to reference pattern.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 23 scenarios across both objects and client with parametrization and mounting patterns.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 147 LOC).
 - Security audit confirms no code defects; one documentation enhancement recommended (add_headers docstring for hook ordering).
 

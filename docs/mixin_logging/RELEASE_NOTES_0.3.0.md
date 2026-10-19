@@ -16,22 +16,22 @@ Explicit `PUBLIC_API` export from top-level package with lockstep conformance te
 - **Sub-package constants**: All adapter-specific configuration constants surfaced via `mixin_logging.constants.<adapter>`
 - **Conformance enforcement**: Test suite validates that public API remains stable across releases; breaking API additions flagged at CI
 
-### Standards-Conformance Sweep (PR #41)
+### Standards-Conformance Pass (PR #41)
 
 Unified constants organization and semantic-literal extraction across all adapters and common modules:
 
-- **Constants dividers**: Canonical docstring-format section headers (`# → Literal values` / `# ← Context`)
+- **Constants dividers**: Reference docstring-format section headers (`# -> Literal values` / `# <- Context`)
 - **Deep extraction**: `MagicNumber`/`EnvironmentVariable`/`HeaderName` literals moved to dedicated `constants/` modules per sub-package
 - **dto-strict gate**: Integration with `dto-strict` v0.2.2+ for @dataclass configuration + @phi_aware metadata validation
 - **Publish trigger migration**: Release workflow now triggered by version-tag push (not release-branch); `chore/release-*` branch pattern deprecated
 
-### Docstring & Naming Conformance Sweep (PR #42)
+### Docstring & Naming Conformance Pass (PR #42)
 
 Package-wide consistency in documentation and parameter naming:
 
-- **One-line verb-phrase docstrings**: All public methods, classes, and packages now start with imperative action verbs (e.g., "Generate correlation ID for…", "Inject header into…")
+- **One-line verb-phrase docstrings**: All public methods, classes, and packages now start with imperative action verbs (e.g., "Generate correlation ID for...", "Inject header into...")
 - **Scoped module docstrings**: Each module includes a 2-3 line docstring describing its responsibility within the sub-package
-- **Intuitive test parameter names**: Test fixtures and helper functions renamed for semantic clarity (e.g., `mock_request` → `sample_asgi_scope`, `event` → `inbound_event`)
+- **Intuitive test parameter names**: Test fixtures and helper functions renamed for semantic clarity (e.g., `mock_request` -> `sample_asgi_scope`, `event` -> `inbound_event`)
 - **Zero API changes**: All updates are documentation and naming only; runtime behavior unchanged
 
 ## API Stability

@@ -1,6 +1,6 @@
-# logging-mixin. LoggingMixin Class
+# mixin-logging. LoggingMixin Class
 
-> **Location:** `logging-mixin/docs/apps/mixin/mixin.md`
+> **Location:** `docs/mixin_logging/apps/mixin/mixin.md`
 > **Status:** Built and ready for use
 > **Code:** `mixin_logging/mixin/mixin.py`
 > **Sibling docs:** `docs/apps/context/correlation.md`, `docs/apps/decorators/logged.md`.
@@ -117,7 +117,7 @@ If your service class has sensitive data (e.g., SSN, API keys), the caller must 
 ```python
 from dataclasses import dataclass
 from mixin_logging import LoggingMixin
-from pii_aware_mixin import phi_aware
+from mixin_sensitivity import phi_aware
 
 @dataclass(frozen=True, slots=True)
 @phi_aware
@@ -171,4 +171,4 @@ For cross-class logging in class/static contexts, use the stdlib logging module 
 - **No automatic exception catching**, for exception handling, pair with `@logged` or explicit try/except.
 - **No performance metrics**, duration/timing are a separate concern (observability-engineer's domain).
 - **No automatic masking**, `LoggingMixin` does not inspect or mask sensitive data; callers must explicitly pass masked values via `**extra` (e.g., `self.log_info("event", **self.mask_for_logging())`).
-- **No pii-aware composition**, fully decoupled from `pii-aware-mixin`; logging-mixin has no knowledge of PII or masking concerns.
+- **No sensitivity-aware composition**, fully decoupled from `mixin-sensitivity`; mixin-logging has no knowledge of PII or masking concerns.

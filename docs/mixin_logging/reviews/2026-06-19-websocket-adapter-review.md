@@ -49,7 +49,7 @@ Total: 252 LOC across 8 files, all under 300-line cap per LOC gate.
 - `websocket_client.py` contains executable middleware: CorrelationIdMiddleware.
 - `__init__.py` is module-docstring-only, imports pulled from both files, __all__ correctly ordered.
 
-**Evidence:** websocket_objects.py, websocket_client.py structure mirrors ASGI/WSGI canonical pattern.
+**Evidence:** websocket_objects.py, websocket_client.py structure mirrors ASGI/WSGI reference pattern.
 
 ---
 
@@ -110,7 +110,7 @@ Total: 252 LOC across 8 files, all under 300-line cap per LOC gate.
 **PASS**
 
 - File docstrings scoped to file only: websocket_objects.py (line 1) describes 'WebSocketCorrelation value object for WebSocket adapter', websocket_client.py (line 1) describes 'CorrelationIdMiddleware: WebSocket inbound entry surface for correlation-ID setup'.
-- No references to 'per qhcg canonical', 'mirrors ASGI', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>', or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies the module scope.
 
 **Evidence:** websocket_objects.py line 1, websocket_client.py line 1, __init__.py line 1.
@@ -159,7 +159,7 @@ Total: 252 LOC across 8 files, all under 300-line cap per LOC gate.
 
 - **Total: 28 tests** across 12 domain paths (WebSocketCorrelation.from_headers, ._is_safe, .__post_init__, CorrelationIdMiddleware.__call__).
 - Parametrization: all unsafe chars (CR, LF, null) are tested individually via fixture variation.
-- Implementation agent reports: 100% coverage for both websocket_objects.py (28 stmts) and websocket_client.py (22 stmts).
+- Implementation author reports: 100% coverage for both websocket_objects.py (28 stmts) and websocket_client.py (22 stmts).
 
 **Evidence:** test_websocket_objects.py lines 12-170 (21 tests), test_websocket_client.py lines 15-173 (7 tests).
 
@@ -185,7 +185,7 @@ Total: 252 LOC across 8 files, all under 300-line cap per LOC gate.
 
 1. **Byte-pair iteration is straightforward.** The adapter relies on the ASGI server to provide well-formed headers, which is correct. No parsing of raw HTTP streams.
 
-2. **Generated ID length (12 hex chars).** Matches the canonical 2^48 format used by ASGI, WSGI, Cloud adapters. Collision probability is acceptable for distributed tracing.
+2. **Generated ID length (12 hex chars).** Matches the 2^48 format used by ASGI, WSGI, Cloud adapters. Collision probability is acceptable for distributed tracing.
 
 ---
 
@@ -215,13 +215,13 @@ Cross-referencing with `docs/audits/2026-06-19-websocket-adapter-security-audit.
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- ASGI middleware adheres to canonical pattern.
+- ASGI middleware adheres to reference pattern.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 28 scenarios across both objects and client with fixture variation and async patterns.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 74 LOC).
 - Security audit confirms no code defects. All 8 threat questions resolved with NO ISSUE verdicts.
-- Implementation agent confirms all gates pass: ruff check/format clean, mypy clean, strict-module clean, LOC cap pass, 28 tests pass, 100% coverage.
+- Implementation author confirms all gates pass: ruff check/format clean, mypy clean, strict-module clean, LOC cap pass, 28 tests pass, 100% coverage.
 
 **Recommended merge:** Ready for integration. No code changes needed. The adapter is secure and complete.
 
@@ -243,5 +243,5 @@ All checklist items pass. Code is production-ready:
 - [x] 100% statement coverage reported
 - [x] No docstring cross-system refs
 - [x] No em dashes
-- [x] No employer/AI-assistant attribution
+- [x] No vendor or tool attribution
 - [x] All gates pass (ruff, mypy, strict-module, LOC, tests)

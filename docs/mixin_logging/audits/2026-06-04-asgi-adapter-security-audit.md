@@ -32,7 +32,7 @@
 
 **Severity:** LOW-MEDIUM. A broken ASGI server is already a major problem. The crash is in correlation extraction, not in the application proper (which would fail earlier). This is a robustness issue, not a security vulnerability.
 
-**Verdict:** ⚠️ NEEDS REVIEW
+**Verdict:** WARNING NEEDS REVIEW
 
 **Recommended improvement:** Add defensive type checking and skip malformed headers:
 
@@ -109,7 +109,7 @@ for header_name, header_value in headers:
 
 **Severity:** LOW. An empty correlation ID is logged, traced, and propagated, but doesn't cause crashes. However, it's semantically incorrect.
 
-**Verdict:** ⚠️ NEEDS REVIEW
+**Verdict:** WARNING NEEDS REVIEW
 
 **Analysis:** The `_is_safe()` check is missing the empty-string guard. Compare with other adapters (httpx, botocore, requests, celery):
 ```python
@@ -215,7 +215,7 @@ def _is_safe(value: str) -> bool:
 
 1. Line 64: `return (const.CORRELATION_ID_HEADER, self.correlation_id.encode())`
 2. `self.correlation_id` is a 12-character hex string (from line 59).
-3. `.encode()` produces bytes: `"abc123def456".encode()` → `b"abc123def456"`.
+3. `.encode()` produces bytes: `"abc123def456".encode()` -> `b"abc123def456"`.
 4. Hex characters (0-9, a-f) are all ASCII, so encoding to UTF-8 is unambiguous.
 
 **Verdict:** NO ISSUE
@@ -239,7 +239,7 @@ def _is_safe(value: str) -> bool:
 
 **Documentation:** The adapter should document this requirement.
 
-**Verdict:** ⚠️ NEEDS REVIEW
+**Verdict:** WARNING NEEDS REVIEW
 
 **Reasoning:** The middleware ordering dependency is implicit. Documentation should clarify that CorrelationIdMiddleware should be the outermost middleware for proper correlation propagation.
 

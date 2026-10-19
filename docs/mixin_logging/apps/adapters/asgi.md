@@ -1,7 +1,7 @@
-# logging-mixin. ASGI Adapter
+# mixin-logging. ASGI Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/asgi.md`
-> **Status:** Living reference. All 13 adapters fully implemented in 0.3.0+. Version sourcing: canonical version in `mixin_logging/config/_version.py` (read by both `__init__.py` and the build system).
+> **Location:** `docs/mixin_logging/apps/adapters/asgi.md`
+> **Status:** Living reference. All 13 adapters fully implemented in 0.3.0+. Version sourcing: reference version in `mixin_logging/config/_version.py` (read by both `__init__.py` and the build system).
 > **Code location:** `mixin_logging/adapters/` (13 adapters: ASGI, WSGI, Cloud, Stdlib, HTTPX, Requests, Botocore, Celery, aiohttp, urllib3, gRPC, WebSocket, GraphQL)
 > **Diagrams:** `docs/apps/adapters/diagrams.md`
 > **Sibling docs:** `docs/architecture/architecture.md`, `docs/apps/decorators/logged.md`, `docs/apps/context/correlation.md`.
@@ -31,7 +31,7 @@ Framework integrations for correlation ID propagation and context setup. Adapter
    - `urllib3.py`. urllib3 PoolManager propagation (`[urllib3]` extra)
    - `botocore.py`. AWS SDK propagation (`[botocore]` extra)
 
-4. **Async/Cross-Boundary**. Carry correlation ID across enqueue→execute boundaries (job queues, background tasks).
+4. **Async/Cross-Boundary**. Carry correlation ID across enqueue->execute boundaries (job queues, background tasks).
    - `celery.py`. Celery task propagation (`[celery]` extra)
 
 5. **Output Sink**. Inject correlation ID into all Python logs, even from third-party libraries.
@@ -50,7 +50,7 @@ All adapters use the following structure:
 
 Each adapter follows this pattern:
 
-1. **Entry:** Clear context → read header or platform ID → set `CorrelationContext` via `_client.set_id()`.
+1. **Entry:** Clear context -> read header or platform ID -> set `CorrelationContext` via `_client.set_id()`.
 2. **Execution:** Downstream code inherits correlation ID from `ContextVar`.
 3. **Exit:** Clear context via `_client.clear()` (if scoped).
 4. **Egress (optional):** Attach correlation ID to response headers or outbound requests.
@@ -70,11 +70,11 @@ Each adapter follows this pattern:
 
 **Behavior:**
 
-- `AsgiCorrelation.from_scope(scope)` extracts `x-correlation-id` header (binary → UTF-8 decode); on any validation failure, generates UUID4 hex[:12].
+- `AsgiCorrelation.from_scope(scope)` extracts `x-correlation-id` header (binary -> UTF-8 decode); on any validation failure, generates UUID4 hex[:12].
   - **Validation:** Untrusted inbound headers are validated via `_is_safe()` to reject control characters (`\r\n\0`), oversized values (>128 bytes), and invalid UTF-8. Invalid headers are rejected and a fresh UUID is auto-generated.
   - **Regenerate on failure:** If the inbound header fails validation (CRLF detected, over-length, bad UTF-8), a safe UUID4 hex[:12] is always generated and echoed in the response instead.
 - `ASGIApp` performs the **set** via `set_correlation_id()`, then delegates to wrapped app.
-- `CorrelationIdMiddleware` resolves correlation → wraps `send` to inject header on `http.response.start` → executes via `ASGIApp` → clears in `finally`.
+- `CorrelationIdMiddleware` resolves correlation -> wraps `send` to inject header on `http.response.start` -> executes via `ASGIApp` -> clears in `finally`.
 - All logs inherit correlation ID via `ContextVar`. The correlation ID is guaranteed to be safe (either validated inbound or freshly generated).
 
 **Example usage:**
@@ -249,10 +249,10 @@ def process_order(order_id: str):
 
 ## Architecture Design
 
-The ASGI adapter (and all others) lives **in logging-mixin's `adapters/asgi/`**, providing a clean, reusable surface that works with any ASGI framework. This design ensures:
+The ASGI adapter (and all others) lives **in mixin-logging's `adapters/asgi/`**, providing a clean, reusable surface that works with any ASGI framework. This design ensures:
 
 - **No framework lock-in:** Adapters are protocol-level, not framework-specific.
-- **Single responsibility:** Correlation ID is a logging-mixin concern; framework adapters are logging-mixin's domain.
+- **Single responsibility:** Correlation ID is a mixin-logging concern; framework adapters are mixin-logging's domain.
 - **Reusability:** The same `CorrelationIdMiddleware` works with FastAPI, Starlette, Quart, and any ASGI app.
 
 ## Constants
@@ -319,8 +319,8 @@ This ensures clean separation and prevents accidental context pollution.
 
 All adapters handle missing/malformed headers gracefully:
 
-- Missing header → generate UUID4 hex[:12].
-- Malformed header → log warning (via `LoggingMixin` if applicable) and generate fallback.
+- Missing header -> generate UUID4 hex[:12].
+- Malformed header -> log warning (via `LoggingMixin` if applicable) and generate fallback.
 - No breaking exceptions on header extraction.
 
 ## See Also

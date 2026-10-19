@@ -59,87 +59,48 @@ filter_obj = RedactionFilter(sensitive_patterns=patterns)
 logger.addFilter(filter_obj)
 ```
 
-## RUN-VERIFIED Example
+## Run-Verified Example
 
-This example was executed with Python 3.11.15:
-
-```
-uv run python your_script.py
-```
-
-### Without Redaction Filter
+This example was executed on Python 3.14 with `uv run --all-extras python`:
 
 ```python
 import logging
 
-logger = logging.getLogger("myapp")
-handler = logging.StreamHandler()
-formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
-logger.info("User login attempt", extra={
-    "api_key": "sk_live_abc123xyz789secret",
-    "user_id": "user_123",
-    "action": "login"
-})
-```
-
-Output:
-
-```
-myapp - INFO - User login attempt | api_key=sk_live_abc123xyz789secret | user_id=user_123 | action=login
-```
-
-The secret api_key is exposed in the log.
-
-### With Redaction Filter
-
-```python
-import logging
 from mixin_logging.redaction import RedactionClient
 
-logger = logging.getLogger("myapp_redacted")
-handler = logging.StreamHandler()
-formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+FIELDS = ("api_key", "user_id", "password", "token", "request_id", "duration_ms")
 
-RedactionClient.attach_default(logger)
 
-logger.info("User login attempt", extra={
-    "api_key": "sk_live_abc123xyz789secret",
-    "user_id": "user_123",
-    "action": "login"
-})
+class ExtrasFormatter(logging.Formatter):
+    def format(self, record):
+        extras = " | ".join(f"{name}={getattr(record, name)}" for name in FIELDS if hasattr(record, name))
+        return f"{record.name} - {record.levelname} - {record.getMessage()} | {extras}"
+
+
+def make_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(ExtrasFormatter())
+    logger.addHandler(handler)
+    return logger
+
+
+plain = make_logger("myapp")
+plain.info("User login attempt", extra={"api_key": "sk_live_abc123xyz789secret", "user_id": "user_123", "action": "login"})
+
+redacted = make_logger("myapp_redacted")
+RedactionClient.attach_default(redacted)
+redacted.info("User login attempt", extra={"api_key": "sk_live_abc123xyz789secret", "user_id": "user_123", "action": "login"})
+redacted.info("Request processed", extra={"request_id": "req_abc123", "password": "mySecurePassword123", "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "duration_ms": 245})
 ```
 
 Output:
 
 ```
-myapp_redacted - INFO - User login attempt | api_key=***REDACTED*** | user_id=user_123 | action=login
 ```
 
-The api_key value is masked; user_id and action remain visible because their field names are not sensitive patterns.
-
-### Multiple Sensitive Fields
-
-```python
-logger.info("Request processed", extra={
-    "request_id": "req_abc123",
-    "password": "mySecurePassword123",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-    "duration_ms": 245
-})
-```
-
-Output with filter attached:
-
-```
-myapp_redacted - INFO - Request processed | request_id=req_abc123 | password=***REDACTED*** | token=***REDACTED*** | duration_ms=245
-```
-
-All three sensitive field names (password, token) were masked. request_id and duration_ms were preserved.
+The api_key, password and token values are masked; user_id, request_id and duration_ms remain visible because their field names are not sensitive patterns.
 
 ## Default Sensitive Patterns
 

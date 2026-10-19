@@ -1,6 +1,6 @@
-# logging-mixin. Celery Adapter
+# mixin-logging. Celery Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/celery.md`
+> **Location:** `docs/mixin_logging/apps/adapters/celery.md`
 > **Status:** Implemented. Task-boundary correlation-ID propagation via celery signals.
 > **Code location:** `mixin_logging/adapters/celery/` (`celery_objects.py` + `celery_client.py`); constants in `mixin_logging/adapters/constants/celery.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Celery Task Propagation Lifecycle).
@@ -17,9 +17,9 @@ Task-Boundary Propagation, distinct from HTTP-propagation adapters (ASGI/WSGI/ht
 ## Behavior
 
 - `CorrelationSignals.connect()` registers three signal handlers on the celery signal bus (weak=False to survive garbage collection):
-  - `before_task_publish` → `inject_on_publish`: write the current correlation ID into task message headers (producer side).
-  - `task_prerun` → `restore_on_prerun`: restore the correlation ID from task headers into context (worker side).
-  - `task_postrun` → `clear_on_postrun`: clear context after task completes (worker side).
+  - `before_task_publish` -> `inject_on_publish`: write the current correlation ID into task message headers (producer side).
+  - `task_prerun` -> `restore_on_prerun`: restore the correlation ID from task headers into context (worker side).
+  - `task_postrun` -> `clear_on_postrun`: clear context after task completes (worker side).
 - On task publish, `inject_on_publish` reads the current correlation ID from the `ContextVar` via `CeleryCorrelation.from_context()`. If it is unset or unsafe the handler is a no-op; otherwise it sets the correlation ID into the `headers` dict (a mutable mapping provided by celery's publish signal).
 - On task prerun, `restore_on_prerun` extracts the correlation ID from `task.request.headers` (the headers that were published with the task), validates it, and calls `set_correlation_id()` to make it available to the task body.
 - On task postrun, `clear_on_postrun` unconditionally clears the context to prevent task-to-task leakage.
@@ -78,45 +78,45 @@ if __name__ == "__main__":
 ## Lifecycle
 
 ```
-┌─────────────────────────────────┐
-│ HTTP Request (ASGI/WSGI)        │
-│ _client.set_id("req-abc123")    │
-└────────────┬────────────────────┘
-             │
-             ↓
-┌─────────────────────────────────┐
-│ Application: task.delay()       │
-│ before_task_publish signal      │
-│ ↓ inject_on_publish             │
-│ headers["X-Correlation-ID"]     │
-│ = "req-abc123"                  │
-└────────────┬────────────────────┘
-             │
-             ↓
++---------------------------------+
+| HTTP Request (ASGI/WSGI)        |
+| _client.set_id("req-abc123")    |
++------------+--------------------+
+             |
+             v
++---------------------------------+
+| Application: task.delay()       |
+| before_task_publish signal      |
+| v inject_on_publish             |
+| headers["X-Correlation-ID"]     |
+| = "req-abc123"                  |
++------------+--------------------+
+             |
+             v
         (Task in broker)
-             │
-             ↓
-┌─────────────────────────────────┐
-│ Celery Worker: task dequeued    │
-│ task_prerun signal              │
-│ ↓ restore_on_prerun             │
-│ _client.set_id("req-abc123")    │
-└────────────┬────────────────────┘
-             │
-             ↓
-┌─────────────────────────────────┐
-│ Task Body: @app.task def ...    │
-│ LoggingMixin logs:              │
-│ correlation_id="req-abc123"     │
-└────────────┬────────────────────┘
-             │
-             ↓
-┌─────────────────────────────────┐
-│ Task Complete                   │
-│ task_postrun signal             │
-│ ↓ clear_on_postrun              │
-│ _client.clear()                 │
-└─────────────────────────────────┘
+             |
+             v
++---------------------------------+
+| Celery Worker: task dequeued    |
+| task_prerun signal              |
+| v restore_on_prerun             |
+| _client.set_id("req-abc123")    |
++------------+--------------------+
+             |
+             v
++---------------------------------+
+| Task Body: @app.task def ...    |
+| LoggingMixin logs:              |
+| correlation_id="req-abc123"     |
++------------+--------------------+
+             |
+             v
++---------------------------------+
+| Task Complete                   |
+| task_postrun signal             |
+| v clear_on_postrun              |
+| _client.clear()                 |
++---------------------------------+
 ```
 
 ## See Also

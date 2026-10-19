@@ -1,6 +1,6 @@
-# logging-mixin. Cloud Adapter
+# mixin-logging. Cloud Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/cloud.md`
+> **Location:** `docs/mixin_logging/apps/adapters/cloud.md`
 > **Status:** Implemented. Inbound AWS-event correlation adapter for serverless and event-driven Lambda entry points. Updated 2026-06-04.
 > **Code location:** `mixin_logging/adapters/cloud/` (`cloud_objects.py` + `cloud_client.py`); constants in `mixin_logging/adapters/constants/cloud.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).
@@ -17,7 +17,7 @@ Inbound Ingress, the same category as the ASGI and WSGI adapters, specialized fo
 ## Behavior
 
 - `CloudSetup.setup_correlation_id(event, context)` is called at the top of a Lambda handler to extract a correlation ID from the event, set it into context, and return it (for optional response header injection).
-- Multi-source extraction follows precedence: API Gateway/ALB headers → SQS message attributes → SNS message attributes → EventBridge detail → direct top-level key → generate uuid4.
+- Multi-source extraction follows precedence: API Gateway/ALB headers -> SQS message attributes -> SNS message attributes -> EventBridge detail -> direct top-level key -> generate uuid4.
 - `CloudCorrelation.from_event(event)` performs the extraction, validating safety and falling back to uuid4 hex[:12] (first 12 hex chars) whenever extraction fails or the value is unsafe.
 - The extracted correlation ID is set into context via `set_correlation_id()` for all downstream services and loggers to inherit via `ContextVar`.
 
@@ -26,7 +26,7 @@ Inbound Ingress, the same category as the ASGI and WSGI adapters, specialized fo
 `CloudCorrelation` (frozen, slots) captures the resolved `correlation_id`:
 
 - `from_event(cls, event)`. Class method. Extract correlation ID from the event dict following AWS-source precedence order; validate safety; generate uuid4 hex[:12] if extraction fails. Returns `CloudCorrelation(correlation_id=..., extracted=extracted_bool)` where `extracted` tracks provenance (True if from event, False if generated).
-- `__post_init__()`. Validate `correlation_id` is non-empty, within length cap (≤128 characters), and free of control characters (`\r\n\0`). Raise `ValueError` if unsafe.
+- `__post_init__()`. Validate `correlation_id` is non-empty, within length cap (<=128 characters), and free of control characters (`\r\n\0`). Raise `ValueError` if unsafe.
 - `_is_safe(value)`. Static method. Return `True` if value is non-empty, within length cap, and free of unsafe header characters; else `False`.
 
 ## Multi-Source Extraction

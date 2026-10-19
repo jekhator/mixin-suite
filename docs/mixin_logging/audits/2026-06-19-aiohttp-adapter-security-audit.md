@@ -17,7 +17,7 @@
 2. `on_request_start` is fired by aiohttp AFTER request object creation but BEFORE transmission (per aiohttp documentation).
 3. Line 32 (aiohttp_client.py): `params.headers[name] = value` modifies the headers dict directly.
 4. The `TraceRequestStartParams.headers` object is a mutable dict until transmission, not frozen.
-5. Aiohttp's execution order: session.get() → request prep → **on_request_start fires** → connection → send.
+5. Aiohttp's execution order: session.get() -> request prep -> **on_request_start fires** -> connection -> send.
 
 **Verdict:** NO ISSUE
 

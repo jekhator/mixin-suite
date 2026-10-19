@@ -81,7 +81,7 @@ Total: 304 LOC across 5 files, all under 694-line cap per LOC gate.
 
 - File docstring (line 1, stdlib_client.py) describes 'CorrelationLogFilter: stdlib logging.Filter that stamps correlation_id onto LogRecords': standalone and scoped.
 - Method docstrings: `filter()` (line 15) is one-liner, `add_correlation_filter()` (line 24-25) is one-liner.
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing.
+- No references to 'mirrors <other project>' or other cross-system framing.
 
 **Evidence:** stdlib_client.py lines 1, 15, 24-25.
 
@@ -118,7 +118,7 @@ Total: 304 LOC across 5 files, all under 694-line cap per LOC gate.
 **PASS**
 
 - `test_stdlib_client.py`: 15+ test methods covering CorrelationLogFilter and add_correlation_filter:
-  - filter(): set/unset context → attribute stamped correctly (multiple tests).
+  - filter(): set/unset context -> attribute stamped correctly (multiple tests).
   - filter(): returns True (record passes) (1+ tests).
   - filter(): idempotent on multiple records (1+ tests).
   - add_correlation_filter(): attaches to logger (1+ tests).
@@ -185,7 +185,7 @@ All checklist items pass. Code is production-ready:
 - Attribute stamping is idempotent and safe.
 - Constants use Final, sentinel values are clear.
 - Tests cover 15+ scenarios including formatter integration.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 244 LOC).
 - Security audit confirms no code defects; mild concern about validation is optional enhancement (docs/hardening only).
 

@@ -49,7 +49,7 @@ Total: 471 LOC across 8 files, all under 694-line cap per LOC gate.
 - `celery_client.py` contains executable signals: CorrelationSignals (stateless classmethod surface, no __init__ fields).
 - `__init__.py` is module-docstring-only, one-liner scope statement.
 
-**Evidence:** celery_objects.py, celery_client.py structure matches canonical pattern.
+**Evidence:** celery_objects.py, celery_client.py structure matches reference pattern.
 
 ---
 
@@ -109,7 +109,7 @@ Total: 471 LOC across 8 files, all under 694-line cap per LOC gate.
 **PASS**
 
 - File docstrings scoped to file only: celery_objects.py (line 1) describes 'CeleryCorrelation value object for celery task boundary propagation', celery_client.py (line 1) describes 'CorrelationSignals: stateless signal-hook surface for celery task boundary correlation-ID propagation'.
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>' or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies the module scope.
 
 **Evidence:** celery_objects.py line 1, celery_client.py line 1, __init__.py line 1.
@@ -150,7 +150,7 @@ Total: 471 LOC across 8 files, all under 694-line cap per LOC gate.
 - `test_celery_objects.py`: 12 test methods covering CeleryCorrelation across 4 test classes:
   - from_context: set/unset/unsafe-char/overlong (4 tests).
   - construction: unsafe-char/empty/overlong raises ValueError (3 tests).
-  - header_pair: returns canonical pair (1 test).
+  - header_pair: returns reference pair (1 test).
   - _is_safe: valid/empty/overlong/unsafe-char (4 tests).
 
 - `test_celery_client.py`: 15 test methods covering CorrelationSignals across 4 test classes:
@@ -218,10 +218,10 @@ Cross-referencing with `docs/audits/2026-06-04-celery-adapter-security-audit.md`
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- Object/client split adheres to canonical.
+- Object/client split adheres to reference.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 27 scenarios across both objects and client, including signal registration and idempotency patterns.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 201 LOC).
 - Security audit confirms no blockers; all findings validate the defensive architecture.
 

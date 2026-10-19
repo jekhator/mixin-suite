@@ -1,6 +1,6 @@
-# logging-mixin. Stdlib Logging Adapter
+# mixin-logging. Stdlib Logging Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/stdlib.md`
+> **Location:** `docs/mixin_logging/apps/adapters/stdlib.md`
 > **Status:** Implemented. Output-sink correlation-ID stamping via `logging.Filter`.
 > **Code location:** `mixin_logging/adapters/stdlib/` (`stdlib_client.py`); constants in `mixin_logging/adapters/constants/stdlib.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Output Sink Adapter pattern).
@@ -96,59 +96,59 @@ CorrelationLogFilter.add_correlation_filter(logger)
 ## Lifecycle
 
 ```
-┌──────────────────────────────────────┐
-│ Application Startup                  │
-│ ┌──────────────────────────────────┐ │
-│ │ logging.config.dictConfig() or   │ │
-│ │ manual handler/formatter setup    │ │
-│ └──────────────┬───────────────────┘ │
-│                │                      │
-│                ↓                      │
-│ ┌──────────────────────────────────┐ │
-│ │ CorrelationLogFilter.            │ │
-│ │ add_correlation_filter(logger)   │ │
-│ │ [filter attached to logger]      │ │
-│ └──────────────────────────────────┘ │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ Request Arrives                      │
-│ ├─ ASGI/WSGI middleware inbound      │
-│ └─ _client.set_id(correlation_id)    │
-└──────────────┬───────────────────────┘
-               │
-               ↓
-┌──────────────────────────────────────┐
-│ Application Code Emits Log           │
-│ logger.info("User signed up")        │
-│                                      │
-│ ↓ logging system routes record       │
-│   through registered filters         │
-│                                      │
-│ ↓ CorrelationLogFilter.filter() runs │
-│   • read _client.current_id()        │
-│   • record.correlation_id = value    │
-│   • return True                      │
-│                                      │
-│ ↓ Formatter renders:                 │
-│   %(correlation_id)s → "req-abc123"  │
-│                                      │
-│ ↓ Handler emits to sink (stream,     │
-│   file, CloudWatch, etc.)            │
-│                                      │
-│ Final log line:                      │
-│ 2026-05-31 14:23:45 - [req-abc123] - │
-│ User signed up                       │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ Request Completes                    │
-│ ├─ Middleware exit                   │
-│ └─ _client.clear()                   │
-│    [ContextVar cleared for next req] │
-└──────────────────────────────────────┘
++--------------------------------------+
+| Application Startup                  |
+| +----------------------------------+ |
+| | logging.config.dictConfig() or   | |
+| | manual handler/formatter setup    | |
+| +--------------+-------------------+ |
+|                |                      |
+|                v                      |
+| +----------------------------------+ |
+| | CorrelationLogFilter.            | |
+| | add_correlation_filter(logger)   | |
+| | [filter attached to logger]      | |
+| +----------------------------------+ |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| Request Arrives                      |
+| +- ASGI/WSGI middleware inbound      |
+| +- _client.set_id(correlation_id)    |
++--------------+-----------------------+
+               |
+               v
++--------------------------------------+
+| Application Code Emits Log           |
+| logger.info("User signed up")        |
+|                                      |
+| v logging system routes record       |
+|   through registered filters         |
+|                                      |
+| v CorrelationLogFilter.filter() runs |
+|   - read _client.current_id()        |
+|   - record.correlation_id = value    |
+|   - return True                      |
+|                                      |
+| v Formatter renders:                 |
+|   %(correlation_id)s -> "req-abc123"  |
+|                                      |
+| v Handler emits to sink (stream,     |
+|   file, CloudWatch, etc.)            |
+|                                      |
+| Final log line:                      |
+| 2026-05-31 14:23:45 - [req-abc123] - |
+| User signed up                       |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| Request Completes                    |
+| +- Middleware exit                   |
+| +- _client.clear()                   |
+|    [ContextVar cleared for next req] |
++--------------------------------------+
 ```
 
 ## See Also

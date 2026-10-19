@@ -1,6 +1,6 @@
-# logging-mixin. Flush-on-Warning Handler
+# mixin-logging. Flush-on-Warning Handler
 
-> **Location:** `logging-mixin/docs/apps/adapters/flush-handler.md`
+> **Location:** `docs/mixin_logging/apps/adapters/flush-handler.md`
 > **Status:** Implemented. Correlation-aware buffering with flush-on-WARNING behavior.
 > **Code location:** `mixin_logging/adapters/stdlib/` (`flush_handler_client.py`, `flush_handler_objects.py`); constants in `mixin_logging/adapters/constants/stdlib.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Flush-on-Warning Handler pattern).
@@ -57,7 +57,7 @@ This handler **buffers per correlation, not globally** (unlike stdlib's `MemoryH
 
 ## Compatibility
 
-Python 3.11+ (uses frozen-slots dataclass with `ContextVar` correlation tracking). Works with any logger configured via standard logging configuration; designed to sit in the handler chain between the logger and final output sinks (files, streams, CloudWatch, etc.).
+Python 3.12+ (uses frozen-slots dataclass with `ContextVar` correlation tracking). Works with any logger configured via standard logging configuration; designed to sit in the handler chain between the logger and final output sinks (files, streams, CloudWatch, etc.).
 
 ## Example Usage
 
@@ -92,119 +92,119 @@ logger.setLevel(logging.DEBUG)
 set_correlation_id("request-123")
 logger.debug("Processing started")
 logger.info("Step 1 complete")
-logger.warning("Warning: retry attempt 1")  # ← triggers flush: debug + info + this warning all emitted
-logger.debug("Post-warning debug")           # ← buffered again (new buffer)
+logger.warning("Warning: retry attempt 1")  # <- triggers flush: debug + info + this warning all emitted
+logger.debug("Post-warning debug")           # <- buffered again (new buffer)
 
 set_correlation_id("request-456")
 logger.debug("Other request started")
-logger.info("Other request step 1")          # ← buffered, NOT flushed (different correlation)
+logger.info("Other request step 1")          # <- buffered, NOT flushed (different correlation)
 ```
 
 ## Lifecycle
 
 ```
-┌──────────────────────────────────────┐
-│ Application Startup                  │
-│ ┌──────────────────────────────────┐ │
-│ │ console_handler = StreamHandler()│ │
-│ │ config = FlushOnWarningConfig()  │ │
-│ │ flush_handler = FlushOnWarning   │ │
-│ │   Handler(config)                │ │
-│ │ logger.addHandler(flush_handler) │ │
-│ └──────────────────────────────────┘ │
-└──────────────┬───────────────────────┘
-               │
-               ↓
-┌──────────────────────────────────────┐
-│ Request Arrives                      │
-│ set_correlation_id("req-abc123")     │
-└──────────────┬───────────────────────┘
-               │
-               ↓
-┌──────────────────────────────────────┐
-│ DEBUG Record Emitted                 │
-│ logger.debug("Processing started")   │
-│                                      │
-│ ↓ FlushOnWarningHandler.emit()       │
-│   • Get correlation_id from record   │
-│   • Level < WARNING? ─→ BUFFER       │
-│   • Store in buffers["req-abc123"]   │
-│   • Target handler NOT called        │
-│                                      │
-│ Result: No output to console yet     │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ INFO Record Emitted                  │
-│ logger.info("Step 1 complete")       │
-│                                      │
-│ ↓ FlushOnWarningHandler.emit()       │
-│   • Level < WARNING? ─→ BUFFER       │
-│   • Append to buffers["req-abc123"]  │
-│   • Target handler NOT called        │
-│                                      │
-│ Result: No output to console yet     │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ WARNING Record Emitted               │
-│ logger.warning("Retry attempt 1")    │
-│                                      │
-│ ↓ FlushOnWarningHandler.emit()       │
-│   • Level >= WARNING? ─→ FLUSH       │
-│   • Drain buffers["req-abc123"]      │
-│   • For each buffered record:        │
-│     └─ target_handler.emit(record)   │
-│       [DEBUG and INFO to console]    │
-│   • Clear buffers["req-abc123"]      │
-│   • Emit WARNING to target_handler   │
-│       [WARNING to console]           │
-│   • Delete buffered records          │
-│                                      │
-│ Output to console:                   │
-│ DEBUG... [req-abc123] Processing...  │
-│ INFO.... [req-abc123] Step 1...      │
-│ WARNING. [req-abc123] Retry...       │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ DEBUG After Flush                    │
-│ logger.debug("Post-warning debug")   │
-│                                      │
-│ ↓ FlushOnWarningHandler.emit()       │
-│   • Level < WARNING? ─→ BUFFER (new) │
-│   • buffers["req-abc123"] created    │
-│     (previous buffer was cleared)    │
-│   • Target handler NOT called        │
-│                                      │
-│ Result: No output to console         │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ TTL Eviction (Example)               │
-│ 300+ seconds pass, no new records    │
-│ for "req-xyz789" arrive              │
-│                                      │
-│ ↓ Next record emitted (any corr.)    │
-│   • FlushOnWarningHandler.emit()     │
-│   • _evict_expired_buffers() runs    │
-│   • Scan _timestamps for old entries │
-│   • "req-xyz789" > 300s old? ─→ DROP │
-│   • buffers["req-xyz789"] deleted    │
-│   • Buffered records lost (no flush) │
-│                                      │
-│ Result: Silently evicted             │
-└──────────────────────────────────────┘
-             │
-             ↓
-┌──────────────────────────────────────┐
-│ Request Completes                    │
-│ clear_correlation_id()               │
-└──────────────────────────────────────┘
++--------------------------------------+
+| Application Startup                  |
+| +----------------------------------+ |
+| | console_handler = StreamHandler()| |
+| | config = FlushOnWarningConfig()  | |
+| | flush_handler = FlushOnWarning   | |
+| |   Handler(config)                | |
+| | logger.addHandler(flush_handler) | |
+| +----------------------------------+ |
++--------------+-----------------------+
+               |
+               v
++--------------------------------------+
+| Request Arrives                      |
+| set_correlation_id("req-abc123")     |
++--------------+-----------------------+
+               |
+               v
++--------------------------------------+
+| DEBUG Record Emitted                 |
+| logger.debug("Processing started")   |
+|                                      |
+| v FlushOnWarningHandler.emit()       |
+|   - Get correlation_id from record   |
+|   - Level < WARNING? --> BUFFER       |
+|   - Store in buffers["req-abc123"]   |
+|   - Target handler NOT called        |
+|                                      |
+| Result: No output to console yet     |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| INFO Record Emitted                  |
+| logger.info("Step 1 complete")       |
+|                                      |
+| v FlushOnWarningHandler.emit()       |
+|   - Level < WARNING? --> BUFFER       |
+|   - Append to buffers["req-abc123"]  |
+|   - Target handler NOT called        |
+|                                      |
+| Result: No output to console yet     |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| WARNING Record Emitted               |
+| logger.warning("Retry attempt 1")    |
+|                                      |
+| v FlushOnWarningHandler.emit()       |
+|   - Level >= WARNING? --> FLUSH       |
+|   - Drain buffers["req-abc123"]      |
+|   - For each buffered record:        |
+|     +- target_handler.emit(record)   |
+|       [DEBUG and INFO to console]    |
+|   - Clear buffers["req-abc123"]      |
+|   - Emit WARNING to target_handler   |
+|       [WARNING to console]           |
+|   - Delete buffered records          |
+|                                      |
+| Output to console:                   |
+| DEBUG... [req-abc123] Processing...  |
+| INFO.... [req-abc123] Step 1...      |
+| WARNING. [req-abc123] Retry...       |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| DEBUG After Flush                    |
+| logger.debug("Post-warning debug")   |
+|                                      |
+| v FlushOnWarningHandler.emit()       |
+|   - Level < WARNING? --> BUFFER (new) |
+|   - buffers["req-abc123"] created    |
+|     (previous buffer was cleared)    |
+|   - Target handler NOT called        |
+|                                      |
+| Result: No output to console         |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| TTL Eviction (Example)               |
+| 300+ seconds pass, no new records    |
+| for "req-xyz789" arrive              |
+|                                      |
+| v Next record emitted (any corr.)    |
+|   - FlushOnWarningHandler.emit()     |
+|   - _evict_expired_buffers() runs    |
+|   - Scan _timestamps for old entries |
+|   - "req-xyz789" > 300s old? --> DROP |
+|   - buffers["req-xyz789"] deleted    |
+|   - Buffered records lost (no flush) |
+|                                      |
+| Result: Silently evicted             |
++--------------------------------------+
+             |
+             v
++--------------------------------------+
+| Request Completes                    |
+| clear_correlation_id()               |
++--------------------------------------+
 ```
 
 ## Usage Guide
@@ -260,7 +260,7 @@ logger.setLevel(logging.DEBUG)
 set_correlation_id("task-123")
 logger.debug("Processing started")
 logger.info("Step 1 complete")
-logger.warning("Retry needed")  # ← Triggers flush and output
+logger.warning("Retry needed")  # <- Triggers flush and output
 ```
 
 ## Verified Example

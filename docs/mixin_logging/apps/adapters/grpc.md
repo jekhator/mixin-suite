@@ -1,6 +1,6 @@
-# logging-mixin. gRPC Adapter
+# mixin-logging. gRPC Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/grpc.md`
+> **Location:** `docs/mixin_logging/apps/adapters/grpc.md`
 > **Status:** Implemented. Inbound correlation-ID extraction and context setup via gRPC ServerInterceptor.
 > **Code location:** `mixin_logging/adapters/grpc/` (`grpc_objects.py` + `grpc_client.py`); constants in `mixin_logging/adapters/constants/grpc.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).

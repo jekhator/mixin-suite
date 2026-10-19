@@ -115,12 +115,12 @@
 1. Line 42-43: `uuid4().hex[: const.GENERATED_ID_LENGTH]` where `GENERATED_ID_LENGTH = 12`
 2. UUID4 hex is 32 hex characters; taking the first 12 gives 2^48 possible values (~281 trillion).
 3. For tracing purposes, collision probability in typical workloads (< 1 million concurrent connections) is negligible (birthday paradox).
-4. The format matches other adapters in logging-mixin (ASGI, WSGI, Cloud).
+4. The format matches other adapters in mixin-logging (ASGI, WSGI, Cloud).
 5. Test coverage (test_websocket_objects.py line 29-31) verifies the generated ID is 12 hex chars.
 
 **Verdict:** NO ISSUE
 
-**Reasoning:** UUID4 hex[:12] is the canonical format for logging-mixin. Collision probability is acceptable for distributed tracing. The design is consistent with all other adapters.
+**Reasoning:** UUID4 hex[:12] is the reference format for mixin-logging. Collision probability is acceptable for distributed tracing. The design is consistent with all other adapters.
 
 ---
 
@@ -174,7 +174,7 @@
 
 **Verdict:** NO ISSUE
 
-**Reasoning:** Frozen dataclass with slots is the canonical pattern in logging-mixin. Immutability prevents accidental corruption. The __post_init__ guard ensures only safe values are exposed.
+**Reasoning:** Frozen dataclass with slots is the reference pattern in mixin-logging. Immutability prevents accidental corruption. The __post_init__ guard ensures only safe values are exposed.
 
 ---
 

@@ -17,12 +17,12 @@
 2. Line 16: `def add_headers(self, request: Any, **kwargs: Any) -> None:` overrides the HTTPAdapter method.
 3. Line 18: `super().add_headers(request, **kwargs)` calls the parent class method first.
 4. Line 19-23: Then injects the correlation ID.
-5. Requests' request preparation flow: method normalization → URL parsing → prepare_auth → **prepare_headers** (add_headers fires here) → prepare body → prepare cookies → finalize headers.
+5. Requests' request preparation flow: method normalization -> URL parsing -> prepare_auth -> **prepare_headers** (add_headers fires here) -> prepare body -> prepare cookies -> finalize headers.
 6. Authentication hooks typically run during prepare_auth, which is BEFORE add_headers.
 
 **Critical finding:** The parent `HTTPAdapter.add_headers()` is called first (line 18). If the parent method freezes headers (unlikely in standard httpx, but possible in custom adapters), the child injection would fail.
 
-**Verdict:** ⚠️ NEEDS REVIEW
+**Verdict:** WARNING NEEDS REVIEW
 
 **Analysis:** The requests library's standard HTTPAdapter does NOT freeze headers in add_headers(); it only adds default headers (User-Agent, etc.). However, a subclass could override this behavior. The call to `super().add_headers()` is safe for the standard library, but documentation should clarify the order of execution.
 

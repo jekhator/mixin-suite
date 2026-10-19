@@ -1,9 +1,9 @@
-# logging-mixin, @logged Decorator
+# mixin-logging, @logged Decorator
 
-> **⚠️ REMOVED IN 0.5.0**: The `@logged` decorator was removed in mixin-suite 0.5.0. Use `LoggingMixin` instead.
+> **WARNING REMOVED IN 0.5.0**: The `@logged` decorator was removed in mixin-suite 0.5.0. Use `LoggingMixin` instead.
 > This document is archived for historical reference only.
 
-> **Location:** `logging-mixin/docs/apps/decorators/logged.md`
+> **Location:** `docs/mixin_logging/apps/decorators/logged.md`
 > **Status:** Historical reference. Removed in 0.5.0.
 > **Code:** `mixin_logging/decorators/logged/` (two-file layout: `logged_objects.py` + `logged_client.py`)
 > **Diagrams:** `docs/apps/decorators/diagrams.md`
@@ -29,7 +29,7 @@ class OrderService(LoggingMixin):
         return {"order_id": order_id, "status": "confirmed"}
 ```
 
-**What happens internally**: `logged("process_order")` → `LoggedClient.for_event("process_order")` → `LoggedClient(container=LoggedContainer("process_order"))` → `__call__` wraps the method with start/error logging.
+**What happens internally**: `logged("process_order")` -> `LoggedClient.for_event("process_order")` -> `LoggedClient(container=LoggedContainer("process_order"))` -> `__call__` wraps the method with start/error logging.
 
 ### Usage Examples
 
@@ -275,18 +275,18 @@ class OrderService(LoggingMixin):
 
 ```
 Call site: @logged("my.event")
-    ↓
+    v
 logged = LoggedClient.for_event
-    ↓
+    v
 LoggedClient(container=LoggedContainer("my.event"))
-    ↓
-__call__(method) → wrapper function
-    ↓
+    v
+__call__(method) -> wrapper function
+    v
 On invocation:
-  · log_info(container.start)  → "my.event.start"
-  · method(...)
-  · On exception: log_error(container.error, ...) → "my.event.error"
-  · Re-raise unchanged
+  - log_info(container.start)  -> "my.event.start"
+  - method(...)
+  - On exception: log_error(container.error, ...) -> "my.event.error"
+  - Re-raise unchanged
 ```
 
 ### Event Suffix Constants

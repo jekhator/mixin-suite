@@ -1,6 +1,6 @@
-# logging-mixin. Correlation Context
+# mixin-logging. Correlation Context
 
-> **Location:** `logging-mixin/docs/apps/context/correlation.md`
+> **Location:** `docs/mixin_logging/apps/context/correlation.md`
 > **Status:** Living reference. Updated 2026-06-04.
 > **Code:** `mixin_logging/context/correlation/` (two-file layout: `correlation_objects.py` + `correlation_client.py`)
 > **Sibling docs:** `docs/architecture/architecture.md`, `docs/apps/decorators/logged.md`, `docs/apps/context/diagrams.md`.

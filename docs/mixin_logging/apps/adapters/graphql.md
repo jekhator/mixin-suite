@@ -1,6 +1,6 @@
-# logging-mixin. GraphQL Adapter
+# mixin-logging. GraphQL Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/graphql.md`
+> **Location:** `docs/mixin_logging/apps/adapters/graphql.md`
 > **Status:** Implemented. Inbound correlation-ID extraction and resolver context injection for GraphQL APIs.
 > **Code location:** `mixin_logging/adapters/graphql/` (`graphql_objects.py` + `graphql_client.py`); constants in `mixin_logging/adapters/constants/graphql.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).

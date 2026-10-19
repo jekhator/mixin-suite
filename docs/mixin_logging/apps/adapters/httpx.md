@@ -11,13 +11,13 @@ The HTTPX adapter uses event hooks to inject the correlation ID from the current
 Install the `httpx` optional dependency:
 
 ```bash
-uv add "logging-mixin[httpx]"
+uv add "mixin-logging[httpx]"
 ```
 
 Or with pip:
 
 ```bash
-pip install "logging-mixin[httpx]"
+pip install "mixin-logging[httpx]"
 ```
 
 ## Usage
@@ -75,7 +75,7 @@ client = httpx.Client(event_hooks=merged_hooks)
 
 ### CorrelationIdInjector
 
-**`event_hooks() → EventHooks`**
+**`event_hooks() -> EventHooks`**
 
 Returns a dict of event hooks ready for `httpx.Client(..., event_hooks=...)`:
 
@@ -87,11 +87,11 @@ Returns a dict of event hooks ready for `httpx.Client(..., event_hooks=...)`:
 
 The hooks read the current correlation ID from context and inject it as the `X-Correlation-ID` header.
 
-**`inject_sync(request: httpx.Request) → None`**
+**`inject_sync(request: httpx.Request) -> None`**
 
 Synchronously injects the correlation ID header into a request. Called automatically by the event hook system.
 
-**`inject_async(request: httpx.Request) → Awaitable[None]`**
+**`inject_async(request: httpx.Request) -> Awaitable[None]`**
 
 Async wrapper of `inject_sync`. Called for async clients.
 
@@ -137,8 +137,8 @@ async def get_order(order_id: int):
 ```
 
 The correlation ID flows:
-1. Client request → FastAPI (ASGI middleware sets context)
-2. Handler → httpx client (injects into outbound request)
+1. Client request -> FastAPI (ASGI middleware sets context)
+2. Handler -> httpx client (injects into outbound request)
 3. Downstream service receives the same correlation ID
 
 ## See Also
