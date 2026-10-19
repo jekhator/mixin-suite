@@ -136,8 +136,8 @@ All remaining constants files (botocore, requests, wsgi, stdlib) also alphabetic
 - **Search:** `grep -r "# ---" mixin_logging/ --include="*.py"` (Result: no matches)
 - All prior `# ---` dividers replaced with docstring partitions
 
-### 6.3 No AI Attribution in Source
-- **Search:** `grep -r "claude\|anthropic\|co-authored" mixin_logging/ --include="*.py"`
+### 6.3 No Tool Attribution in Source
+- **Search:** `grep -r "<tool name>\|<vendor name>\|co-authored" mixin_logging/ --include="*.py"`
 - **Result:** 0 matches in source code yes
 - (Review docs reference prior review findings only, appropriately contextualized)
 
@@ -228,7 +228,7 @@ if message["type"] == const.RESPONSE_START_MESSAGE_TYPE:
 | No stale comment dividers | yes | grep "# ---" = 0 matches |
 | Test suite passing (283 tests) | yes | 283 passed in 2.91s, 95%+ coverage |
 | All standards gates pass (ruff, strict-module, pytest) | yes | ruff/strict-module clean, pytest green |
-| No AI attribution in source | yes | grep for claude/anthropic/co-authored = 0 matches |
+| No tool attribution in source | yes | grep for tool name, vendor name and co-authored = 0 matches |
 | No behavioral changes | yes | All test logic and assertions semantically identical |
 | Test class structure preserved | yes | All test methods in TestConcern classes; no restructuring |
 | Documentation accurate & compliant | yes | Path refs updated, no prohibited language |

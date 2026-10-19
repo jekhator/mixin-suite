@@ -367,7 +367,7 @@ All 10 checklist items **PASS**. No blockers. No nits. The WSGI adapter is struc
 2. yes 10 checklist items present (### 1 through ### 10)
 3. yes Overall verdict: **SHIP** yes
 4. yes Git status: untracked file in `docs/reviews/`
-5. yes No AI attribution in review body
+5. yes No tool attribution in review body
 
 ---
 

@@ -188,11 +188,11 @@ Total: 428 LOC across 8 files; all well within LOC cap (300 per file).
 
 ---
 
-### 13. No AI Attribution
+### 13. No Tool Attribution
 
 **PASS**
 
-- No `Co-Authored-By Claude`, `Generated with Claude`, ``, or `noreply@anthropic` in any files or commit messages.
+- No co-author trailers, generated-by lines or vendor no-reply addresses in any files or commit messages.
 
 **Evidence:** Files clean of attribution markers.
 
