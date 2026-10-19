@@ -8,7 +8,7 @@ from collections.abc import Iterator
 import pytest
 
 from mixin_logging import LoggingMixin, clear_correlation_id
-from mixin_logging.tests.helpers import _RecordCollector
+from mixin_logging.tests.helpers import RecordCollector
 
 
 @pytest.fixture(autouse=True)
@@ -34,10 +34,10 @@ def service_class() -> type[LoggingMixin]:
 @pytest.fixture
 def log_capture(
     service_class: type[LoggingMixin],
-) -> tuple[LoggingMixin, _RecordCollector]:
+) -> tuple[LoggingMixin, RecordCollector]:
     """Service instance + collector handler attached at DEBUG level."""
     svc = service_class()
-    collector = _RecordCollector()
+    collector = RecordCollector()
     svc._logger.addHandler(collector)
     svc._logger.setLevel(logging.DEBUG)
     return svc, collector
