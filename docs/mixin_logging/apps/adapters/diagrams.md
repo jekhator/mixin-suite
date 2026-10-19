@@ -457,8 +457,8 @@ Module constants, mixin_logging/adapters/constants/graphql.py
 |  +----------------------+                                                       |
 |                                                                                   |
 |  +----------------------+                                                       |
-|  |  @logged decorator   | <- Inherits correlation_id via LoggingMixin            |
-|  |  emit start/error    |   -> Decorated method logs include correlation_id      |
+|  |  Ambient log_* calls | <- Module-level functions, no class needed            |
+|  |  (AmbientLogger)     |   -> Logs include correlation_id from the ContextVar   |
 |  +----------------------+                                                       |
 |                                                                                   |
 +---------------------------------------------------------------------------------+
@@ -491,7 +491,7 @@ Module constants, mixin_logging/adapters/constants/graphql.py
 |  |  - Injects correlation_id into every LogRecord                            | |
 |  |  - Pulls from ContextVar via _client.current_id()                         | |
 |  |  - Defaults to "-" if unset                                               | |
-|  |  - Covers all logs: LoggingMixin, @logged, third-party, stdlib            | |
+|  |  - Covers all logs: LoggingMixin, ambient log_*, third-party, stdlib      | |
 |  |                                                                              | |
 |  +----------------------------------------------------------------------------+ |
 |                                                                                   |
