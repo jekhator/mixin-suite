@@ -30,10 +30,10 @@ This document records an optimization pass over every Python file under mixin_se
 
 These were found during the pass and left unchanged, because the change alters behavior beyond the objective or needs a design decision.
 
-- docs/mixin_sensitivity (STATUS.md, architecture/architecture.md, architecture/flow-trace.md, apps/decorators, apps/diagrams.md, the 2026-06-09 audit and review, CHANGELOG-history.md) describe the removed @sensitive decorator, the sensitivity_mixin import name and a Python 3.11 floor. They are outside this pass markdown scope and are listed for the documentation pass.
+- docs/mixin_sensitivity (STATUS.md, architecture/architecture.md, architecture/flow-trace.md, apps/decorators, apps/diagrams.md, the 2026-06-09 audit and review, CHANGELOG-history.md) described the removed @sensitive decorator, the sensitivity_mixin import name and a Python 3.11 floor. The current pages were rewritten and the removed-surface pages were marked as archived in the documentation pass; the 2026-06-09 records keep their verdicts with names and paths corrected.
 - The SensitiveRepr adoption message keeps its Python 3.11 rationale about zero-argument super. The package floor is now 3.12; the rationale should be re-checked on 3.12 and 3.14 before the message text changes.
 - A marker value that is not a valid Sensitivity name is masked at repr time and rejected only by classify(). Validating marker values at class creation would surface typos earlier; that is a design change and is deferred.
-- Method docstrings are kept; the method docstring ruling is pending.
+- Method docstrings are kept pending a separate decision.
 
 ## Per-file table
 

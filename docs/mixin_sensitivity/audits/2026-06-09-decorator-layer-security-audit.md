@@ -1,7 +1,7 @@
 # Security Audit: @sensitive Decorator Layer
 
 **Date:** 2026-06-09  
-**Branch:** `feat/sensitivity-mixin`  
+**Branch:** `feat/mixin-sensitivity`  
 **Commit range:** `main...HEAD`  
 **Auditor:** Security Engineering  
 **Verdict:** **SHIP** :  No blocking security defects
@@ -50,11 +50,11 @@ Security review of the decorator-layer masking subsystem:
 **Finding:** Policies are caller-supplied `ClassMakerAware` objects; a buggy/malicious policy could return the unmasked input from `mask()` method, echoing the value.
 
 **Risk level:** Low  
-**Why low:** Policies are internal implementation details, not user-supplied at runtime; both qhcg and govtech control the 4 policy classes (PhiPolicyAware, PiiPolicyAware, PciPolicyAware, SecretPolicyAware).
+**Why low:** Policies are internal implementation details, not user-supplied at runtime; both downstream projects control the 4 policy classes (PhiPolicyAware, PiiPolicyAware, PciPolicyAware, SecretPolicyAware).
 
 **Requirement:** Document policy contract as a caller responsibility. Current status: NOT explicitly documented in docs/apps/decorators/sensitive.md.
 
-**Recommendation:** Add note to sensitive.md § "Security Boundary" or API section:
+**Recommendation:** Add note to sensitive.md section "Security Boundary" or API section:
 ```
 Policy Contract: Each ClassMakerAware.mask() implementation MUST NOT return the input value unchanged. 
 Returning the unmasked value defeats masking; implementations MUST return a placeholder or transformed value.
@@ -107,9 +107,9 @@ Frozen slots integrity: OK
 **Finding:** docs/apps/decorators/sensitive.md provides comprehensive security boundary documentation. One gap: policy injection responsibility not explicitly stated.
 
 **Current coverage (GOOD):**
-- § "Security Boundary: What This Does and Does NOT Protect" :  explicitly lists protected paths (repr, str, logging, f-strings) vs. bypass methods (direct access, asdict, JSON, pickling)
-- § "Mask Strategy Information Leakage" :  documents PII/PCI leakage patterns (first-char, last-4 digits) per regulatory guidance
-- § "Correct and Incorrect Usage" :  example showing safe vs. unsafe logging patterns; untagged field pitfall
+- section "Security Boundary: What This Does and Does NOT Protect" :  explicitly lists protected paths (repr, str, logging, f-strings) vs. bypass methods (direct access, asdict, JSON, pickling)
+- section "Mask Strategy Information Leakage" :  documents PII/PCI leakage patterns (first-char, last-4 digits) per regulatory guidance
+- section "Correct and Incorrect Usage" :  example showing safe vs. unsafe logging patterns; untagged field pitfall
 
 **Gap (MINOR):**
 - Policy contract not documented (see Finding 3 recommendation above)
@@ -119,19 +119,19 @@ Frozen slots integrity: OK
 ## Security Boundary (as documented)
 
 ### Protected (Repr Layer Only)
-- ✓ `repr(obj)` :  sensitive fields masked per sensitivity tag
-- ✓ `str(obj)` :  uses masked repr
-- ✓ `print(obj)` :  masked via repr
-- ✓ F-string: `f"{obj}"` :  masked
-- ✓ Logging: `logger.info("Object: %s", obj)` :  masked
+- yes `repr(obj)` :  sensitive fields masked per sensitivity tag
+- yes `str(obj)` :  uses masked repr
+- yes `print(obj)` :  masked via repr
+- yes F-string: `f"{obj}"` :  masked
+- yes Logging: `logger.info("Object: %s", obj)` :  masked
 
 ### NOT Protected (by design, out-of-scope)
-- ✗ Direct field access: `obj.api_key` :  full unmasked value
-- ✗ Serialization: `dataclasses.asdict(obj)` :  full unmasked values
-- ✗ Field-level logging: `logger.info(f"Token: {obj.api_key}")` :  full value
-- ✗ Attribute introspection: `getattr(obj, 'api_key')` :  unmasked
-- ✗ Pickling: `pickle.dumps(obj)` :  full values
-- ✗ Untagged fields :  never masked, even if field name looks sensitive
+- no Direct field access: `obj.api_key` :  full unmasked value
+- no Serialization: `dataclasses.asdict(obj)` :  full unmasked values
+- no Field-level logging: `logger.info(f"Token: {obj.api_key}")` :  full value
+- no Attribute introspection: `getattr(obj, 'api_key')` :  unmasked
+- no Pickling: `pickle.dumps(obj)` :  full values
+- no Untagged fields :  never masked, even if field name looks sensitive
 
 ---
 
@@ -140,26 +140,26 @@ Frozen slots integrity: OK
 All 37 test cases pass:
 
 ```
-sensitivity_mixin/decorators/tests/test_sensitive/test_sensitive_client.py
-  ✓ TestSensitiveDecoratorRequireDataclass (2 tests)
-  ✓ TestSensitiveDecoratorUntaggedClass (2 tests)
-  ✓ TestSensitiveDecoratorNoPolicy (1 test)
-  ✓ TestSensitiveDecoratorWithPolicies (3 tests)
-  ✓ TestSensitiveModuleVariable (3 tests)
-  ✓ TestSensitiveDecoratorInstanceFrozen (1 test)
-  ✓ TestSensitiveDecoratorSlotsDataclass (1 test)
-  ✓ TestSensitiveDecoratorReturnsSameType (2 tests)
-  ✓ TestSensitiveDecoratorWithIntFields (1 test)
-  ✓ TestSensitiveDecoratorEdgeCases (3 tests)
+mixin_sensitivity/decorators/tests/test_sensitive/test_sensitive_client.py
+  yes TestSensitiveDecoratorRequireDataclass (2 tests)
+  yes TestSensitiveDecoratorUntaggedClass (2 tests)
+  yes TestSensitiveDecoratorNoPolicy (1 test)
+  yes TestSensitiveDecoratorWithPolicies (3 tests)
+  yes TestSensitiveModuleVariable (3 tests)
+  yes TestSensitiveDecoratorInstanceFrozen (1 test)
+  yes TestSensitiveDecoratorSlotsDataclass (1 test)
+  yes TestSensitiveDecoratorReturnsSameType (2 tests)
+  yes TestSensitiveDecoratorWithIntFields (1 test)
+  yes TestSensitiveDecoratorEdgeCases (3 tests)
 
-sensitivity_mixin/decorators/tests/test_sensitive/test_sensitive_objects.py
-  ✓ TestFromDataclass (3 tests)
-  ✓ TestIsEmpty (3 tests)
-  ✓ TestMaskedReprUntagged (2 tests)
-  ✓ TestMaskedReprWithoutPolicies (2 tests)
-  ✓ TestMaskedReprWithPolicies (3 tests)
-  ✓ TestMaskedReprNoneAndIntValues (2 tests)
-  ✓ TestMaskedReprFormat (3 tests)
+mixin_sensitivity/decorators/tests/test_sensitive/test_sensitive_objects.py
+  yes TestFromDataclass (3 tests)
+  yes TestIsEmpty (3 tests)
+  yes TestMaskedReprUntagged (2 tests)
+  yes TestMaskedReprWithoutPolicies (2 tests)
+  yes TestMaskedReprWithPolicies (3 tests)
+  yes TestMaskedReprNoneAndIntValues (2 tests)
+  yes TestMaskedReprFormat (3 tests)
 
 TOTAL: 37 PASSED in 0.22s
 ```
