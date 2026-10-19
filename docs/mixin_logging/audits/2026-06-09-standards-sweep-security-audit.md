@@ -2,7 +2,7 @@
 
 **Date**: 2026-06-09
 **Scope**: Full diff across constants extraction + docstring-divider standardization + test-fixture updates
-**Branch**: `chore/standards-conformance-pass`
+**Branch**: `chore/standards-conformance-sweep`
 **Audit Focus**: Correlation-ID validation safety, secrets hygiene, injection attack surface, constant-extraction semantic correctness
 
 ---

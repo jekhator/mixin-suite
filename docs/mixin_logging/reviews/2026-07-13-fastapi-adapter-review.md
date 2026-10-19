@@ -1,7 +1,7 @@
 # FastAPI Adapter Review
 
 **Date:** 2026-07-13
-**Branch:** `feat/pass-and-additions`
+**Branch:** `feat/sweep-and-additions`
 **Reviewer:** Code Reviewer
 **Scope:** FastAPI middleware, dependency, value object, constants, and tests
 

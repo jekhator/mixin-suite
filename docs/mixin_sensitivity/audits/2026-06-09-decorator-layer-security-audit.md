@@ -1,7 +1,7 @@
 # Security Audit: @sensitive Decorator Layer
 
 **Date:** 2026-06-09  
-**Branch:** `feat/mixin-sensitivity`  
+**Branch:** `feat/sensitivity-mixin`  
 **Commit range:** `main...HEAD`  
 **Auditor:** Security Engineering  
 **Verdict:** **SHIP** :  No blocking security defects

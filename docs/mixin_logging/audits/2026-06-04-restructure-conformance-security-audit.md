@@ -2,7 +2,7 @@
 
 **Date**: 2026-06-04
 **Scope**: Full diff (staged + working-tree) across root-layout restructure and conformance optimization
-**Branch**: `chore/conformance-pass`
+**Branch**: `chore/conformance-sweep`
 **Audit Focus**: OWASP Top 10 (A01/A03), correlation-ID injection safety (CRLF/null/length/encoding), secret hygiene, multi-source extraction safety
 
 ---

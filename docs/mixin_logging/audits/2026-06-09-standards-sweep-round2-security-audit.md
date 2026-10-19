@@ -2,7 +2,7 @@
 
 **Date**: 2026-06-09  
 **Scope**: Docstring condensation + test-fixture docstring additions  
-**Branch**: `chore/standards-pass-round2`  
+**Branch**: `chore/standards-sweep-round2`  
 **Audit Focus**: Verification that docstring refactoring did not alter validation logic, injection gates, or security-critical code paths
 
 ---
@@ -378,4 +378,4 @@ The standards-conformance pass (Round 2, docstring refactoring) introduces **zer
 
 **Audit Conducted By**: Security Engineer (Haiku 4.5)  
 **Audit Date**: 2026-06-09  
-**Branch**: chore/standards-pass-round2
+**Branch**: chore/standards-sweep-round2

@@ -1,7 +1,7 @@
 # Code Review: Decorator Layer Wrap-Up
 
 **Date:** 2026-06-09  
-**Branch:** `feat/mixin-sensitivity`  
+**Branch:** `feat/sensitivity-mixin`  
 **Commit range:** `main...HEAD` (9 commits)  
 **Reviewer:** Code Review Discipline  
 **Verdict:** **SHIP** with **one non-blocking fix** (alphabetical __all__ ordering)
