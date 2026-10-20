@@ -20,6 +20,7 @@ jobs:
   scan:
     name: Scan markdown for banned dashes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Check for em-dashes and en-dashes in markdown
