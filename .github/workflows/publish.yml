@@ -8,6 +8,7 @@ jobs:
   publish:
     name: Build + publish
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi  # second-layer GitHub deployment-environment gate
     permissions:
       id-token: write  # OIDC trusted publisher
