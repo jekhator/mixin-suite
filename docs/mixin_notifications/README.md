@@ -1,14 +1,14 @@
 # mixin_notifications
 
-Cross-cutting notification dispatch abstraction for Python services. Framework-agnostic, zero-dependencies core (stdlib only).
+Notification dispatch for Python services: a frozen event type, backends, a guarded dispatcher with suppression, and an egress gate for backends that send data outside the process. The core uses no third-party packages; it builds on the mixin_logging and mixin_retry roots of the same distribution.
 
 **Key features:**
 
-- **NotificationEvent**: Immutable dataclass (frozen+slots) with category, severity, title, body, fingerprint, correlation_id, occurred_at, and optional metadata.
-- **NotificationBackend protocol**: Extensible interface for backends (built-in: NullBackend, CollectingBackend, LoggingBackend; consumers implement DB/Slack/webhook/email).
-- **Dispatcher**: Guarded dispatch to explicit tuple of backends. One backend failure does not raise; all exceptions logged as warnings.
-- **Suppression**: Optional in-memory suppression on (category, fingerprint) key within a configurable window.
-- **Egress gate**: Automatically masks sensitive content (via mixin_sensitivity) when sending to backends marked with `external_egress=True`.
+- **NotificationEvent**: frozen, slotted dataclass with category, severity, title, body, fingerprint, correlation_id, occurred_at, optional metadata and optional attachments.
+- **NotificationBackend protocol**: built-in NullBackend, CollectingBackend and LoggingBackend; SNSBackend and SESBackend behind extras; RetryingBackend wraps any backend with retries and an optional dead-letter backend.
+- **Dispatcher**: guarded dispatch to an explicit tuple of backends. A backend that raises does not stop the others; the failure is logged and reported in the result.
+- **Suppression**: optional in-memory suppression on the (category, fingerprint) key within a time window.
+- **Egress gate**: for backends with `external_egress=True`, the dispatcher replaces the title and body with fixed text, keeps only a count of metadata entries, and removes attachments that are not marked `egress_safe`.
 
 ## Installation
 
@@ -16,25 +16,32 @@ Cross-cutting notification dispatch abstraction for Python services. Framework-a
 pip install mixin-suite
 ```
 
+The AWS backends need boto3, installed by extras:
+
+```bash
+uv add "mixin-suite[sns]"
+uv add "mixin-suite[ses]"
+```
+
 ## Service-Class Example
 
-Run-verified example using Dispatcher + CollectingBackend + suppression:
+The example below was executed with `uv run --all-extras python` on Python 3.14 against the 0.7.0 tree. The output is pasted from that run.
 
 ```python
+from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_notifications import (
     CollectingBackend,
     Dispatcher,
     NotificationEventClient,
     SuppressionPolicy,
 )
-from mixin_logging import set_correlation_id, clear_correlation_id
 
 set_correlation_id("example-correlation-123")
 
 collecting_backend = CollectingBackend()
 dispatcher = Dispatcher(
     backends=(collecting_backend,),
-    suppression_policy=SuppressionPolicy(window_seconds=60)
+    suppression_policy=SuppressionPolicy(window_seconds=60),
 )
 
 event = NotificationEventClient.create(
@@ -42,18 +49,18 @@ event = NotificationEventClient.create(
     severity="WARNING",
     title="Login Failed",
     body="User provided invalid credentials",
-    fingerprint="login-failed-user-456"
+    fingerprint="login-failed-user-456",
 )
 
 result = dispatcher.notify(event)
 
-print(f"Dispatch result:")
+print("Dispatch result:")
 print(f"  Suppressed: {result.suppressed}")
 print(f"  Total backends: {result.total_backends}")
 print(f"  Delivery outcomes: {len(result.results)}")
 print(f"  First result delivered: {result.results[0].delivered}")
 print()
-print(f"Collected event:")
+print("Collected event:")
 print(f"  Category: {collecting_backend.events[0].category}")
 print(f"  Severity: {collecting_backend.events[0].severity}")
 print(f"  Title: {collecting_backend.events[0].title}")
@@ -65,19 +72,19 @@ event2 = NotificationEventClient.create(
     severity="WARNING",
     title="Login Failed Again",
     body="Same user provided invalid credentials again",
-    fingerprint="login-failed-user-456"
+    fingerprint="login-failed-user-456",
 )
 
 result2 = dispatcher.notify(event2)
 print()
-print(f"Second dispatch (same fingerprint within window):")
+print("Second dispatch (same fingerprint within window):")
 print(f"  Suppressed: {result2.suppressed}")
 print(f"  Events in backend: {len(collecting_backend.events)}")
 
 clear_correlation_id()
 ```
 
-**Output:**
+Output:
 
 ```
 Dispatch result:
@@ -98,13 +105,13 @@ Second dispatch (same fingerprint within window):
   Events in backend: 1
 ```
 
-## 0.6.0+ Features: Delivery Semantics & Attachment Support
+## Attachments
 
-### Attachments
-
-Attach binary payloads to notifications with egress-safe marking:
+Attachments are a tuple on the event. `NotificationEventClient.create()` does not accept an `attachments` argument; build the event first and add the tuple with `dataclasses.replace`:
 
 ```python
+from dataclasses import replace
+
 from mixin_notifications import Attachment, CollectingBackend, Dispatcher, NotificationEventClient
 
 collecting_backend = CollectingBackend()
@@ -115,33 +122,26 @@ event = NotificationEventClient.create(
     severity="INFO",
     title="Monthly Report Ready",
     body="Report is attached",
-    fingerprint="monthly-report-2026-07"
-)
-
-event_with_attachment = NotificationEventClient.create(
-    category="report",
-    severity="INFO",
-    title="Monthly Report Ready",
-    body="Report is attached",
     fingerprint="monthly-report-2026-07",
-    attachments=(
-        Attachment(
-            filename="report_2026_07.pdf",
-            content_type="application/pdf",
-            content=b"PDF binary data here...",
-            egress_safe=True
-        ),
-    )
 )
 
-result = dispatcher.notify(event_with_attachment)
+attachment = Attachment(
+    filename="report_2026_07.pdf",
+    content_type="application/pdf",
+    content=b"PDF binary data here...",
+    egress_safe=True,
+)
+event_with_attachment = replace(event, attachments=(attachment,))
 
-print(f"Event dispatched with {len(collecting_backend.events[0].attachments)} attachment(s)")
-print(f"Attachment filename: {collecting_backend.events[0].attachments[0].filename}")
-print(f"Attachment egress_safe: {collecting_backend.events[0].attachments[0].egress_safe}")
+dispatcher.notify(event_with_attachment)
+
+delivered = collecting_backend.events[0]
+print(f"Event dispatched with {len(delivered.attachments)} attachment(s)")
+print(f"Attachment filename: {delivered.attachments[0].filename}")
+print(f"Attachment egress_safe: {delivered.attachments[0].egress_safe}")
 ```
 
-**Output:**
+Output:
 
 ```
 Event dispatched with 1 attachment(s)
@@ -149,97 +149,181 @@ Attachment filename: report_2026_07.pdf
 Attachment egress_safe: True
 ```
 
-**Note:** `egress_safe=True` allows attachments to pass through external backends (e.g., SNS, email). Unmarked attachments (default `egress_safe=False`) are stripped when sending to external backends.
+An attachment is forwarded to external backends only when `egress_safe=True`. Attachments with the default `egress_safe=False` are removed before an external backend sees the event. Internal backends receive all attachments.
 
-### RetryingBackend (optional, requires mixin_retry)
+## RetryingBackend
 
-Wrap any backend with exponential backoff retry logic and optional dead-letter fallback:
+`RetryingBackend` wraps a backend with a `mixin_retry` `RetryPolicy`. A result with `retryable=True` is retried; when the attempts run out, the event goes to `dead_letter` if one is given. The script below shows a backend that recovers on its third attempt and one that exhausts its attempts and falls back to a dead-letter backend.
 
 ```python
+from dataclasses import dataclass, field
+
 from mixin_notifications import (
     CollectingBackend,
+    DeliveryResult,
     Dispatcher,
+    NotificationEvent,
     NotificationEventClient,
     RetryingBackend,
 )
 from mixin_retry import RetryPolicy
 
-# This example is illustrative; in production, integrate with SNSBackend or SESBackend
-collecting_backend = CollectingBackend()
-dlq_backend = CollectingBackend()
 
-retry_policy = RetryPolicy(
+@dataclass
+class FlakyBackend:
+    failures_left: int
+    attempts: list[int] = field(default_factory=list)
+
+    @property
+    def external_egress(self) -> bool:
+        return False
+
+    def send(self, event: NotificationEvent) -> DeliveryResult:
+        self.attempts.append(len(self.attempts) + 1)
+        if self.failures_left > 0:
+            self.failures_left -= 1
+            return DeliveryResult(
+                delivered=False,
+                backend_name="FlakyBackend",
+                detail="throttled",
+                retryable=True,
+            )
+        return DeliveryResult(delivered=True, backend_name="FlakyBackend", detail="ok", retryable=False)
+
+
+policy = RetryPolicy(
     max_attempts=3,
-    backoff_base_seconds=0.5,
-    backoff_multiplier=2,
-    backoff_max_seconds=30,
-    jitter=True
+    backoff_base_seconds=0.01,
+    backoff_multiplier=2.0,
+    backoff_max_seconds=0.05,
+    jitter=False,
 )
-
-retrying_backend = RetryingBackend(
-    inner=collecting_backend,
-    policy=retry_policy,
-    dead_letter=dlq_backend
-)
-
-dispatcher = Dispatcher(backends=(retrying_backend,))
-
 event = NotificationEventClient.create(
     category="alert",
     severity="CRITICAL",
     title="System Critical",
     body="System health critical",
-    fingerprint="system-critical-001"
+    fingerprint="system-critical-001",
 )
 
+recovering = FlakyBackend(failures_left=2)
+dispatcher = Dispatcher(backends=(RetryingBackend(inner=recovering, policy=policy),))
 result = dispatcher.notify(event)
+print("Recovering backend:")
+print(f"  delivered: {result.results[0].delivered}")
+print(f"  detail: {result.results[0].detail}")
+print(f"  attempts: {len(recovering.attempts)}")
 
-print(f"Event delivered: {result.results[0].delivered}")
-print(f"Backend name: {result.results[0].backend_name}")
-print(f"Events in collecting backend: {len(collecting_backend.events)}")
-print(f"Dead-letter queue: {len(dlq_backend.events)} events")
+dead_letter = CollectingBackend()
+failing = FlakyBackend(failures_left=10)
+dispatcher = Dispatcher(
+    backends=(RetryingBackend(inner=failing, policy=policy, dead_letter=dead_letter),)
+)
+result = dispatcher.notify(
+    NotificationEventClient.create(
+        category="alert",
+        severity="CRITICAL",
+        title="System Critical",
+        body="System health critical",
+        fingerprint="system-critical-002",
+    )
+)
+print("Exhausted backend with dead letter:")
+print(f"  delivered: {result.results[0].delivered}")
+print(f"  backend_name: {result.results[0].backend_name}")
+print(f"  detail: {result.results[0].detail}")
+print(f"  attempts: {len(failing.attempts)}")
+print(f"  dead-letter events: {len(dead_letter.events)}")
 ```
 
-**Output:**
+Output:
 
 ```
-Event delivered: True
-Backend name: CollectingBackend
-Events in collecting backend: 1
-Dead-letter queue: 0 events
+Recovering backend:
+  delivered: True
+  detail: ok
+  attempts: 3
+Exhausted backend with dead letter:
+  delivered: True
+  backend_name: RetryingBackend(dead_letter=CollectingBackend)
+  detail: exhausted retries, dead_letter outcome: collected event system-critical-002
+  attempts: 3
+  dead-letter events: 1
 ```
 
-**SNS/SES Backends (optional, requires boto3)**
+## AWS Backends (SNS and SES)
 
-For AWS integration, use SNSBackend (with topic override via metadata) or SESBackend (with MIME attachments):
+`SNSBackend(sns_client=..., default_topic_arn=...)` publishes with the title as the subject, the body as the message, and category, severity, fingerprint and correlation_id as message attributes. A `topic_arn` entry in the event metadata overrides the default topic.
+
+`SESBackend(ses_client=..., to_addresses=(...), from_address=...)` sends a MIME message through `send_raw_email`, including the attachments that passed the egress gate.
+
+Both take an injected client, so tests and examples can use a fake. The example below uses a fake SNS client to show the topic override. It was executed on Python 3.14.
 
 ```python
-# SNSBackend example (requires boto3, [sns] extra)
-# backend = SNSBackend(
-#     sns_client=boto3.client("sns"),
-#     default_topic_arn="arn:aws:sns:us-east-1:123456789012:notifications"
-# )
-#
-# # Per-event topic override:
-# event = NotificationEventClient.create(
-#     category="alert",
-#     severity="CRITICAL",
-#     title="Alert",
-#     body="...",
-#     fingerprint="...",
-#     metadata=(("topic_arn", "arn:aws:sns:us-east-1:123456789012:critical-alerts"),)
-# )
+from dataclasses import dataclass, field, replace
 
-# SESBackend example (requires boto3, [ses] extra)
-# backend = SESBackend(
-#     ses_client=boto3.client("ses"),
-#     to_addresses=("ops@example.com",),
-#     from_address="alerts@example.com"
-# )
+from mixin_notifications import Dispatcher, NotificationEventClient, SNSBackend
+
+
+@dataclass
+class FakeSNSClient:
+    """Stands in for boto3.client("sns"); records each publish call."""
+
+    calls: list[dict[str, object]] = field(default_factory=list)
+
+    def publish(self, *, TopicArn, Subject, Message, MessageAttributes):
+        self.calls.append({"TopicArn": TopicArn, "Subject": Subject})
+        return {"MessageId": f"msg-{len(self.calls)}"}
+
+
+sns_client = FakeSNSClient()
+default_topic = "arn:aws:sns:us-east-1:123456789012:notifications"
+critical_topic = "arn:aws:sns:us-east-1:123456789012:critical-alerts"
+
+event = NotificationEventClient.create(
+    category="alert",
+    severity="CRITICAL",
+    title="Alert",
+    body="Pump pressure out of range",
+    fingerprint="alert-001",
+    metadata=(("topic_arn", critical_topic),),
+)
+
+backend = SNSBackend(sns_client=sns_client, default_topic_arn=default_topic)
+
+direct = backend.send(event)
+print("Direct send:")
+print(f"  delivered: {direct.delivered}, detail: {direct.detail}")
+print(f"  topic used: {sns_client.calls[-1]['TopicArn']}")
+
+dispatcher = Dispatcher(backends=(backend,))
+dispatched = dispatcher.notify(event)
+print("Through Dispatcher (external_egress backend):")
+print(f"  delivered: {dispatched.results[0].delivered}")
+print(f"  topic used: {sns_client.calls[-1]['TopicArn']}")
 ```
+
+Output:
+
+```
+Direct send:
+  delivered: True, detail: message_id: msg-1
+  topic used: arn:aws:sns:us-east-1:123456789012:critical-alerts
+Through Dispatcher (external_egress backend):
+  delivered: True
+  topic used: arn:aws:sns:us-east-1:123456789012:notifications
+```
+
+### Limitation: metadata overrides through the egress gate
+
+For backends with `external_egress=True`, `Dispatcher.notify` applies the egress gate before the backend sees the event. The gate replaces the metadata with a count of its entries (`sensitive_count_metadata`). A per-event `topic_arn` carried in metadata therefore does not reach `SNSBackend` through `Dispatcher.notify`, and the event goes to the default topic. The output above shows this.
+
+Calling `SNSBackend.send` directly honours the override, as the first half of that run shows.
+
+This is intended. The gate fails closed: metadata is not sent to an external service, so the topic override cannot be carried through it. To route per-event, call the backend directly or set the topic on the backend instance.
 
 ## Documentation
 
-- [Flow Trace](architecture/flow-trace.md): Dispatch flow and architecture diagram
+- [Flow Trace](architecture/flow-trace.md): dispatch flow and module map
 - [Security Audit](audits/2026-07-29-0.6.0-delivery-security-audit.md): 0.6.0 delivery semantics audit
-- [Architecture Review](reviews/2026-07-29-0.6.0-delivery-architecture-review.md): Design and backward compatibility review
+- [Architecture Review](reviews/2026-07-29-0.6.0-delivery-architecture-review.md): design and backward compatibility review

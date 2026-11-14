@@ -1,7 +1,5 @@
 """Tests for CorrelationContext dataclass."""
 
-# ruff: noqa: S101
-
 from __future__ import annotations
 
 import dataclasses
@@ -31,7 +29,7 @@ class TestCorrelationContext:
         ctx = CorrelationContext(correlation_id=None)
         assert ctx.is_set is False
 
-    def test_context_is_set_false_when_id_empty_string(self) -> None:
+    def test_context_is_set_true_when_id_empty_string(self) -> None:
         """is_set is True for empty string (only None is falsy)."""
         ctx = CorrelationContext(correlation_id="")
         assert ctx.is_set is True

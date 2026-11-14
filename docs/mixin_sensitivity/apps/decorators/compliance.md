@@ -1,12 +1,16 @@
 # Compliance Contract Layer
 
+> **WARNING REMOVED IN 0.5.0**: The policy value objects and compliance layer described here were removed from mixin-sensitivity in 0.5.0.
+> Use field metadata with `Sensitivity` and `SensitiveRepr` instead; see [sensitive.md](sensitive.md).
+> This document is archived for historical reference only. Its code paths and examples no longer exist in the package.
+
 The `Compliance` enum and `ClassMakerAware` protocol define the governance boundaries for sensitivity-aware masking policies.
 
 ## File Layout
 
 ```
-sensitivity_mixin/decorators/classes/compliance/
-└── compliance_objects.py  ← Compliance enum, ClassMakerAware protocol
+mixin_sensitivity/decorators/classes/compliance/
++-- compliance_objects.py  <- Compliance enum, ClassMakerAware protocol
 ```
 
 ## Compliance Enum
@@ -57,16 +61,16 @@ Return the masked replacement for a sensitive value. Implementations typically i
 
 Return `True` when the field name matches a heuristic detection hint. Intended for optional automatic field classification when metadata is absent.
 
-The `sensitivity_mixin.decorators.classes` module provides four policy value objects that implement this protocol, one per sensitivity class (PHI, PII, PCI, SECRET). See `policies.md` for details.
+The `mixin_sensitivity.decorators.classes` module provides four policy value objects that implement this protocol, one per sensitivity class (PHI, PII, PCI, SECRET). See `policies.md` for details.
 
 ## Usage
 
 Policies are instantiated and wired into the `@sensitive` decorator:
 
 ```python
-from sensitivity_mixin import Sensitivity, SensitiveDecorator
-from sensitivity_mixin.decorators.classes.secret_aware import SecretPolicyAware
-from sensitivity_mixin.decorators.classes.compliance import Compliance
+from mixin_sensitivity import Sensitivity, SensitiveDecorator
+from mixin_sensitivity.decorators.classes.secret_aware import SecretPolicyAware
+from mixin_sensitivity.decorators.classes.compliance import Compliance
 
 secret_policy = SecretPolicyAware(
     compliance=Compliance.NONE,
@@ -90,7 +94,7 @@ See `sensitive.md` for full decorator usage patterns.
 
 ## Testing
 
-See `sensitivity_mixin/decorators/tests/test_sensitive/`:
+See `mixin_sensitivity/decorators/tests/test_sensitive/`:
 
 - `test_sensitive_client.py`: Decorator with multiple policies, field masking via policy lookup
 - Per-policy tests in `test_*_aware.py` files: compliance tag values, detection_hints, masking behavior

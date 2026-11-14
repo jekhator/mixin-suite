@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Optional
 
 from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_logging.adapters.wsgi import wsgi_objects as objs
@@ -45,7 +44,7 @@ class CorrelationIdMiddleware:
         def wrapped_start_response(
             status: str,
             headers: objs.Headers,
-            exc_info: Optional[objs.ExcInfo] = None,
+            exc_info: objs.ExcInfo | None = None,
         ) -> Callable[[bytes], None]:
             """Inject correlation ID header before delegating to original start_response."""
             headers.append(correlation.response_header)

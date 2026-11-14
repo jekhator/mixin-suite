@@ -1,6 +1,6 @@
-# logging-mixin. GraphQL Adapter
+# mixin-logging. GraphQL Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/graphql.md`
+> **Location:** `docs/mixin_logging/apps/adapters/graphql.md`
 > **Status:** Implemented. Inbound correlation-ID extraction and resolver context injection for GraphQL APIs.
 > **Code location:** `mixin_logging/adapters/graphql/` (`graphql_objects.py` + `graphql_client.py`); constants in `mixin_logging/adapters/constants/graphql.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).
@@ -46,6 +46,8 @@ Any Python GraphQL framework with a context dict: FastAPI with Strawberry or Gra
 
 ### FastAPI + Strawberry
 
+Illustrative fragment, not run-verified; requires strawberry.
+
 ```python
 import strawberry
 from fastapi import FastAPI
@@ -69,6 +71,8 @@ async def graphql_endpoint(request: Request):
 ```
 
 ### Django Graphene
+
+Illustrative fragment, not run-verified; requires graphene and does not parse as written.
 
 ```python
 from graphene import ObjectType, String, Schema

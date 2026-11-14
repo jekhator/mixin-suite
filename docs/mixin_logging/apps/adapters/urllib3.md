@@ -1,6 +1,6 @@
-# logging-mixin. Urllib3 Adapter
+# mixin-logging. Urllib3 Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/urllib3.md`
+> **Location:** `docs/mixin_logging/apps/adapters/urllib3.md`
 > **Status:** Implemented. Outbound correlation-ID propagation via the urllib3 library `PoolManager.urlopen()` hook.
 > **Code location:** `mixin_logging/adapters/urllib3/` (`urllib3_objects.py` + `urllib3_client.py`); constants in `mixin_logging/adapters/constants/urllib3.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).
@@ -46,6 +46,8 @@ The urllib3 library exposes `PoolManager.urlopen(method, url, **kwargs)` as the 
 Synchronous `urllib3` library (widely-used HTTP client for Python, used as the transport layer by requests). Requires the `[urllib3]` extra to be installed.
 
 ## Example Usage
+
+Illustrative fragment, not run-verified; requires urllib3 and network access to api.example.com.
 
 ```python
 from mixin_logging.adapters.urllib3 import CorrelationIdPoolManager

@@ -77,7 +77,7 @@
 2. The hook fires BEFORE the SigV4 signing phase.
 3. After the hook injects the header, the request enters the signing phase, which includes all headers in the request.
 4. SigV4 signing computes a cryptographic signature over the request (method, URI, headers, body).
-5. The X-Correlation-ID header, once injected, is included in the canonical request string and is covered by the signature.
+5. The X-Correlation-ID header, once injected, is included in the SigV4 request string and is covered by the signature.
 
 **Verdict:** NO ISSUE
 

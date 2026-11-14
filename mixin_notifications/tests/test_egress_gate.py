@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mixin_notifications import Attachment, Dispatcher, NotificationEvent, Severity
+from mixin_notifications.common.constants import events as const
 
 
 class TestEgressGate:
@@ -50,7 +51,7 @@ class TestEgressGate:
 
         assert len(capturing_external_backend.events) == 1
         received = capturing_external_backend.events[0]
-        assert "[content redacted for external delivery]" == received.body
+        assert const.EGRESS_REDACTED_BODY == received.body
 
     def test_mixed_backends_each_receive_appropriate_content(
         self,
@@ -78,7 +79,7 @@ class TestEgressGate:
 
         assert "123-45-6789" in internal_event.body
         assert "user@example.com" in internal_event.body
-        assert "[content redacted for external delivery]" == external_event.body
+        assert const.EGRESS_REDACTED_BODY == external_event.body
 
     def test_external_backend_metadata_reduced_to_counts(
         self,
@@ -102,7 +103,7 @@ class TestEgressGate:
         received = capturing_external_backend.events[0]
         assert len(received.metadata) == 1
         key, value = received.metadata[0]
-        assert key == "sensitive_count_metadata"
+        assert key == const.EGRESS_COUNT_METADATA_KEY
         assert value == "2"
 
     def test_external_backend_title_derived_from_category_severity(

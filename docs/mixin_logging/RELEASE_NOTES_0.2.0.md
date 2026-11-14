@@ -22,7 +22,7 @@ All adapters are now available in `mixin_logging/adapters/`:
 
 - **Botocore Adapter**: AWS SDK (boto3). Inject correlation ID into all AWS service calls via event system hooks.
 
-- **Celery Adapter**: Task-boundary propagation. Maintains correlation ID across task publish → prerun → postrun via Celery signals.
+- **Celery Adapter**: Task-boundary propagation. Maintains correlation ID across task publish -> prerun -> postrun via Celery signals.
 
 - **Stdlib Adapter**: `logging.Filter` implementation. Stamps `correlation_id` on every `LogRecord` automatically.
 

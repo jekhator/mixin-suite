@@ -11,7 +11,7 @@ Adapters are grouped by where they operate in a request/response lifecycle:
 | **Inbound HTTP** | Extract/generate correlation ID at request entry | [ASGI](asgi.md), [WSGI](wsgi.md) |
 | **Inbound edge** | Extract/generate for WebSocket, gRPC, GraphQL | [WebSocket](websocket.md), [gRPC](grpc.md), [GraphQL](graphql.md) |
 | **Outbound clients** | Inject correlation ID into downstream calls | [HTTPX](httpx.md), [Requests](requests.md), [aiohttp](aiohttp.md), [urllib3](urllib3.md), [Botocore](botocore.md) |
-| **Task/async** | Propagate across task publish → execute | [Celery](celery.md) |
+| **Task/async** | Propagate across task publish -> execute | [Celery](celery.md) |
 | **Logging** | Stamp correlation ID on all log records | [Stdlib](stdlib.md) |
 | **Serverless** | Extract from AWS Lambda events | [Cloud](cloud.md) |
 
@@ -38,7 +38,7 @@ Adapters are grouped by where they operate in a request/response lifecycle:
 
 ### Task & Async
 
-- **[Celery](celery.md)** :  Propagate correlation ID across task publish → prerun → postrun via Celery signals.
+- **[Celery](celery.md)** :  Propagate correlation ID across task publish -> prerun -> postrun via Celery signals.
 
 ### Logging
 
@@ -84,17 +84,17 @@ class OrderService(LoggingMixin):
 Core library (required):
 
 ```bash
-uv add logging-mixin
+uv add mixin-logging
 ```
 
 Optional dependencies for specific adapters:
 
 ```bash
-uv add "logging-mixin[aiohttp]"    # aiohttp client instrumentation
-uv add "logging-mixin[urllib3]"    # urllib3 client instrumentation
-uv add "logging-mixin[celery]"     # Celery propagation
-uv add "logging-mixin[requests]"   # Requests client instrumentation
-uv add "logging-mixin[grpc]"       # gRPC server instrumentation
+uv add "mixin-logging[aiohttp]"    # aiohttp client instrumentation
+uv add "mixin-logging[urllib3]"    # urllib3 client instrumentation
+uv add "mixin-logging[celery]"     # Celery propagation
+uv add "mixin-logging[requests]"   # Requests client instrumentation
+uv add "mixin-logging[grpc]"       # gRPC server instrumentation
 ```
 
 Note: ASGI, WSGI, HTTPX, Botocore, Stdlib, Cloud, WebSocket, and GraphQL adapters have no external dependencies beyond the standard library.
@@ -103,7 +103,7 @@ Note: ASGI, WSGI, HTTPX, Botocore, Stdlib, Cloud, WebSocket, and GraphQL adapter
 
 - **Zero boilerplate** :  Adapters hook into framework middleware/event systems automatically
 - **Opt-in per adapter** :  Use only what you need; no unused instrumentation
-- **Framework-agnostic core** :  logging-mixin itself has zero dependencies
+- **Framework-agnostic core** :  mixin-logging itself has zero dependencies
 - **Security-hardened** :  Input validation, CRLF injection prevention, length limits
 - **ContextVar-based** :  Survives async/await, thread pools, and background tasks
 

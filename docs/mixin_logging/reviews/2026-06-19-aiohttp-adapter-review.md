@@ -49,7 +49,7 @@ Total: 347 LOC across 8 files, all under 300-LOC cap per file, under 694-line ca
 - `aiohttp_client.py` contains executable middleware: CorrelationIdInjector (provides trace_config() factory and _inject hook).
 - `__init__.py` is module-docstring-only, alphabetically-sorted __all__ with both exports.
 
-**Evidence:** aiohttp_objects.py, aiohttp_client.py structure matches requests/httpx canonical pattern.
+**Evidence:** aiohttp_objects.py, aiohttp_client.py structure matches requests/httpx reference pattern.
 
 ---
 
@@ -72,7 +72,7 @@ Total: 347 LOC across 8 files, all under 300-LOC cap per file, under 694-line ca
 - All constants use `Final` type annotation (constants/aiohttp.py lines 17, 22, 27, 32): correct.
 - `UNSAFE_HEADER_CHARS` is `frozenset({"\r", "\n", "\0"})` (line 27): correct, contains CR/LF/null.
 - `ERR_CORRELATION_ID_UNSAFE` present as constant (lines 32-34): matches field-level validation message (aiohttp_objects.py line 23).
-- Section dividers use bare string-literal docstrings with 2 blank lines above + 1 below: lines 15, 20, 25, 30 all correct. Even single-section file starts with divider above first constant (per requests.py canonical).
+- Section dividers use bare string-literal docstrings with 2 blank lines above + 1 below: lines 15, 20, 25, 30 all correct. Even single-section file starts with divider above first constant (per requests.py reference).
 
 **Evidence:** constants/aiohttp.py lines 1-34.
 
@@ -109,7 +109,7 @@ Total: 347 LOC across 8 files, all under 300-LOC cap per file, under 694-line ca
 **PASS**
 
 - File docstrings scoped to file only: aiohttp_objects.py (line 1) describes 'AiohttpCorrelation value object for aiohttp adapter', aiohttp_client.py (line 1) describes 'CorrelationIdInjector: stateless TraceConfig surface for aiohttp ClientSession'.
-- No references to 'per qhcg canonical', 'mirrors requests', 'async version of', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>', 'async version of', or other cross-system framing: all docstrings are standalone descriptive.
 - `__init__.py` docstring (line 1) correctly identifies module scope; __all__ alphabetically sorted.
 - Class docstrings (line 15, aiohttp_objects.py; line 13, aiohttp_client.py) are one-liners describing role.
 - Every method has one-liner docstring: `__post_init__` (line 21), `from_context` (line 26), `header_tuple` (line 34), `_is_safe` (line 39) in objects; `trace_config` (line 16), `_inject` (line 28) in client.
@@ -136,7 +136,7 @@ Total: 347 LOC across 8 files, all under 300-LOC cap per file, under 694-line ca
 
 **PASS**
 
-- Test organization mirrors requests/httpx canonical: test classes group related test methods (TestAiohttpCorrelationFromContext, TestAiohttpCorrelationConstruction, TestAiohttpCorrelationHeaderTuple, TestAiohttpCorrelationIsSafe, TestCorrelationIdInjectorTraceConfig, TestCorrelationIdInjectorInject).
+- Test organization mirrors requests/httpx reference: test classes group related test methods (TestAiohttpCorrelationFromContext, TestAiohttpCorrelationConstruction, TestAiohttpCorrelationHeaderTuple, TestAiohttpCorrelationIsSafe, TestCorrelationIdInjectorTraceConfig, TestCorrelationIdInjectorInject).
 - conftest.py provides autouse `reset_correlation` fixture (lines 15-20) for test isolation, clears before+after, matches requests/httpx pattern exactly.
 - Factory fixture `make_trace_params` (lines 23-35) correctly creates a mock aiohttp.TraceRequestStartParams object.
 - Test constants use `test_const.HTTPX_CORR_ID_*` alias (shared pool with httpx tests per collision-avoidance rule).
@@ -154,7 +154,7 @@ Total: 347 LOC across 8 files, all under 300-LOC cap per file, under 694-line ca
 - `test_aiohttp_objects.py`: 13 test methods covering AiohttpCorrelation across 4 test classes:
   - TestAiohttpCorrelationFromContext: set/unset/unsafe-char (parametrized, 3 unsafe chars)/overlong (4 test methods).
   - TestAiohttpCorrelationConstruction: unsafe-char/empty/overlong raises ValueError (3 test methods).
-  - TestAiohttpCorrelationHeaderTuple: returns canonical pair (1 test method).
+  - TestAiohttpCorrelationHeaderTuple: returns reference pair (1 test method).
   - TestAiohttpCorrelationIsSafe: valid/empty/overlong/exactly-max/unsafe-char (parametrized, 3 unsafe chars) (5 test methods).
 
 - `test_aiohttp_client.py`: 5 async test methods covering CorrelationIdInjector across 2 test classes:
@@ -225,10 +225,10 @@ Cross-referencing with `docs/audits/2026-06-19-aiohttp-adapter-security-audit.md
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- TraceConfig factory and async hook adhere to canonical aiohttp pattern.
+- TraceConfig factory and async hook adhere to reference aiohttp pattern.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 18 test methods across both objects and client with parametrization and async hook tests.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/platform attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or platform attribution.
 - LOC under cap on all files (max 106 LOC in test file, 44 LOC in objects, 34 LOC in client, 35 LOC in constants).
 - Security audit confirms no code defects; all threats evaluated and resolved.
 - 100% coverage on both aiohttp_objects.py and aiohttp_client.py.

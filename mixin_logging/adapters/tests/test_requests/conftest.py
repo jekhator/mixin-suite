@@ -5,21 +5,11 @@ from __future__ import annotations
 import http.server
 import socketserver
 import threading
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Callable, Generator
 from typing import Any, cast
 
 import pytest
 import requests as requests_lib  # type: ignore[import-untyped]
-
-from mixin_logging import clear_correlation_id
-
-
-@pytest.fixture(autouse=True)
-def reset_correlation() -> Iterator[None]:
-    """Clear correlation context before and after each test for isolation."""
-    clear_correlation_id()
-    yield
-    clear_correlation_id()
 
 
 @pytest.fixture
@@ -66,3 +56,4 @@ def http_server_with_header_capture() -> Generator[
     server_thread.start()
     yield f"http://{host}:{port}", captured_headers
     server.shutdown()
+    server.server_close()

@@ -1,7 +1,7 @@
-# Security Audit: logging-mixin
+# Security Audit: mixin-logging
 
 **Audit Date**: 2026-05-24  
-**Package Version**: See `mixin_logging/config/_version.py` for canonical version (read by build and `__init__.py`)  
+**Package Version**: See `mixin_logging/config/_version.py` for reference version (read by build and `__init__.py`)  
 **Status**: PASS (with caller-responsibility note)
 
 ---
@@ -16,20 +16,20 @@ The package is deliberately designed with a **clear security boundary**:
 
 - **Package responsibility** (PASS): The library logs **only** `correlation_id` and **caller-supplied `**extra` kwargs**. It performs **zero masking, redaction, or sensitive-data detection** internally.
   - `LoggingMixin._log_extra()` at `mixin_logging/mixin/mixin.py:21-26` builds the log dict from `correlation_id + extra` only.
-  - The `@logged` decorator at `mixin_logging/decorators/logged/logged_client.py:32-36` logs only `error_type` (the exception class name) + `code` (a field from the exception object if present). It **never** calls `str(error)`, logs exception message text, or introspects exception attributes beyond `.code`.
+  - The `@logged` decorator, removed in 0.5.0, logged only `error_type` (the exception class name) + `code` (a field from the exception object if present). Its review is kept under the Removed in 0.5.0 heading below.
   - **No mutable state stored**: the library holds no credentials, PII, or sensitive configuration. CorrelationContext at `mixin_logging/context/correlation/correlation_objects.py:9-18` stores only a string ID in a ContextVar.
 
 - **Correlation ID risk** (PASS): The correlation ID itself is a string passed by the caller via `set_correlation_id()`. The library enforces **no validation or format restrictions**, it accepts any string (UUID, opaque hash, etc.) from the caller. Risk is **caller-controlled**: if a caller sets a correlation ID containing PII (e.g., a phone number as the ID), the ID will be logged. This is a **caller error**, not a library defect. Best practice: correlation IDs should be opaque identifiers (UUIDs, random hashes), never PII.
 
 ### Caller Responsibility Note
 
-**Logging masking is decoupled from this library.** The `log_*()` and `@logged` interfaces deliberately do not inspect, redact, or mask the `**extra` kwargs or exception attributes passed by callers. This gives consumers full flexibility to implement domain-specific masking (e.g., via logging formatters, filters, or wrapper functions).
+**Logging masking is decoupled from this library.** The `log_*()` interfaces (and, before 0.5.0, `@logged`) deliberately do not inspect, redact, or mask the `**extra` kwargs or exception attributes passed by callers. This gives consumers full flexibility to implement domain-specific masking (e.g., via logging formatters, filters, or wrapper functions).
 
 **Consumers MUST NOT pass secrets or PII as:**
 - Keys or values in the `**extra` kwargs to `log_debug()`, `log_info()`, `log_warning()`, `log_error()`, or `log_exception()`.
   - Bad: `svc.log_info("user created", password="hunter2", ssn="123-45-6789")`
   - Good: `svc.log_info("user created", user_id="user-42", action="signup")`
-- Exception messages or attributes that are logged via `@logged`.
+- Exception messages or attributes that are logged via `log_exception()` or `log_error()`.
   - Bad: `raise ValueError(f"Failed to process credit card {card_number}")`
   - Good: `raise ValueError("Failed to process payment")`
 - Correlation ID values (should be opaque identifiers only).
@@ -38,7 +38,7 @@ The package is deliberately designed with a **clear security boundary**:
 
 ---
 
-## Axis 2: `@logged` Decorator Safety
+## Removed in 0.5.0: `@logged` Decorator Safety (historical axis)
 
 **Status**: PASS
 
@@ -92,7 +92,7 @@ The `@logged` decorator at `mixin_logging/decorators/logged/logged_client.py:18-
 
 **Status**: N/A
 
-The logging-mixin package is a **library, not a service**. It has no multi-tenant data structures, no per-customer isolation, and no tenant-scoped state. The ContextVar-backed correlation ID is **task-local** (isolated per async task / thread context), but it is **single-tenant by design**, the library does not enforce or track tenant boundaries. Multi-tenancy is the responsibility of the **consumer** (e.g., a consuming service would track `customer_id` in the `**extra` kwargs passed to `log_*()` methods).
+The mixin-logging package is a **library, not a service**. It has no multi-tenant data structures, no per-customer isolation, and no tenant-scoped state. The ContextVar-backed correlation ID is **task-local** (isolated per async task / thread context), but it is **single-tenant by design**, the library does not enforce or track tenant boundaries. Multi-tenancy is the responsibility of the **consumer** (e.g., a consuming service would track `customer_id` in the `**extra` kwargs passed to `log_*()` methods).
 
 ---
 
@@ -101,7 +101,7 @@ The logging-mixin package is a **library, not a service**. It has no multi-tenan
 | Axis | Status | Evidence |
 |------|--------|----------|
 | Secret/PII leakage | PASS | No internal masking; caller responsible for not passing secrets in `**extra` or exception messages. Correlation ID is opaque string only. |
-| `@logged` decorator | PASS | Logs only `error_type` + `code`; never logs exception message or args. No format-string risk. Re-raises unchanged. |
+| `@logged` decorator (removed in 0.5.0) | PASS (historical) | Logs only `error_type` + `code`; never logs exception message or args. No format-string risk. Re-raises unchanged. |
 | Dependency hygiene | PASS | Stdlib-only runtime. No risky imports (`eval`, `pickle`, etc.). |
 | Injection / format-string | PASS | Event strings are fixed literals or f-strings over decoration parameters. No caller-controlled data in format templates. |
 | Multi-tenancy | N/A | Library (not service). Tenant isolation is consumer responsibility. |
@@ -131,9 +131,9 @@ The ASGI adapter reads the **untrusted inbound** `X-Correlation-ID` request head
 
 ### Code Path
 
-1. **Inbound**: ASGI scope headers list (bytes tuples) → `AsgiCorrelation.from_scope(scope)` (line 32-40 in asgi_objects.py)
+1. **Inbound**: ASGI scope headers list (bytes tuples) -> `AsgiCorrelation.from_scope(scope)` (line 32-40 in asgi_objects.py)
    - Line 36: header name compared (case-insensitive) to `const.CORRELATION_ID_HEADER` (b"x-correlation-id")
-   - Line 38: **UNTRUSTED** `header_value.decode("utf-8")` → string stored in `AsgiCorrelation.correlation_id`
+   - Line 38: **UNTRUSTED** `header_value.decode("utf-8")` -> string stored in `AsgiCorrelation.correlation_id`
 
 2. **Logging**: `CorrelationIdMiddleware.__call__()` (line 33-57 in asgi_client.py)
    - Line 23: correlation ID set into ContextVar via `set_correlation_id(self.correlation.correlation_id)`
@@ -141,7 +141,7 @@ The ASGI adapter reads the **untrusted inbound** `X-Correlation-ID` request head
 
 3. **Outbound**: `wrapped_send()` (line 46-52 in asgi_client.py)
    - Line 50: correlation ID echoed into response headers via `correlation.response_header` tuple
-   - Line 49 in asgi_objects.py: `self.correlation_id.encode()` → bytes appended to headers list
+   - Line 49 in asgi_objects.py: `self.correlation_id.encode()` -> bytes appended to headers list
 
 ---
 
@@ -172,7 +172,7 @@ The `from_scope()` method calls `_is_safe()` after decoding (line 55); if valida
 2. **Character validation** (line 55): `_is_safe()` rejects any string containing `\r`, `\n`, or `\0`.
 3. **Fallback** (line 61-64): Rejected headers trigger UUID4 auto-generation, so the response always carries a safe value.
 
-**Remediation history:** CRITICAL vuln (2026-05-24) → hardened 2026-05-25 via `_is_safe()` + validate-and-regenerate semantics.
+**Remediation history:** CRITICAL vuln (2026-05-24) -> hardened 2026-05-25 via `_is_safe()` + validate-and-regenerate semantics.
 
 ---
 
@@ -195,7 +195,7 @@ An attacker cannot forge log entries because:
 2. **Safe-only storage** (line 23 in `asgi_client.py`): Only values passing `_is_safe()` reach `set_correlation_id()`.
 3. **Fallback** (line 61-64): Invalid IDs trigger UUID4 auto-generation, which is opaque and safe by construction.
 
-**Remediation history:** CRITICAL vuln (2026-05-24) → hardened 2026-05-25 via `_is_safe()` character check.
+**Remediation history:** CRITICAL vuln (2026-05-24) -> hardened 2026-05-25 via `_is_safe()` character check.
 
 ---
 
@@ -218,7 +218,7 @@ An attacker cannot cause memory or log bloat because:
 2. **Fallback** (line 61-64): Oversized IDs trigger UUID4 auto-generation (12 bytes).
 3. **Consistency** (line 69): Response headers always carry the safe value (either validated inbound or 12-byte UUID4).
 
-**Remediation history:** MEDIUM warning (2026-05-24) → hardened 2026-05-25 via `CORRELATION_ID_MAX_LENGTH = 128` constant + length check in `_is_safe()`.
+**Remediation history:** MEDIUM warning (2026-05-24) -> hardened 2026-05-25 via `CORRELATION_ID_MAX_LENGTH = 128` constant + length check in `_is_safe()`.
 
 ---
 
@@ -243,7 +243,7 @@ On invalid UTF-8, the exception is caught and the loop breaks, falling through t
 2. **Graceful fallback** (line 61-64): Invalid UTF-8 triggers UUID4 auto-generation.
 3. **Defensive assumption**: `_is_safe()` assumes valid UTF-8 (because decode succeeded or fell back), so no downstream surprises.
 
-**Remediation history:** MEDIUM warning (2026-05-24) → hardened 2026-05-25 via try-except on decode + fallback regenerate.
+**Remediation history:** MEDIUM warning (2026-05-24) -> hardened 2026-05-25 via try-except on decode + fallback regenerate.
 
 ---
 
@@ -300,10 +300,10 @@ The task is **correct** but the variable naming could be clearer:
 
 All critical and medium vulnerabilities are **REMEDIATED**:
 
-1. ✓ Input validation via `_is_safe()`, catches CRLF, null bytes, oversized IDs.
-2. ✓ UnicodeDecodeError guard, try-except on decode; graceful fallback to UUID4.
-3. ✓ Length enforcement, `CORRELATION_ID_MAX_LENGTH = 128` constant + validation.
-4. ✓ Validate-and-regenerate semantics, invalid IDs trigger safe UUID4 auto-generation.
+1. yes Input validation via `_is_safe()`, catches CRLF, null bytes, oversized IDs.
+2. yes UnicodeDecodeError guard, try-except on decode; graceful fallback to UUID4.
+3. yes Length enforcement, `CORRELATION_ID_MAX_LENGTH = 128` constant + validation.
+4. yes Validate-and-regenerate semantics, invalid IDs trigger safe UUID4 auto-generation.
 
 Test coverage: 100% for `from_scope()` across CRLF rejection, oversized ID rejection, invalid UTF-8 fallback, and valid ID extraction (see `mixin_logging/adapters/tests/test_asgi/`).
 
@@ -328,12 +328,12 @@ Key points:
 
 All critical cases are **covered with 100% test coverage** in `mixin_logging/adapters/tests/test_asgi/`:
 
-- ✓ CRLF rejection (`\r\n` in header → auto-generate).
-- ✓ Invalid UTF-8 rejection (decode error → auto-generate).
-- ✓ Oversized ID rejection (exceeds 128 bytes → auto-generate).
-- ✓ Null byte rejection (`\0` in header → auto-generate).
-- ✓ Valid ID extraction (`from_header=True`, ID matches input).
-- ✓ Missing header fallback (no header → auto-generate).
+- yes CRLF rejection (`\r\n` in header -> auto-generate).
+- yes Invalid UTF-8 rejection (decode error -> auto-generate).
+- yes Oversized ID rejection (exceeds 128 bytes -> auto-generate).
+- yes Null byte rejection (`\0` in header -> auto-generate).
+- yes Valid ID extraction (`from_header=True`, ID matches input).
+- yes Missing header fallback (no header -> auto-generate).
 
 Each case verifies both the fallback behavior (UUID4 hex[:12], `from_header=False`) and the acceptance case (`from_header=True`, ID echoed unchanged).
 

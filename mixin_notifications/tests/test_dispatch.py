@@ -2,16 +2,33 @@
 
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from mixin_notifications import (
     CollectingBackend,
+    DeliveryResult,
     Dispatcher,
     NotificationEvent,
     NullBackend,
     Severity,
     SuppressionPolicy,
+    SuppressionTracker,
 )
+
+
+class FailingBackend:
+    """Backend whose send always raises a RuntimeError."""
+
+    @property
+    def external_egress(self) -> bool:
+        """Does not egress data."""
+        return False
+
+    def send(self, event: NotificationEvent) -> DeliveryResult:
+        """Raise to simulate a backend failure."""
+        raise RuntimeError("Backend failed")
 
 
 class TestDispatcher:
@@ -60,15 +77,7 @@ class TestDispatcherGuardedDispatch:
     ) -> None:
         """Backend exception logs warning but does not raise."""
 
-        class FailingBackend:
-            @property
-            def external_egress(self) -> bool:
-                return False
-
-            def send(self, event: NotificationEvent):
-                raise RuntimeError("Backend failed")
-
-        dispatcher = Dispatcher(backends=(FailingBackend(),))  # type: ignore
+        dispatcher = Dispatcher(backends=(FailingBackend(),))
 
         result = dispatcher.notify(test_event)
 
@@ -80,16 +89,8 @@ class TestDispatcherGuardedDispatch:
     def test_multiple_backends_one_fails(self, test_event: NotificationEvent) -> None:
         """If one backend fails, others still deliver."""
 
-        class FailingBackend:
-            @property
-            def external_egress(self) -> bool:
-                return False
-
-            def send(self, event: NotificationEvent):
-                raise RuntimeError("Backend failed")
-
         collecting = CollectingBackend()
-        dispatcher = Dispatcher(backends=(FailingBackend(), collecting))  # type: ignore
+        dispatcher = Dispatcher(backends=(FailingBackend(), collecting))
 
         result = dispatcher.notify(test_event)
 
@@ -127,16 +128,18 @@ class TestDispatcherSuppression:
         assert result2.suppressed is True
         assert len(backend.events) == 1
 
-    def test_suppression_after_window(self, test_event: NotificationEvent) -> None:
+    def test_suppression_after_window(
+        self, test_event: NotificationEvent, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Duplicate after window expires is allowed."""
-        import time
-
+        clock = {"now": 1000.0}
+        monkeypatch.setattr(time, "time", lambda: clock["now"])
         backend = CollectingBackend()
         policy = SuppressionPolicy(window_seconds=1)
         dispatcher = Dispatcher(backends=(backend,), suppression_policy=policy)
 
         result1 = dispatcher.notify(test_event)
-        time.sleep(1.1)
+        clock["now"] += 1.1
         result2 = dispatcher.notify(test_event)
 
         assert result1.suppressed is False
@@ -205,8 +208,6 @@ class TestDispatcherSuppression:
 
     def test_suppression_tracker_capacity_eviction(self) -> None:
         """Tracker evicts oldest entry when capacity exceeded."""
-        from mixin_notifications import SuppressionTracker
-
         tracker = SuppressionTracker(window_seconds=60, max_capacity=2)
         current_time = 1000.0
 
@@ -215,3 +216,18 @@ class TestDispatcherSuppression:
         tracker.record("cat1", "fp3", current_time + 2)
 
         assert len(tracker._seen) == 2
+        assert not tracker.is_suppressed("cat1", "fp1", current_time + 2)
+        assert tracker.is_suppressed("cat1", "fp2", current_time + 2)
+
+    def test_re_recorded_key_is_not_evicted_first(self) -> None:
+        """Recording an existing key again makes it the most recent entry."""
+        tracker = SuppressionTracker(window_seconds=60, max_capacity=2)
+        current_time = 1000.0
+
+        tracker.record("cat1", "fp1", current_time)
+        tracker.record("cat1", "fp2", current_time + 1)
+        tracker.record("cat1", "fp1", current_time + 2)
+        tracker.record("cat1", "fp3", current_time + 3)
+
+        assert tracker.is_suppressed("cat1", "fp1", current_time + 3)
+        assert not tracker.is_suppressed("cat1", "fp2", current_time + 3)

@@ -1,6 +1,6 @@
-# logging-mixin. WebSocket Adapter
+# mixin-logging. WebSocket Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/websocket.md`
+> **Location:** `docs/mixin_logging/apps/adapters/websocket.md`
 > **Status:** Implemented. Inbound correlation-ID extraction via WebSocket handshake headers.
 > **Code location:** `mixin_logging/adapters/websocket/` (`websocket_objects.py` + `websocket_client.py`); constants in `mixin_logging/adapters/constants/websocket.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).

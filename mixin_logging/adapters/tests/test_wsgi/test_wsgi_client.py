@@ -35,6 +35,25 @@ class TestCorrelationIdMiddleware:
             == test_const.CORRELATION_ID_ABC_123
         )
 
+    def test_empty_header_generates_and_sets_response_header(
+        self,
+        make_environ,
+        start_response_capture,
+        mock_app_that_calls_start_response,
+    ) -> None:
+        """An empty X-Correlation-ID header does not fail the request; a new ID is returned."""
+        captured, start_response = start_response_capture
+        environ = make_environ({"X-Correlation-ID": ""})
+        middleware = wsgi_client.CorrelationIdMiddleware(
+            mock_app_that_calls_start_response
+        )
+        list(middleware(environ, start_response))
+        assert len(captured) == 1
+        _status, headers = captured[0]
+        generated = dict(headers).get(const.CORRELATION_ID_HEADER)
+        assert generated is not None
+        assert len(generated) == test_const.GENERATED_ID_LENGTH
+
     def test_absent_header_generates_and_sets_response_header(
         self,
         make_environ,
@@ -54,8 +73,8 @@ class TestCorrelationIdMiddleware:
         header_dict = dict(headers)
         generated_id = header_dict.get(const.CORRELATION_ID_HEADER)
         assert generated_id is not None
-        assert len(generated_id) == 12
-        assert all(char in "0123456789abcdef" for char in generated_id)
+        assert len(generated_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in generated_id)
 
     def test_correlation_cleared_after_response_iteration_completes(
         self,

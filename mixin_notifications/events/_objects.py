@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from mixin_notifications.common.constants import events as const
+
 
 @dataclass(frozen=True, slots=True)
 class Attachment:
@@ -17,8 +19,6 @@ class Attachment:
 
     def __post_init__(self) -> None:
         """Validate non-empty required fields."""
-        from mixin_notifications.common.constants import events as const
-
         if not self.filename:
             raise ValueError(const.ERR_ATTACHMENT_EMPTY_FILENAME)
         if not self.content_type:
@@ -49,8 +49,6 @@ class NotificationEvent:
 
     def __post_init__(self) -> None:
         """Validate non-empty required fields."""
-        from mixin_notifications.common.constants import events as const
-
         if not self.category:
             raise ValueError(const.ERR_NOTIFICATION_EMPTY_CATEGORY)
         if not self.title:

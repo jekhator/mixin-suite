@@ -2,11 +2,29 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Protocol
 
 from mixin_notifications.backends._objects import DeliveryResult
+from mixin_notifications.backends.aws_errors import AwsErrorClassifier
+from mixin_notifications.common.constants import events as const
 from mixin_notifications.events._objects import NotificationEvent
+
+
+class SNSClient(Protocol):
+    """Subset of the boto3 SNS client used by SNSBackend."""
+
+    def publish(
+        self,
+        *,
+        TopicArn: str,
+        Subject: str,
+        Message: str,
+        MessageAttributes: Mapping[str, Mapping[str, str]],
+    ) -> Mapping[str, object]:
+        """Publish one message to a topic and return the SNS response."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,7 +34,7 @@ class SNSBackend:
     Requires: boto3>=1.28.0 (installed via [sns] extra).
     """
 
-    sns_client: Any
+    sns_client: SNSClient
     default_topic_arn: str
 
     @property
@@ -26,32 +44,18 @@ class SNSBackend:
 
     def send(self, event: NotificationEvent) -> DeliveryResult:
         """Publish notification to SNS topic."""
-        from mixin_notifications.common.constants import events as const
-
         topic_arn = self.default_topic_arn
         for key, value in event.metadata:
             if key == const.METADATA_KEY_TOPIC_ARN:
                 topic_arn = value
                 break
 
-        title = event.title
-        body = event.body
-
-        message_attributes = {
-            "category": {
-                "DataType": "String",
-                "StringValue": event.category,
-            },
-            "severity": {
-                "DataType": "String",
-                "StringValue": event.severity.value,
-            },
-            "fingerprint": {
-                "DataType": "String",
-                "StringValue": event.fingerprint,
-            },
+        # Keys mirror the SNS MessageAttributes request shape, not domain fields.
+        message_attributes: dict[str, dict[str, str]] = {
+            "category": {"DataType": "String", "StringValue": event.category},
+            "severity": {"DataType": "String", "StringValue": event.severity.value},
+            "fingerprint": {"DataType": "String", "StringValue": event.fingerprint},
         }
-
         if event.correlation_id:
             message_attributes["correlation_id"] = {
                 "DataType": "String",
@@ -61,8 +65,8 @@ class SNSBackend:
         try:
             response = self.sns_client.publish(
                 TopicArn=topic_arn,
-                Subject=title,
-                Message=body,
+                Subject=event.title,
+                Message=event.body,
                 MessageAttributes=message_attributes,
             )
 
@@ -74,19 +78,4 @@ class SNSBackend:
                 retryable=False,
             )
         except Exception as error:
-            error_code = getattr(error, "response", {}).get("Error", {}).get("Code", "")
-            retryable_codes = {
-                "Throttling",
-                "ThrottledException",
-                "TooManyRequestsException",
-                "ServiceUnavailable",
-                "InternalError",
-            }
-            is_retryable = error_code in retryable_codes
-
-            return DeliveryResult(
-                delivered=False,
-                backend_name="SNSBackend",
-                detail=f"sns_error: {error_code or error.__class__.__name__}",
-                retryable=is_retryable,
-            )
+            return AwsErrorClassifier.failure("SNSBackend", "sns_error", error)

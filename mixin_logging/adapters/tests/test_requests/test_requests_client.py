@@ -95,7 +95,9 @@ class TestCorrelationHTTPAdapterRealRequestsIntegration:
         server_url, captured_headers = http_server_with_header_capture
         set_correlation_id(test_const.HTTPX_CORR_ID_SAFE)
         session = requests_client.CorrelationHTTPAdapter.correlation_session()
-        response = session.get(f"{server_url}/test")
+        response = session.get(
+            f"{server_url}/test", timeout=test_const.HTTP_TIMEOUT_SECONDS
+        )
         assert response.status_code == 200
         assert const.CORRELATION_ID_HEADER in captured_headers
         assert (
@@ -110,6 +112,8 @@ class TestCorrelationHTTPAdapterRealRequestsIntegration:
         """Real requests.Session omits header when correlation_id context is unset."""
         server_url, captured_headers = http_server_with_header_capture
         session = requests_client.CorrelationHTTPAdapter.correlation_session()
-        response = session.get(f"{server_url}/test")
+        response = session.get(
+            f"{server_url}/test", timeout=test_const.HTTP_TIMEOUT_SECONDS
+        )
         assert response.status_code == 200
         assert const.CORRELATION_ID_HEADER not in captured_headers

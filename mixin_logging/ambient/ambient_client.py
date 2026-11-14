@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from mixin_logging.context.constants import correlation as const
 from mixin_logging.context.correlation.correlation_client import get_correlation_id
 
 
@@ -19,35 +20,32 @@ class AmbientLogger:
 
     _logger: logging.Logger
 
+    def _log_extra(self, fields: dict[str, Any]) -> dict[str, Any]:
+        return {
+            const.CORRELATION_ID_KEY: get_correlation_id()
+            or const.UNSET_CORRELATION_ID,
+            **fields,
+        }
+
     def log_debug(self, event: str, **fields: Any) -> None:
         """Emit DEBUG event with auto-injected correlation_id."""
-        extra = {"correlation_id": get_correlation_id() or "-"}
-        extra.update(fields)
-        self._logger.debug(event, extra=extra)
+        self._logger.debug(event, extra=self._log_extra(fields))
 
     def log_info(self, event: str, **fields: Any) -> None:
         """Emit INFO event with auto-injected correlation_id."""
-        extra = {"correlation_id": get_correlation_id() or "-"}
-        extra.update(fields)
-        self._logger.info(event, extra=extra)
+        self._logger.info(event, extra=self._log_extra(fields))
 
     def log_warning(self, event: str, **fields: Any) -> None:
         """Emit WARNING event with auto-injected correlation_id."""
-        extra = {"correlation_id": get_correlation_id() or "-"}
-        extra.update(fields)
-        self._logger.warning(event, extra=extra)
+        self._logger.warning(event, extra=self._log_extra(fields))
 
     def log_error(self, event: str, **fields: Any) -> None:
         """Emit ERROR event with auto-injected correlation_id."""
-        extra = {"correlation_id": get_correlation_id() or "-"}
-        extra.update(fields)
-        self._logger.error(event, extra=extra)
+        self._logger.error(event, extra=self._log_extra(fields))
 
     def log_exception(self, event: str, **fields: Any) -> None:
         """Emit ERROR event with exception info and auto-injected correlation_id."""
-        extra = {"correlation_id": get_correlation_id() or "-"}
-        extra.update(fields)
-        self._logger.exception(event, extra=extra)
+        self._logger.exception(event, extra=self._log_extra(fields))
 
 
 _ambient = AmbientLogger(_logger=logging.getLogger("mixin_logging.ambient"))

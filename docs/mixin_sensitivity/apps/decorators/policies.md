@@ -1,19 +1,23 @@
 # Sensitivity Policies: PHI, PII, PCI, SECRET
 
+> **WARNING REMOVED IN 0.5.0**: The policy value objects and compliance layer described here were removed from mixin-sensitivity in 0.5.0.
+> Use field metadata with `Sensitivity` and `SensitiveRepr` instead; see [sensitive.md](sensitive.md).
+> This document is archived for historical reference only. Its code paths and examples no longer exist in the package.
+
 Four policy value objects, one per sensitivity class. Each implements the `ClassMakerAware` protocol and can be wired into `SensitiveDecorator` for per-class masking customization.
 
 ## File Layout
 
 ```
 mixin_sensitivity/decorators/classes/
-├── phi_aware/
-│   └── phi_aware_objects.py      ← PhiPolicyAware
-├── pii_aware/
-│   └── pii_aware_objects.py      ← PiiPolicyAware
-├── pci_aware/
-│   └── pci_aware_objects.py      ← PciPolicyAware
-└── secret_aware/
-    └── secret_aware_objects.py   ← SecretPolicyAware
++-- phi_aware/
+|   +-- phi_aware_objects.py      <- PhiPolicyAware
++-- pii_aware/
+|   +-- pii_aware_objects.py      <- PiiPolicyAware
++-- pci_aware/
+|   +-- pci_aware_objects.py      <- PciPolicyAware
++-- secret_aware/
+    +-- secret_aware_objects.py   <- SecretPolicyAware
 ```
 
 ## Policy Value Objects
@@ -48,7 +52,7 @@ phi_policy = PhiPolicyAware(
     placeholder="[REDACTED]"
 )
 
-masked = phi_policy.mask("John Doe")  # → "[REDACTED]"
+masked = phi_policy.mask("John Doe")  # -> "[REDACTED]"
 ```
 
 **`looks_sensitive(field_name: str) -> bool`**
@@ -62,9 +66,9 @@ phi_policy = PhiPolicyAware(
     placeholder="[REDACTED]"
 )
 
-phi_policy.looks_sensitive("patient_name")      # → True (contains "name")
-phi_policy.looks_sensitive("PATIENT_SSN")       # → True (contains "ssn", case-insensitive)
-phi_policy.looks_sensitive("appointment_date")  # → False (no hint match)
+phi_policy.looks_sensitive("patient_name")      # -> True (contains "name")
+phi_policy.looks_sensitive("PATIENT_SSN")       # -> True (contains "ssn", case-insensitive)
+phi_policy.looks_sensitive("appointment_date")  # -> False (no hint match)
 ```
 
 ## Usage Examples

@@ -1,13 +1,13 @@
 # mixin-suite Documentation
 
-This directory contains comprehensive documentation for the two composable mixins that make up mixin-suite:
+This directory holds the documentation for the five composable roots that make up mixin-suite. The top-level [README](../README.md) has installation and run-verified quick starts.
 
-## mixin-logging
+## mixin_logging
 
-**End-to-end correlation-ID propagation across 13 adapters for distributed systems.**
+**Correlation-ID propagation across framework adapters for distributed systems.**
 
-- **[Architecture](mixin_logging/architecture/architecture.md)**: System design, correlation context propagation, and integration patterns
-- **[Adapters](mixin_logging/apps/adapters/)**: Instrumentation for ASGI, WSGI, gRPC, GraphQL, Celery, Botocore, Requests, HTTPX, aiohttp, urllib3, WebSocket, Cloud, and Stdlib
+- **[Architecture](mixin_logging/architecture/architecture.md)**: system design, correlation context propagation and integration patterns
+- **[Adapters](mixin_logging/apps/adapters/)**: instrumentation for ASGI, WSGI, gRPC, GraphQL, Celery, Botocore, Requests, HTTPX, aiohttp, urllib3, WebSocket, Cloud, FastAPI and Stdlib
   - [ASGI Adapter](mixin_logging/apps/adapters/asgi.md)
   - [WSGI Adapter](mixin_logging/apps/adapters/wsgi.md)
   - [gRPC Adapter](mixin_logging/apps/adapters/grpc.md)
@@ -21,30 +21,55 @@ This directory contains comprehensive documentation for the two composable mixin
   - [WebSocket Adapter](mixin_logging/apps/adapters/websocket.md)
   - [Cloud Adapter](mixin_logging/apps/adapters/cloud.md)
   - [Stdlib Adapter](mixin_logging/apps/adapters/stdlib.md)
-- **[Decorators](mixin_logging/apps/decorators/logged.md)**: Class-level and method-level @logged decorators
+  - [Flush-on-Warning Handler](mixin_logging/apps/adapters/flush-handler.md)
 - **[Correlation Context](mixin_logging/apps/context/correlation.md)**: ContextVar-based correlation ID propagation
-- **[LoggingMixin](mixin_logging/apps/mixin/mixin.md)**: Base class providing log_info(), log_debug(), and @logged support
-- **[Security Audit](mixin_logging/apps/security-audit.md)**: CRLF injection prevention, sanitization, and adapter safety
-- **[Historical Changelog](mixin_logging/CHANGELOG-history.md)**: Release notes for prior versions of mixin-logging
+- **[LoggingMixin](mixin_logging/apps/mixin/mixin.md)**: base class providing log_info(), log_debug(), log_warning(), log_error() and log_exception()
+- **[Redaction](mixin_logging/redaction/README.md)**: log-record masking for sensitive field names
+- **[Security Audit](mixin_logging/apps/security-audit.md)**: CRLF injection prevention, sanitization and adapter safety
+- **[Historical Changelog](mixin_logging/CHANGELOG-history.md)**: release notes for prior versions of mixin-logging
 
-## mixin-sensitivity
+## mixin_sensitivity
 
-**Decorator-based sensitivity classification and masking for frozen dataclasses.**
+**Sensitivity classification and repr masking for frozen dataclasses.**
 
-- **[Architecture](mixin_sensitivity/architecture/architecture.md)**: System design and masking strategy
-- **[Sensitive Decorator](mixin_sensitivity/apps/decorators/sensitive.md)**: Class-level decorator enabling automatic masking
-- **[Compliance Policies](mixin_sensitivity/apps/decorators/compliance.md)**: Taxonomy-driven field classification
-- **[Classification API](mixin_sensitivity/apps/decorators/policies.md)**: Policy enforcement and introspection
-- **[Classify Service](mixin_sensitivity/services/classify.py)**: Field introspection and sensitivity profile generation (PHI, PII, PCI, SECRET)
-- **[Status](mixin_sensitivity/STATUS.md)**: Current feature coverage and known limitations
-- **[Historical Changelog](mixin_sensitivity/CHANGELOG-history.md)**: Release notes for prior versions of mixin-sensitivity
+- **[Status](mixin_sensitivity/STATUS.md)**: current feature coverage
+- **[Architecture](mixin_sensitivity/architecture/architecture.md)**: package scope, public API and integration patterns
+- **[Flow Trace](mixin_sensitivity/architecture/flow-trace.md)**: how the repr masking and classification run
+- **[SensitiveRepr](mixin_sensitivity/apps/decorators/sensitive.md)**: adoption mixin that masks marked fields in repr output
+- **[Diagrams](mixin_sensitivity/apps/diagrams.md)**: module layout and flows
+- **[Classification source](../mixin_sensitivity/services/classify/classify_objects.py)**: Sensitivity taxonomy and SensitivityProfile
+- **[Archived policy pages](mixin_sensitivity/apps/decorators/policies.md)**: policy value objects removed in 0.5.0
+- **[Historical Changelog](mixin_sensitivity/CHANGELOG-history.md)**: release notes for prior versions of mixin-sensitivity
 
-## Security & Code Reviews
+## mixin_retry
 
-- [mixin-logging audits](mixin_logging/audits/): Per-adapter and cross-feature security assessments
-- [mixin-logging reviews](mixin_logging/reviews/): Code review findings and resolution
-- [mixin-sensitivity audits](mixin_sensitivity/audits/): Decorator and classification layer security analysis
-- [mixin-sensitivity reviews](mixin_sensitivity/reviews/): Code review findings and resolution
+**Exponential backoff with jitter, driven by RetryPolicy and RetryExecutor.**
+
+- **[README](mixin_retry/README.md)**: usage, parameters and run-verified example
+- **[Flow Trace](mixin_retry/architecture/flow-trace.md)**: how the retry loop and backoff run
+- **[Optimization Pass Audit](mixin_retry/audits/2026-10-19-optimization-pass.md)**: 0.7.0 changes and gate results
+
+## mixin_latency
+
+**Elapsed-time measurement with a perf_counter-backed clock.** The API is documented in the top-level [README](../README.md#public-api) and its run-verified examples.
+
+## mixin_notifications
+
+**Notification events, backends, guarded dispatch, suppression and an egress gate.**
+
+- **[README](mixin_notifications/README.md)**: service-class, attachment, retry and AWS backend examples, with the egress-gate limitation
+- **[Flow Trace](mixin_notifications/architecture/flow-trace.md)**: dispatch, egress gate and retry flows
+- **[Security Audit](mixin_notifications/audits/2026-07-29-0.6.0-delivery-security-audit.md)**: 0.6.0 delivery semantics audit
+- **[Architecture Review](mixin_notifications/reviews/2026-07-29-0.6.0-delivery-architecture-review.md)**: design and backward compatibility review
+
+## Security and Code Reviews
+
+- [mixin-logging audits](mixin_logging/audits/): per-adapter and cross-feature security assessments
+- [mixin-logging reviews](mixin_logging/reviews/): code review findings and their resolution
+- [mixin-sensitivity audits](mixin_sensitivity/audits/): decorator-layer security analysis (historical) and the 0.7.0 optimization pass
+- [mixin-sensitivity reviews](mixin_sensitivity/reviews/): code review findings and their resolution (historical)
+- [mixin-retry audits](mixin_retry/audits/): 0.7.0 optimization pass
+- [mixin-notifications audits](mixin_notifications/audits/) and [reviews](mixin_notifications/reviews/): 0.6.0 delivery records and the 0.7.0 optimization pass
 
 ## Getting Started
 

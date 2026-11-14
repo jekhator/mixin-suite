@@ -21,8 +21,8 @@ class TestAsgiCorrelationFromScope:
     def test_from_scope_without_header_generates_id(self, basic_http_scope) -> None:
         """from_scope() generates 12-hex correlation ID and sets from_header=False."""
         correlation = asgi_objs.AsgiCorrelation.from_scope(basic_http_scope)
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_case_insensitive_header_match(
@@ -42,8 +42,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_carriage_return_header
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_rejects_newline_in_header(
@@ -53,8 +53,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_newline_header
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_rejects_null_byte_in_header(
@@ -64,8 +64,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_null_byte_header
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_rejects_oversized_header(
@@ -75,8 +75,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_oversized_header
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_rejects_invalid_utf8_header(
@@ -86,8 +86,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_invalid_utf8_header
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_rejects_string_header_name(
@@ -97,8 +97,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_string_header_name
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_rejects_string_header_value(
@@ -108,8 +108,8 @@ class TestAsgiCorrelationFromScope:
         correlation = asgi_objs.AsgiCorrelation.from_scope(
             http_scope_with_string_header_value
         )
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
         assert correlation.from_header is False
 
     def test_from_scope_stops_after_first_correlation_header(self) -> None:

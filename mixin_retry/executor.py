@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import math
 import random
 import time
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import Any, cast
 
-from mixin_retry.common.constants import errors as const
+from mixin_retry.common.constants import backoff as backoff_const, errors as const
 from mixin_retry.policy import RetryPolicy
 
 
@@ -36,58 +37,50 @@ class RetryExecutor:
             Wrapped function with retry logic.
         """
         if inspect.iscoroutinefunction(operation):
-            return self._wrap_async(operation, policy)
+            async_operation = cast("Callable[..., Awaitable[Any]]", operation)
+            return cast(
+                "Callable[..., OperationReturnType]",
+                self._wrap_async(async_operation, policy),
+            )
         return self._wrap_sync(operation, policy)
 
-    def _wrap_sync(
+    def _wrap_sync[OperationReturnType](
         self,
-        operation: Callable[..., Any],
+        operation: Callable[..., OperationReturnType],
         policy: RetryPolicy,
-    ) -> Callable[..., Any]:
+    ) -> Callable[..., OperationReturnType]:
         """Wrap a synchronous function."""
 
         @functools.wraps(operation)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            last_error: BaseException | None = None
-            for attempt in range(policy.max_attempts):
+        def wrapper(*args: Any, **kwargs: Any) -> OperationReturnType:
+            for attempt in range(policy.max_attempts - 1):
                 try:
                     return operation(*args, **kwargs)
                 except BaseException as error:
-                    last_error = error
-                    if attempt == policy.max_attempts - 1:
-                        raise
                     if not self._should_retry(error, policy):
                         raise
-                    backoff = self._calculate_backoff(attempt, policy)
-                    time.sleep(backoff)
-            assert last_error is not None  # pragma: no cover
-            raise last_error  # pragma: no cover
+                    time.sleep(self._calculate_backoff(attempt, policy))
+            return operation(*args, **kwargs)
 
         return wrapper
 
-    def _wrap_async(
+    def _wrap_async[AwaitedReturnType](
         self,
-        operation: Callable[..., Any],
+        operation: Callable[..., Awaitable[AwaitedReturnType]],
         policy: RetryPolicy,
-    ) -> Callable[..., Any]:
+    ) -> Callable[..., Awaitable[AwaitedReturnType]]:
         """Wrap an asynchronous function."""
 
         @functools.wraps(operation)
-        async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            last_error: BaseException | None = None
-            for attempt in range(policy.max_attempts):
+        async def wrapper(*args: Any, **kwargs: Any) -> AwaitedReturnType:
+            for attempt in range(policy.max_attempts - 1):
                 try:
                     return await operation(*args, **kwargs)
                 except BaseException as error:
-                    last_error = error
-                    if attempt == policy.max_attempts - 1:
-                        raise
                     if not self._should_retry(error, policy):
                         raise
-                    backoff = self._calculate_backoff(attempt, policy)
-                    await asyncio.sleep(backoff)
-            assert last_error is not None  # pragma: no cover
-            raise last_error  # pragma: no cover
+                    await asyncio.sleep(self._calculate_backoff(attempt, policy))
+            return await operation(*args, **kwargs)
 
         return wrapper
 
@@ -141,11 +134,18 @@ class RetryExecutor:
         policy: RetryPolicy,
     ) -> float:
         """Calculate backoff delay with optional jitter."""
-        backoff = min(
-            policy.backoff_base_seconds * (policy.backoff_multiplier**attempt),
-            policy.backoff_max_seconds,
-        )
+        try:
+            exponential = policy.backoff_base_seconds * (
+                policy.backoff_multiplier**attempt
+            )
+        except OverflowError:
+            # The growth term left float range, so it is above any finite cap.
+            exponential = math.inf if policy.backoff_base_seconds > 0 else 0.0
+        backoff = min(exponential, policy.backoff_max_seconds)
         if policy.jitter:
-            jitter_factor = random.uniform(0.9, 1.1)
+            jitter_factor = random.uniform(
+                backoff_const.JITTER_MIN_FACTOR,
+                backoff_const.JITTER_MAX_FACTOR,
+            )
             backoff *= jitter_factor
         return backoff

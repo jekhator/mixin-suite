@@ -99,7 +99,7 @@
 
 **Test case:** No test explicitly covers unsafe correlation ID logging.
 
-**Verdict:** ⚠️ MILD CONCERN
+**Verdict:** WARNING MILD CONCERN
 
 **Analysis:** While the stdlib adapter does not validate the correlation ID, the practical impact is low. Log formatters typically escape special characters. However, for consistency with other adapters (httpx, requests, botocore, celery) and to prevent malformed logs, the filter could optionally validate or strip unsafe characters.
 

@@ -42,7 +42,7 @@ class TestCloudCorrelationConstruction:
 
     def test_construct_with_overlong_raises_value_error(self) -> None:
         """CloudCorrelation constructor raises ValueError for exceeding length cap."""
-        overlong_id = "a" * 129
+        overlong_id = "a" * (const.CORRELATION_ID_MAX_LENGTH + 1)
         with pytest.raises(ValueError, match=const.ERR_CORRELATION_ID_UNSAFE):
             objs.CloudCorrelation(correlation_id=overlong_id, extracted=True)
 

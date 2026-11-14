@@ -47,7 +47,7 @@
    ```
 
 2. `UNSAFE_HEADER_CHARS = frozenset({"\r", "\n", "\0"})` (constants/fastapi.py line 28).
-3. These are the canonical injection vectors: CRLF for header wrapping, null byte for string termination.
+3. These are the reference injection vectors: CRLF for header wrapping, null byte for string termination.
 
 **Verdict:** GREEN
 

@@ -50,7 +50,7 @@ Total: 679 LOC across 9 files, all under 694-line cap per LOC gate.
 - `cloud_client.py` contains executable setup: CloudSetup (static service class with setup_correlation_id classmethod).
 - `__init__.py` is module-docstring-only, one-liner scope statement.
 
-**Evidence:** cloud_objects.py, cloud_client.py structure matches canonical pattern.
+**Evidence:** cloud_objects.py, cloud_client.py structure matches reference pattern.
 
 ---
 
@@ -112,7 +112,7 @@ Total: 679 LOC across 9 files, all under 694-line cap per LOC gate.
 
 - File docstrings scoped to file only: cloud_objects.py (line 1) describes 'CloudCorrelation value object for cloud adapter', cloud_client.py (line 1) describes 'CloudSetup: cloud adapter inbound entry surface for correlation-ID setup'.
 - Method docstrings are descriptive: from_event() (lines 25-34) includes multi-source extraction precedence as docstring comment (not inline code comments).
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing.
+- No references to 'mirrors <other project>' or other cross-system framing.
 
 **Evidence:** cloud_objects.py lines 1, 25-34, cloud_client.py line 1.
 
@@ -230,10 +230,10 @@ Cross-referencing with `docs/audits/2026-06-04-cloud-adapter-security-audit.md`:
 All checklist items pass. Code is production-ready:
 
 - DTO follows frozen/slots/docstring golden standard.
-- Object/client split adheres to canonical pattern.
+- Object/client split adheres to reference pattern.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 28+ scenarios across extraction sources, precedence logic, and fallback generation with parametrization and edge cases.
-- No docstring cross-system refs, no em dashes, no inline comments (docstring precedence is documented, not inlined), no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments (docstring precedence is documented, not inlined), no vendor or tool attribution.
 - LOC under cap on all files (max 245 LOC).
 - Security audit confirms no blockers; all findings validate the defensive extraction architecture.
 

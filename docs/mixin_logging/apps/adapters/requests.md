@@ -1,6 +1,6 @@
-# logging-mixin. Requests Adapter
+# mixin-logging. Requests Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/requests.md`
+> **Location:** `docs/mixin_logging/apps/adapters/requests.md`
 > **Status:** Implemented. Outbound correlation-ID propagation via the requests library `HTTPAdapter.add_headers` hook.
 > **Code location:** `mixin_logging/adapters/requests/` (`requests_objects.py` + `requests_client.py`); constants in `mixin_logging/adapters/constants/requests.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Adapter Categories & Data Flow).
@@ -47,6 +47,8 @@ Synchronous `requests` library (popular, widely-used HTTP client for Python). Re
 
 ## Example Usage
 
+Illustrative fragment, not run-verified; requires requests and network access to api.example.com.
+
 ```python
 from mixin_logging.adapters.requests import CorrelationHTTPAdapter
 
@@ -55,6 +57,8 @@ response = session.get("https://api.example.com/resource")
 ```
 
 Or register on an existing session:
+
+Illustrative fragment, not run-verified; requires requests and network access to api.example.com.
 
 ```python
 import requests

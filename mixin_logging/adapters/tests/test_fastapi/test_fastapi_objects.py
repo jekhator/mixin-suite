@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-# ruff: noqa: S101
 import pytest
 
 from mixin_logging.adapters.constants import fastapi as const
 from mixin_logging.adapters.fastapi.fastapi_objects import (
     FastApiCorrelation,
 )
+from mixin_logging.common.constants import tests as test_const
 
 
 class TestFastApiCorrelationFromHeaders:
@@ -29,7 +29,7 @@ class TestFastApiCorrelationFromHeaders:
         headers: dict[str, str] = {}
         corr = FastApiCorrelation.from_headers(headers)
         assert corr.correlation_id is not None
-        assert len(corr.correlation_id) == 12
+        assert len(corr.correlation_id) == test_const.GENERATED_ID_LENGTH
         assert corr.from_header is False
 
     def test_from_headers_rejects_unsafe_header_value(self) -> None:

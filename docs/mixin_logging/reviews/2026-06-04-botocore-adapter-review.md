@@ -49,7 +49,7 @@ Total: 366 LOC across 8 files, all under 694-line cap per LOC gate.
 - `botocore_client.py` contains executable middleware: CorrelationIdInjector (stateless classmethod surface, no __init__ fields).
 - `__init__.py` is module-docstring-only, one-liner scope statement.
 
-**Evidence:** botocore_objects.py, botocore_client.py structure matches httpx canonical pattern.
+**Evidence:** botocore_objects.py, botocore_client.py structure matches httpx reference pattern.
 
 ---
 
@@ -107,7 +107,7 @@ Total: 366 LOC across 8 files, all under 694-line cap per LOC gate.
 **PASS**
 
 - File docstrings scoped to file only: botocore_objects.py (line 1) describes 'BotocoreCorrelation value object for botocore event-hook surfaces', botocore_client.py (line 1) describes 'CorrelationIdInjector: stateless before-sign event-hook surface'.
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>' or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies the module scope without forward-referencing.
 
 **Evidence:** botocore_objects.py line 1, botocore_client.py line 1, __init__.py line 1.
@@ -148,7 +148,7 @@ Total: 366 LOC across 8 files, all under 694-line cap per LOC gate.
 - `test_botocore_objects.py`: 12 test methods covering BotocoreCorrelation across 4 test classes:
   - from_context: set/unset/unsafe-char/overlong (4 tests).
   - construction: unsafe-char/empty/overlong raises ValueError (3 tests).
-  - header_tuple: returns canonical pair (1 test).
+  - header_tuple: returns reference pair (1 test).
   - _is_safe: valid/empty/overlong/unsafe-char (4 tests).
 
 - `test_botocore_client.py`: 11 test methods covering CorrelationIdInjector across 3 test classes:
@@ -212,10 +212,10 @@ Cross-referencing with `docs/audits/2026-06-04-botocore-adapter-security-audit.m
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- Object/client split adheres to canonical.
+- Object/client split adheres to reference.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 23 scenarios across both objects and client with parametrization and dual registration patterns.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 120 LOC).
 - Security audit confirms no blockers; all findings are defensive design choices.
 

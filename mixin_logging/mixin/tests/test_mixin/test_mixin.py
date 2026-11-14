@@ -10,6 +10,7 @@ import pytest
 from mixin_logging import LoggingMixin, set_correlation_id
 from mixin_logging.common.constants import tests as test_const
 from mixin_logging.context.constants import correlation as correlation_const
+from mixin_logging.tests.helpers import RecordCollector
 
 
 class TestLoggingMixin:
@@ -44,7 +45,7 @@ class TestLoggingMixin:
 
     def test_log_debug_emits_at_debug_level(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_debug() emits a record at DEBUG level."""
         svc, collector = log_capture
@@ -56,7 +57,7 @@ class TestLoggingMixin:
 
     def test_log_info_emits_at_info_level(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_info() emits a record at INFO level."""
         svc, collector = log_capture
@@ -68,7 +69,7 @@ class TestLoggingMixin:
 
     def test_log_warning_emits_at_warning_level(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_warning() emits a record at WARNING level."""
         svc, collector = log_capture
@@ -80,7 +81,7 @@ class TestLoggingMixin:
 
     def test_log_error_emits_at_error_level(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_error() emits a record at ERROR level."""
         svc, collector = log_capture
@@ -92,7 +93,7 @@ class TestLoggingMixin:
 
     def test_log_exception_emits_at_error_level_with_traceback(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_exception() emits ERROR level record with traceback."""
         svc, collector = log_capture
@@ -111,7 +112,7 @@ class TestLoggingMixin:
 
     def test_log_injects_correlation_id(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_*() injects the current correlation_id into extra."""
         svc, collector = log_capture
@@ -127,7 +128,7 @@ class TestLoggingMixin:
 
     def test_log_injects_dash_when_correlation_id_unset(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_*() injects "-" when no correlation_id is set."""
         svc, collector = log_capture
@@ -141,7 +142,7 @@ class TestLoggingMixin:
 
     def test_log_merges_caller_extra_kwargs(
         self,
-        log_capture: tuple[LoggingMixin, Any],
+        log_capture: tuple[LoggingMixin, RecordCollector],
     ) -> None:
         """log_*() merges caller **extra kwargs into the log record."""
         svc, collector = log_capture

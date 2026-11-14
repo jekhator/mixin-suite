@@ -30,8 +30,8 @@ class TestWsgiCorrelation:
         environ = make_environ()
         correlation = wsgi_objs.WsgiCorrelation.from_environ(environ)
         assert correlation.from_header is False
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
 
     @pytest.mark.parametrize("unsafe_char", ["\r", "\n", "\0"])
     def test_unsafe_chars_in_header_triggers_silent_regen(
@@ -44,8 +44,8 @@ class TestWsgiCorrelation:
         correlation = wsgi_objs.WsgiCorrelation.from_environ(environ)
         assert correlation.from_header is False
         assert correlation.correlation_id != f"abc{unsafe_char}xyz"
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
 
     def test_overlong_header_triggers_silent_regen(
         self,
@@ -56,8 +56,15 @@ class TestWsgiCorrelation:
         environ = make_environ({"X-Correlation-ID": overlong})
         correlation = wsgi_objs.WsgiCorrelation.from_environ(environ)
         assert correlation.from_header is False
-        assert len(correlation.correlation_id) == 12
-        assert all(char in "0123456789abcdef" for char in correlation.correlation_id)
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in correlation.correlation_id)
+
+    def test_empty_header_is_treated_as_absent(self, make_environ) -> None:
+        """from_environ() treats an empty X-Correlation-ID header as absent and generates an ID."""
+        environ = make_environ({"X-Correlation-ID": ""})
+        correlation = wsgi_objs.WsgiCorrelation.from_environ(environ)
+        assert correlation.from_header is False
+        assert len(correlation.correlation_id) == test_const.GENERATED_ID_LENGTH
 
     def test_empty_correlation_id_raises_value_error(self) -> None:
         """__post_init__() raises ValueError if correlation_id is empty string."""

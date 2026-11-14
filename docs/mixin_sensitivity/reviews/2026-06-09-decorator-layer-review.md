@@ -17,8 +17,8 @@
 - [x] No `repr=False` overrides
   - Default repr behavior preserved for all DTOs
 - [x] Module-as-const import idiom followed
-  - `from sensitivity_mixin.decorators.constants import sensitive as const` (sensitive_client.py:10)
-  - `from sensitivity_mixin.common.constants import metadata as const` (classify_objects.py:9)
+  - `from mixin_sensitivity.decorators.constants import sensitive as const` (sensitive_client.py:10)
+  - `from mixin_sensitivity.common.constants import metadata as const` (classify_objects.py:9)
 - [x] One-line verb-phrase docstrings on all classes/methods
   - Classes: "A dataclass's sensitivity profile plus its masking surface"
   - Methods: "Build the field set from a dataclass's sensitivity metadata"
@@ -72,27 +72,27 @@
 - [x] No orphaned constants
   - 2 constants in sensitive.py (DEFAULT_PLACEHOLDER, ERR_SENSITIVE_TARGET_NOT_DATACLASS); both used
 - [x] No broken imports
-  - All imports verified: `from sensitivity_mixin.decorators.classes.compliance import ClassMakerAware` resolves, etc.
-- [x] Files ≤300 LOC
+  - All imports verified: `from mixin_sensitivity.decorators.classes.compliance import ClassMakerAware` resolves, etc.
+- [x] Files <=300 LOC
   - Spot checked: largest files are test files (386 lines test_sensitive_client.py, 280 lines test_sensitive_objects.py)
   - Source files: sensitive_client.py (48 LOC), sensitive_objects.py (55 LOC), classify_objects.py (57 LOC) :  all well below limit
 
 ### Commit Log
 
 - [x] Commit messages coherent
-  - 9 commits: logical progression from rename → refactor → implement → test → extract-constants
+  - 9 commits: logical progression from rename -> refactor -> implement -> test -> extract-constants
 - [x] No rename-only commit issues (flagged)
-  - **NOTE (not a blocker):** Commit `d03ffde` is rename-only (sensitive_aware → sensitive). This is a refactor precursor and safe; however, the history shows intermediate states that could have been squashed. Current state is acceptable.
+  - **NOTE (not a blocker):** Commit `d03ffde` is rename-only (sensitive_aware -> sensitive). This is a refactor precursor and safe; however, the history shows intermediate states that could have been squashed. Current state is acceptable.
 
 ---
 
 ## Findings
 
-### ✅ CORRECT: Protocol Enforcement
+### yes CORRECT: Protocol Enforcement
 
 The `ClassMakerAware` protocol (mask, looks_sensitive) is correctly implemented across all four policy classes. The decorator injects `__repr__` only when at least one field carries a sensitivity tag; untagged classes are returned unchanged.
 
-### ✅ CORRECT: Masking Logic
+### yes CORRECT: Masking Logic
 
 `SensitiveFieldSet.masked_repr()` correctly:
 1. Iterates fields using `dataclasses.fields()`
@@ -101,13 +101,13 @@ The `ClassMakerAware` protocol (mask, looks_sensitive) is correctly implemented 
 4. Converts value to str() before masking (handles int/float correctly)
 5. Assembles output with class name and field order preserved
 
-### ✅ CORRECT: Frozen/Slots Integrity
+### yes CORRECT: Frozen/Slots Integrity
 
 `__repr__` is injected via `setattr(target, "__repr__", closure)` at class decoration time. The closure correctly captures `field_set` and `policies` in lexical scope. Frozen dataclass instances cannot modify __repr__ post-construction.
 
-### ⚠️ MINOR: Alphabetical __all__ Ordering
+### WARNING MINOR: Alphabetical __all__ Ordering
 
-**Location:** `sensitivity_mixin/__init__.py`
+**Location:** `mixin_sensitivity/__init__.py`
 
 **Current:**
 ```python
@@ -135,9 +135,9 @@ __all__ = [
 
 **Impact:** Low :  this is a stylistic preference, not a correctness issue. However, it violates the stated DTO discipline rule.
 
-### ⚠️ UNUSED FIXTURE DEFECT
+### WARNING UNUSED FIXTURE DEFECT
 
-**Location:** `sensitivity_mixin/decorators/tests/test_sensitive/conftest.py:154`
+**Location:** `mixin_sensitivity/decorators/tests/test_sensitive/conftest.py:154`
 
 ```python
 @pytest.fixture
@@ -165,18 +165,18 @@ def mixed_instance(mixed_class: type[Any]) -> Any:
 All 133 tests pass:
 
 ```
-sensitivity_mixin/decorators/tests/test_sensitive/
-  ✓ test_sensitive_client.py (18 tests)
-  ✓ test_sensitive_objects.py (19 tests)
-  ✓ conftest.py (8 fixtures)
+mixin_sensitivity/decorators/tests/test_sensitive/
+  yes test_sensitive_client.py (18 tests)
+  yes test_sensitive_objects.py (19 tests)
+  yes conftest.py (8 fixtures)
 
-sensitivity_mixin/decorators/tests/test_compliance/ (8 tests)
-sensitivity_mixin/decorators/tests/test_phi_aware/ (15 tests)
-sensitivity_mixin/decorators/tests/test_pii_aware/ (14 tests)
-sensitivity_mixin/decorators/tests/test_pci_aware/ (13 tests)
-sensitivity_mixin/decorators/tests/test_secret_aware/ (13 tests)
+mixin_sensitivity/decorators/tests/test_compliance/ (8 tests)
+mixin_sensitivity/decorators/tests/test_phi_aware/ (15 tests)
+mixin_sensitivity/decorators/tests/test_pii_aware/ (14 tests)
+mixin_sensitivity/decorators/tests/test_pci_aware/ (13 tests)
+mixin_sensitivity/decorators/tests/test_secret_aware/ (13 tests)
 
-sensitivity_mixin/services/tests/test_classify/ (24 tests)
+mixin_sensitivity/services/tests/test_classify/ (24 tests)
 
 TOTAL: 133 PASSED
 ```
@@ -184,7 +184,7 @@ TOTAL: 133 PASSED
 Spot-run coverage:
 - `SensitiveDecorator` :  18 tests covering dataclass requirement, untagged classes, policies, module variable, frozen/slots, return type identity, non-string fields, edge cases
 - `SensitiveFieldSet` :  19 tests covering from_dataclass(), is_empty, masked_repr() with/without policies, partial coverage, all 4 sensitivity classes, non-string values, format/order
-- Policy objects (4 × phi/pii/pci/secret) :  13-15 tests each covering mask(), looks_sensitive(), field detection
+- Policy objects (4 x phi/pii/pci/secret) :  13-15 tests each covering mask(), looks_sensitive(), field detection
 - `Sensitivity` + `SensitivityProfile` :  24 tests covering enum values, profile construction, has(), fields_of()
 
 Coverage is comprehensive and plausible.
@@ -193,19 +193,19 @@ Coverage is comprehensive and plausible.
 
 ## Security Boundary
 
-**Per docs/apps/decorators/sensitive.md § "Security Boundary":**
+**Per docs/apps/decorators/sensitive.md section "Security Boundary":**
 
 ### Protected (Repr Layer)
-- ✓ `repr(obj)` :  sensitive fields masked
-- ✓ `str(obj) / print(obj)` :  uses masked repr
-- ✓ `f"Object: {obj}"` :  masked via repr
-- ✓ `logger.info("Object: %s", obj)` :  masked
+- yes `repr(obj)` :  sensitive fields masked
+- yes `str(obj) / print(obj)` :  uses masked repr
+- yes `f"Object: {obj}"` :  masked via repr
+- yes `logger.info("Object: %s", obj)` :  masked
 
 ### NOT Protected (by design)
-- ✗ Direct field access: `obj.api_key` :  full unmasked value
-- ✗ Serialization: `dataclasses.asdict(obj)` :  full unmasked values
-- ✗ Field-level logging: `logger.info(f"Token: {obj.api_key}")` :  full value
-- ✗ Pickling / attribute introspection :  full unmasked values
+- no Direct field access: `obj.api_key` :  full unmasked value
+- no Serialization: `dataclasses.asdict(obj)` :  full unmasked values
+- no Field-level logging: `logger.info(f"Token: {obj.api_key}")` :  full value
+- no Pickling / attribute introspection :  full unmasked values
 
 **Design principle is sound:** @sensitive operates at the object boundary (repr layer), not the field boundary. Documented security boundary is correct.
 
@@ -219,10 +219,10 @@ Coverage is comprehensive and plausible.
 
 ## Non-Blocking Fixes
 
-1. **Fix __all__ alphabetical ordering** in `sensitivity_mixin/__init__.py`
+1. **Fix __all__ alphabetical ordering** in `mixin_sensitivity/__init__.py`
    - Change order to: `["classify", "sensitive", "Sensitivity", "SensitivityProfile", "__version__"]`
 
-2. **Fix mixed_instance fixture** in `sensitivity_mixin/decorators/tests/test_sensitive/conftest.py:154`
+2. **Fix mixed_instance fixture** in `mixin_sensitivity/decorators/tests/test_sensitive/conftest.py:154`
    - Change `return mixed_instance(` to `return mixed_class(`
    - Or: Delete the fixture entirely if it remains unused (no tests reference it)
 
@@ -251,6 +251,6 @@ This review verifies:
 - Security boundary is correctly implemented and documented
 - Commit history is coherent with one rename-only commit (acceptable refactor precursor)
 
-**Reviewer:** Code Review (govtech-code-reviewer)  
+**Reviewer:** Code Review  
 **Date:** 2026-06-09  
 **Status:** Ready for merge with non-blocking fixes applied

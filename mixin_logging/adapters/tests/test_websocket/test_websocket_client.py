@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from mixin_logging import clear_correlation_id, get_correlation_id
+from mixin_logging.adapters.asgi.asgi_objects import Receive, Scope, Send
 from mixin_logging.adapters.websocket import websocket_client
 from mixin_logging.common.constants import tests as test_const
 
@@ -27,9 +28,9 @@ class TestCorrelationIdMiddlewareCall:
         set_value: str | None = None
 
         async def recording_app(
-            scope: dict[str, Any],
-            receive: Any,
-            send: Any,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
         ) -> None:
             nonlocal set_value
             set_value = get_correlation_id()
@@ -37,8 +38,8 @@ class TestCorrelationIdMiddlewareCall:
         middleware = websocket_client.CorrelationIdMiddleware(recording_app)
         await middleware(basic_websocket_scope, mock_receive, mock_send)
         assert set_value is not None
-        assert len(set_value) == 12
-        assert all(char in "0123456789abcdef" for char in set_value)
+        assert len(set_value) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in set_value)
 
     async def test_middleware_websocket_with_header_extracts_correlation(
         self,
@@ -52,9 +53,9 @@ class TestCorrelationIdMiddlewareCall:
         set_value: str | None = None
 
         async def recording_app(
-            scope: dict[str, Any],
-            receive: Any,
-            send: Any,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
         ) -> None:
             nonlocal set_value
             set_value = get_correlation_id()
@@ -75,9 +76,9 @@ class TestCorrelationIdMiddlewareCall:
         set_value: str | None = None
 
         async def recording_app(
-            scope: dict[str, Any],
-            receive: Any,
-            send: Any,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
         ) -> None:
             nonlocal set_value
             set_value = get_correlation_id()
@@ -109,9 +110,9 @@ class TestCorrelationIdMiddlewareCall:
         clear_correlation_id()
 
         async def failing_app(
-            scope: dict[str, Any],
-            receive: Any,
-            send: Any,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
         ) -> None:
             raise RuntimeError("test error")
 
@@ -130,9 +131,9 @@ class TestCorrelationIdMiddlewareCall:
         called_with: dict[str, Any] = {}
 
         async def recording_app(
-            scope: dict[str, Any],
-            receive: Any,
-            send: Any,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
         ) -> None:
             called_with["scope"] = scope
             called_with["receive"] = receive
@@ -156,9 +157,9 @@ class TestCorrelationIdMiddlewareCall:
         set_value: str | None = None
 
         async def recording_app(
-            scope: dict[str, Any],
-            receive: Any,
-            send: Any,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
         ) -> None:
             nonlocal set_value
             set_value = get_correlation_id()
@@ -168,5 +169,5 @@ class TestCorrelationIdMiddlewareCall:
             websocket_scope_with_carriage_return_header, mock_receive, mock_send
         )
         assert set_value is not None
-        assert len(set_value) == 12
-        assert all(char in "0123456789abcdef" for char in set_value)
+        assert len(set_value) == test_const.GENERATED_ID_LENGTH
+        assert all(char in test_const.HEX_DIGITS for char in set_value)

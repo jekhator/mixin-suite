@@ -45,4 +45,4 @@ class WebSocketCorrelation:
         """Check if correlation_id is safe (non-empty, within length, no CRLF/null)."""
         if not value or len(value) > const.CORRELATION_ID_MAX_LENGTH:
             return False
-        return not any(char in const.UNSAFE_HEADER_CHARS for char in value)
+        return const.UNSAFE_HEADER_CHARS.isdisjoint(value)

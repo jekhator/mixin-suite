@@ -2,24 +2,13 @@
 
 from __future__ import annotations
 
-import logging
-from collections.abc import Iterator
 from typing import Any
 
 import pytest
 
-from mixin_logging import LoggingMixin, clear_correlation_id
+from mixin_logging.adapters.asgi.asgi_objects import App, Message, Receive, Scope, Send
 from mixin_logging.adapters.constants import asgi as const
 from mixin_logging.common.constants import tests as test_const
-from mixin_logging.tests.helpers import _RecordCollector
-
-
-@pytest.fixture(autouse=True)
-def reset_correlation() -> Iterator[None]:
-    """Clear correlation context before and after each test for isolation."""
-    clear_correlation_id()
-    yield
-    clear_correlation_id()
 
 
 @pytest.fixture
@@ -172,33 +161,33 @@ def http_scope_with_string_header_value() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_receive() -> Any:
+def mock_receive() -> Receive:
     """Mock ASGI receive callable returning an empty http.request message."""
 
-    async def receive() -> dict[str, Any]:
+    async def receive() -> Message:
         return {"type": test_const.HTTP_EVENT_REQUEST, "body": b""}
 
     return receive
 
 
 @pytest.fixture
-def mock_send() -> Any:
+def mock_send() -> Send:
     """Mock ASGI send callable that discards messages."""
 
-    async def send(message: dict[str, Any]) -> None:
+    async def send(message: Message) -> None:
         return None
 
     return send
 
 
 @pytest.fixture
-def mock_app() -> Any:
+def mock_app() -> App:
     """Mock ASGI app that does nothing."""
 
     async def app(
-        scope: dict[str, Any],
-        receive: Any,
-        send: Any,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> None:
         return None
 
@@ -206,13 +195,13 @@ def mock_app() -> Any:
 
 
 @pytest.fixture
-def http_app_that_sends_response() -> Any:
+def http_app_that_sends_response() -> App:
     """Mock ASGI app that emits an http.response.start message."""
 
     async def app(
-        scope: dict[str, Any],
-        receive: Any,
-        send: Any,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> None:
         await send(
             {
@@ -223,27 +212,3 @@ def http_app_that_sends_response() -> Any:
         )
 
     return app
-
-
-@pytest.fixture
-def log_capture(
-    service_class: type[LoggingMixin],
-) -> tuple[LoggingMixin, _RecordCollector]:
-    """Service instance + collector handler attached at DEBUG level."""
-    svc = service_class()
-    collector = _RecordCollector()
-    svc._logger.addHandler(collector)
-    svc._logger.setLevel(logging.DEBUG)
-    return svc, collector
-
-
-@pytest.fixture
-def service_class() -> type[LoggingMixin]:
-    """Bare LoggingMixin subclass with slots: base for service-class tests."""
-
-    class Svc(LoggingMixin):
-        """LoggingMixin subclass with slots for service-class fixture tests."""
-
-        __slots__ = ()
-
-    return Svc

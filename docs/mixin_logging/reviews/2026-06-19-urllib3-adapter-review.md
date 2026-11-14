@@ -49,7 +49,7 @@ Total: 486 LOC across 8 files, all under 300-line cap per LOC gate.
 - `urllib3_client.py` contains executable middleware: CorrelationIdPoolManager (extends PoolManager, overrides urlopen).
 - `__init__.py` is module-docstring-only, correctly lists both exports.
 
-**Evidence:** urllib3_objects.py, urllib3_client.py structure matches requests canonical pattern.
+**Evidence:** urllib3_objects.py, urllib3_client.py structure matches requests reference pattern.
 
 ---
 
@@ -109,7 +109,7 @@ Total: 486 LOC across 8 files, all under 300-line cap per LOC gate.
 **PASS**
 
 - File docstrings scoped to file only: urllib3_objects.py (line 1) describes 'Urllib3Correlation value object for urllib3 adapter', urllib3_client.py (line 1) describes 'CorrelationIdPoolManager: urllib3 PoolManager for correlation-ID propagation'.
-- No references to 'mirrors requests', 'per canonical pattern', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>', or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies module scope.
 
 **Evidence:** urllib3_objects.py line 1, urllib3_client.py line 1, __init__.py line 1.
@@ -150,7 +150,7 @@ Total: 486 LOC across 8 files, all under 300-line cap per LOC gate.
 - `test_urllib3_objects.py`: 11 test methods covering Urllib3Correlation across 4 test classes:
   - from_context: set/unset/unsafe-char/overlong (4 tests).
   - construction: unsafe-char/empty/overlong raises ValueError, exact-max-length succeeds (4 tests).
-  - header_tuple: returns canonical pair (1 test).
+  - header_tuple: returns reference pair (1 test).
   - _is_safe: valid/empty/overlong/exact-max/unsafe-char (5 tests).
 
 - `test_urllib3_client.py`: 14 test methods covering CorrelationIdPoolManager across 1 test class:
@@ -159,7 +159,7 @@ Total: 486 LOC across 8 files, all under 300-line cap per LOC gate.
 - **Total: 25 tests** across full domain (Urllib3Correlation.from_context, .__post_init__, ._is_safe, .header_tuple, CorrelationIdPoolManager.urlopen).
 - Parametrized tests cover all 3 unsafe chars (CR, LF, null).
 
-**Evidence:** test_urllib3_objects.py lines 13-111 (11 tests), test_urllib3_client.py lines 16-232 (14 tests). Impl agent reported 25 tests, 100% coverage.
+**Evidence:** test_urllib3_objects.py lines 13-111 (11 tests), test_urllib3_client.py lines 16-232 (14 tests). Implementation author reported 25 tests, 100% coverage.
 
 ---
 
@@ -213,7 +213,7 @@ Cross-referencing with `docs/audits/2026-06-19-urllib3-adapter-security-audit.md
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- PoolManager subclass adheres to canonical pattern.
+- PoolManager subclass adheres to reference pattern.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 25 scenarios across both objects and client with parametrization.
 - No docstring cross-system refs, no em dashes, no inline comments, no attribution.

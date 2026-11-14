@@ -5,7 +5,7 @@ Thank you for your interest in contributing to mixin-suite!
 ## Development Setup
 
 ### Prerequisites
-- Python 3.11 or later
+- Python 3.12 or later
 - [uv](https://docs.astral.sh/uv/) for dependency management
 
 ### Local Setup
@@ -33,17 +33,18 @@ Execute the full test suite:
 uv run pytest
 ```
 
-For coverage report:
+For coverage report across all five roots (CI requires 100 percent):
 ```bash
-uv run pytest --cov=mixin_logging --cov=mixin_sensitivity --cov-report=term-missing
+uv run pytest --cov --cov-report=term-missing
 ```
 
 ## Linting and Code Style
 
-Format and lint your code before committing:
+Format and lint your code before committing. The formatter excludes
+`mixin_notifications/dispatch/_client.py`, which CI also excludes; edit that file by hand:
 ```bash
 uv run ruff check --fix .
-uv run ruff format .
+uv run ruff format --exclude mixin_notifications/dispatch/_client.py .
 ```
 
 ## Submitting Changes

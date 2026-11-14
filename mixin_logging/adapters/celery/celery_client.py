@@ -37,7 +37,7 @@ class CorrelationSignals:
         """Restore the correlation_id from the task message headers into context (worker side)."""
         if task is None:
             return
-        headers = getattr(task.request, "headers", None) or {}
+        headers = getattr(task.request, const.TASK_REQUEST_HEADERS_ATTR, None) or {}
         raw_value = headers.get(const.CORRELATION_ID_HEADER)
         if raw_value is not None and objs.CeleryCorrelation._is_safe(raw_value):
             set_correlation_id(raw_value)

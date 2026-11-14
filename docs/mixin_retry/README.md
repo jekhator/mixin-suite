@@ -1,119 +1,201 @@
 # mixin_retry
 
-Composable decorator for exponential backoff retry with full jitter. Apply @retried to functions, methods, or entire classes to automatically retry on transient failures.
+Composable retry capability: exponential backoff with optional jitter, driven by a frozen `RetryPolicy` and a `RetryExecutor`. Works with sync functions and coroutines.
 
 ## Features
 
-- Exponential backoff with configurable base delay and maximum delay cap
-- Full jitter to prevent thundering herd in distributed systems
-- Custom retry predicate to decide which exceptions trigger retry
-- Works on functions, methods, classmethods, staticmethods, and classes
-- Supports both sync and async (coroutines and async methods)
+- `RetryPolicy` frozen dataclass: attempt limit, exponential backoff with a cap, jitter flag, and a retry predicate
+- `RetryExecutor.wrap(fn, policy)` returns a wrapper that preserves the signature of `fn` (rebind once, call many)
+- `RetryExecutor.call(fn, *args, policy=..., **kwargs)` runs one call with retry
+- Supports sync functions and async functions (coroutines)
+- Retry scope is either an exception-type tuple (`retry_on`) or a predicate (`should_retry`) that can unwrap `__cause__`
+
+## Requirements
+
+Python 3.12 or newer. The package has no runtime dependencies.
 
 ## Installation
 
-Base mixin-suite includes mixin_retry:
+mixin_retry ships in the mixin-suite distribution:
 
 ```
 uv add mixin-suite
 ```
 
-Or as a standalone:
-
-```
-uv add mixin-retry
-```
-
-## Quick Start
-
-### Decorator on a Service Method
+## RetryPolicy
 
 ```python
-from mixin_retry import retried
-
-class MyService:
-    @retried(max_attempts=4, base_delay_s=1.0, max_delay_s=60.0, jitter=True)
-    def fetch_item(self, item_id: int) -> str:
-        """Fetches an item; automatically retries with exponential backoff."""
-        result = api_call(item_id)  # May raise IOError on network timeout
-        return result
+RetryPolicy(
+    max_attempts: int,
+    backoff_base_seconds: float,
+    backoff_multiplier: float,
+    backoff_max_seconds: float,
+    jitter: bool,
+    should_retry: Callable[[BaseException], bool] | None = None,
+    retry_on: tuple[type[BaseException], ...] = (),
+)
 ```
 
-### Decorator on a Function
+- `max_attempts`: total attempts, must be >= 1
+- `backoff_base_seconds`: delay before the first retry, must be >= 0
+- `backoff_multiplier`: growth factor per retry, must be > 0
+- `backoff_max_seconds`: cap on any single delay, must be >= 0
+- `jitter`: when True, each delay is multiplied by a random factor between 0.9 and 1.1
+- `should_retry`: predicate that receives the caught exception and decides whether to retry. It takes precedence over `retry_on`.
+- `retry_on`: exception types to retry on, used when `should_retry` is None. With neither set, nothing is retried.
+
+## Backoff
+
+After failed attempt n (0-indexed), the delay before the next attempt is:
+
+- exponential: `backoff_base_seconds * backoff_multiplier ** n`
+- capped: `min(exponential, backoff_max_seconds)`
+- jittered (if enabled): capped delay times a uniform factor in [0.9, 1.1]
+
+With `backoff_base_seconds=1.0`, `backoff_multiplier=2.0`, `backoff_max_seconds=60.0` and jitter off, the delays are 1, 2, 4, 8, ... seconds, never more than 60.
+
+## Usage
+
+### Wrap a method (rebind once, call many)
 
 ```python
-@retried(max_attempts=3, base_delay_s=0.5, retry_on=lambda e: isinstance(e, IOError))
-def unreliable_operation():
-    """Retry only on IOError."""
-    return perform_operation()
+from mixin_retry import RetryExecutor, RetryPolicy
+
+policy = RetryPolicy(
+    max_attempts=4,
+    backoff_base_seconds=1.0,
+    backoff_multiplier=2.0,
+    backoff_max_seconds=60.0,
+    jitter=True,
+    retry_on=(IOError,),
+)
+executor = RetryExecutor()
+fetch_item = executor.wrap(service.fetch_item, policy)
+result = fetch_item(123)
 ```
 
-### Decorator on a Class
+### Per-call convenience
 
 ```python
-@retried(max_attempts=5)
-class DataFetcher:
-    """All public methods in the class get automatic retry."""
-
-    def fetch(self, url: str) -> str:
-        return requests.get(url).text
-
-    def parse(self, data: str) -> dict:
-        return json.loads(data)
-
-    @staticmethod
-    def validate(obj: dict) -> bool:
-        return "id" in obj
+result = executor.call(service.fetch_item, 123, policy=policy)
 ```
 
-## Parameters
+`call()` requires `policy`; calling it without one raises `ValueError`.
 
-- max_attempts (int, default 3): Maximum number of attempts (must be >= 1)
-- base_delay_s (float, default 1.0): Base delay in seconds for exponential backoff
-- max_delay_s (float, default 60.0): Maximum delay in seconds (capped backoff)
-- jitter (bool, default True): Enable full jitter to randomize backoff
-- retry_on (callable, optional): Predicate function(exception) -> bool. Default retries on any Exception (not BaseException)
+### Async callables
 
-## Backoff Strategy
+`wrap()` detects coroutine functions and returns an async wrapper that sleeps with `asyncio.sleep`:
 
-On each failed attempt n (0-indexed):
-
-- Exponential: base_delay_s * (2 ** n)
-- Capped: min(exponential, max_delay_s)
-- Jittered (if enabled): random.uniform(0, capped)
-
-Example with base_delay_s=1.0, max_delay_s=60.0, jitter=True:
-
-- Attempt 0: Fails, delay = random(0, 1s)
-- Attempt 1: Fails, delay = random(0, 2s)
-- Attempt 2: Fails, delay = random(0, 4s)
-- Attempt 3: Succeeds, no further delay
+```python
+fetch = executor.wrap(async_fetch, policy)
+body = await fetch("https://example.com")
+```
 
 ## RUN-VERIFIED Example
 
-This example was executed with Python 3.11.15:
-
-```
-uv run python your_script.py
-```
-
-### Service Class with Retry
+The script below is the example used to check this page. It was executed with `uv run --all-extras python` on Python 3.14 against the 0.7.0 tree. The output is pasted from that run.
 
 ```python
-from mixin_retry import retried
+import asyncio
 
-class MyService:
-    attempt_count = 0
+from mixin_retry import RetryExecutor, RetryPolicy
 
-    @retried(max_attempts=4, base_delay_s=0.1, max_delay_s=0.5, jitter=True)
+
+class FlakyService:
+    def __init__(self) -> None:
+        self.attempts = 0
+
     def fetch_item(self, item_id: int) -> str:
-        self.attempt_count += 1
-        print(f"[Attempt {self.attempt_count}] Fetching item {item_id}...")
-
-        if self.attempt_count < 3:
-            raise IOError(f"Network timeout (attempt {self.attempt_count})")
-
+        self.attempts += 1
+        print(f"[Attempt {self.attempts}] Fetching item {item_id}...")
+        if self.attempts < 3:
+            raise IOError(f"Network timeout (attempt {self.attempts})")
         return f"Item#{item_id}:data=OK"
+
+
+policy = RetryPolicy(
+    max_attempts=4,
+    backoff_base_seconds=0.01,
+    backoff_multiplier=2.0,
+    backoff_max_seconds=0.05,
+    jitter=False,
+    retry_on=(IOError,),
+)
+executor = RetryExecutor()
+
+service = FlakyService()
+fetch_item = executor.wrap(service.fetch_item, policy)
+print("Result:", fetch_item(123))
+
+service.attempts = 0
+print("Per-call result:", executor.call(service.fetch_item, 456, policy=policy))
+
+try:
+    executor.call(service.fetch_item, 789)
+except ValueError as error:
+    print("Missing policy:", error)
+
+
+def always_fails() -> None:
+    raise IOError("permanent failure")
+
+
+try:
+    executor.wrap(always_fails, policy)()
+except IOError as error:
+    print("Exhausted after max_attempts:", error)
+
+
+def unwrap_cause(error: BaseException) -> bool:
+    cause = error.__cause__ or error
+    return isinstance(cause, ConnectionError)
+
+
+class Wrapped(Exception):
+    pass
+
+
+calls = {"count": 0}
+
+
+def fails_with_wrapped_cause() -> str:
+    calls["count"] += 1
+    if calls["count"] < 2:
+        try:
+            raise ConnectionError("reset by peer")
+        except ConnectionError as inner:
+            raise Wrapped("request failed") from inner
+    return "recovered"
+
+
+predicate_policy = RetryPolicy(
+    max_attempts=3,
+    backoff_base_seconds=0.01,
+    backoff_multiplier=1.0,
+    backoff_max_seconds=0.01,
+    jitter=False,
+    should_retry=unwrap_cause,
+)
+print("Predicate result:", executor.call(fails_with_wrapped_cause, policy=predicate_policy))
+
+
+async def fetch_async(url: str) -> str:
+    calls_async["count"] += 1
+    if calls_async["count"] < 2:
+        raise TimeoutError("slow upstream")
+    return f"fetched {url}"
+
+
+calls_async = {"count": 0}
+async_policy = RetryPolicy(
+    max_attempts=3,
+    backoff_base_seconds=0.01,
+    backoff_multiplier=2.0,
+    backoff_max_seconds=0.05,
+    jitter=True,
+    retry_on=(TimeoutError,),
+)
+print("Async result:", asyncio.run(executor.wrap(fetch_async, async_policy)("https://example.com")))
 ```
 
 Output:
@@ -123,47 +205,25 @@ Output:
 [Attempt 2] Fetching item 123...
 [Attempt 3] Fetching item 123...
 Result: Item#123:data=OK
+[Attempt 1] Fetching item 456...
+[Attempt 2] Fetching item 456...
+[Attempt 3] Fetching item 456...
+Per-call result: Item#456:data=OK
+Missing policy: policy is required for call()
+Exhausted after max_attempts: permanent failure
+Predicate result: recovered
+Async result: fetched https://example.com
 ```
 
-Explanation: The decorator automatically retried twice after network failures before succeeding on the third attempt.
+The first two runs show the flaky method succeeding on its third attempt, with the delays kept short by a 0.01 second base. The missing-policy call fails before any attempt is made. The exhausted run re-raises the last `IOError` after four attempts. The predicate run retries because the wrapped `ConnectionError` is found through `__cause__`.
 
-## Behavior Details
+## Exceptions
 
-### Exceptions Handled
-
-- Retries on Exception and its subclasses
-- Never retries on BaseException-only types: KeyboardInterrupt, SystemExit, asyncio.CancelledError
-- Custom retry_on predicate can narrow or widen retry scope
-
-### Class Decoration
-
-When decorating a class, @retried fans out to all public methods:
-
-- Instance methods: Wrapped with retry logic; called via the instance binding
-- Classmethods: Extracted, wrapped, re-wrapped as classmethod to preserve semantics
-- Staticmethods: Extracted, wrapped, re-wrapped as staticmethod to preserve semantics
-- Methods starting with _ (private): Skipped entirely
-- Properties and nested classes: Skipped
-- Methods already decorated with @retried (identified by marker attribute): Skipped to prevent double wrapping
-
-### Async Support
-
-Both sync and async callables are supported. The decorator detects coroutine functions and wraps them with asyncio.sleep instead of time.sleep.
-
-```python
-import asyncio
-
-class AsyncService:
-    @retried(max_attempts=3)
-    async def fetch_async(self, url: str) -> str:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                return await resp.text()
-
-await service.fetch_async("https://example.com")
-```
+- Retries only on the exception types selected by `should_retry` or `retry_on`
+- `BaseException`-only types such as `KeyboardInterrupt`, `SystemExit` and `asyncio.CancelledError` are retried only when the policy names them explicitly (through `should_retry` or `retry_on`)
+- After the last attempt, the original exception is re-raised unchanged
 
 ## See Also
 
-- Architecture and flow trace: docs/mixin_retry/architecture/flow-trace.md
-- mixin-suite: https://github.com/jekhator/mixin-suite
+- Architecture and flow trace: [architecture/flow-trace.md](architecture/flow-trace.md)
+- Repository: https://github.com/jekhator/mixin-suite

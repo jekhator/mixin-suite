@@ -9,7 +9,7 @@
 
 ## Review Summary
 
-The httpx adapter mirrors the ASGI and WSGI adapter patterns established in the logging-mixin codebase. It provides stateless event-hook registration for httpx Client and AsyncClient to propagate correlation IDs into outbound requests.
+The httpx adapter mirrors the ASGI and WSGI adapter patterns established in the mixin-logging codebase. It provides stateless event-hook registration for httpx Client and AsyncClient to propagate correlation IDs into outbound requests.
 
 **Scope of review:**
 - `mixin_logging/adapters/httpx/httpx_objects.py` (49 LOC)
@@ -49,7 +49,7 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 - `httpx_client.py` contains executable middleware: CorrelationIdInjector (stateless classmethod surface, no __init__ fields).
 - `__init__.py` is module-docstring-only, no exports (line 1): one-liner, scope statement.
 
-**Evidence:** httpx_objects.py, httpx_client.py, __init__.py structure matches ASGI/WSGI canonical pattern.
+**Evidence:** httpx_objects.py, httpx_client.py, __init__.py structure matches ASGI/WSGI reference pattern.
 
 ---
 
@@ -96,7 +96,7 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 
 **PASS**
 
-- CorrelationIdInjector has no instance fields (frozen dataclass, empty body expected based on ASGI canonical pattern): callable via classmethods only.
+- CorrelationIdInjector has no instance fields (frozen dataclass, empty body expected based on ASGI reference pattern): callable via classmethods only.
 - `event_hooks` classmethod returns ready-to-use dict (httpx_client.py lines 17-19): `{"request": [inject_sync, inject_async]}` ready for httpx registration.
 - No initialization side effects; lifecycle tied to httpx.Client / AsyncClient initialization only.
 
@@ -109,7 +109,7 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 **PASS**
 
 - File docstrings scoped to file only: httpx_objects.py (line 1) describes 'HttpxCorrelation + type aliases for httpx event-hook surfaces', httpx_client.py (line 1) describes 'CorrelationIdInjector + stateless event-hook surface'.
-- No references to 'per qhcg canonical', 'mirrors stripe', or other cross-system framing: all docstrings are standalone descriptive.
+- No references to 'mirrors <other project>' or other cross-system framing: all docstrings are standalone descriptive.
 - __init__.py docstring (line 1) correctly identifies both sub-modules without forward-referencing them by relative import.
 
 **Evidence:** httpx_objects.py line 1, httpx_client.py line 1, __init__.py line 1.
@@ -150,7 +150,7 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 - `test_httpx_objects.py`: 12 test methods covering HttpxCorrelation across 4 test classes:
   - from_context: set/unset/unsafe-char/overlong (4 tests).
   - construction: unsafe-char/empty/overlong raises ValueError (3 tests).
-  - header_tuple: returns canonical pair (1 test).
+  - header_tuple: returns reference pair (1 test).
   - _is_safe: valid/empty/overlong/unsafe-char (4 tests).
 
 - `test_httpx_client.py`: 7 test methods covering CorrelationIdInjector across 3 test classes:
@@ -170,7 +170,7 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 
 ### Strengths
 
-1. **Event-hook design is non-invasive.** CorrelationIdInjector.event_hooks() returns a dict ready for httpx.Client(event_hooks=...) without requiring subclassing or decorator wrapping. This decouples logging-mixin from httpx Client lifecycle.
+1. **Event-hook design is non-invasive.** CorrelationIdInjector.event_hooks() returns a dict ready for httpx.Client(event_hooks=...) without requiring subclassing or decorator wrapping. This decouples mixin-logging from httpx Client lifecycle.
 
 2. **Silent fallback on unsafe is consistent.** from_context and inject_sync both silently return/skip on unsafe values, never raising or logging. This matches ASGI/WSGI semantics and prevents log-injection DoS.
 
@@ -178,7 +178,7 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 
 4. **Test isolation is airtight.** autouse reset_correlation fixture ensures every test starts with blank context, no cross-test pollution.
 
-5. **Mirrors established canonical exactly.** Layout, docstring patterns, constant organization, and test structure are byte-for-byte consistent with ASGI/WSGI adapters, lowering cognitive load for maintenance.
+5. **Mirrors established reference exactly.** Layout, docstring patterns, constant organization, and test structure are byte-for-byte consistent with ASGI/WSGI adapters, lowering cognitive load for maintenance.
 
 ### Minor Notes (Not Blockers)
 
@@ -195,10 +195,10 @@ Total: 340 LOC across 8 files, all under 694-line cap per LOC gate.
 All checklist items pass. Code is production-ready:
 
 - DTOs follow frozen/slots/docstring golden standard.
-- Object/client split adheres to canonical.
+- Object/client split adheres to reference.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule 2026-05-28.
 - Tests cover 19 scenarios across both objects and client with parametrization and async coverage.
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 100 LOC).
 
 **Recommended merge:** No changes needed. This branch is ready for integration into release.

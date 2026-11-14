@@ -39,13 +39,11 @@ class LatencyClock:
     @classmethod
     @contextmanager
     def measure(cls) -> Iterator[LatencyClock]:
-        """Context manager for measuring elapsed time.
+        """Context manager that yields a started clock.
+
+        Call stop() on the yielded clock after the block to read the duration.
 
         Yields:
-            LatencyClock instance that will measure duration on context exit.
+            Started LatencyClock instance.
         """
-        clock = cls.start()
-        try:
-            yield clock
-        finally:
-            pass
+        yield cls.start()

@@ -5,15 +5,12 @@ from __future__ import annotations
 import logging
 import time
 from collections import deque
-from typing import Final
 
+from mixin_logging.adapters.constants import stdlib as const
 from mixin_logging.adapters.stdlib.flush_handler_objects import (
     FlushOnWarningConfig,
 )
 from mixin_logging.context.correlation.correlation_client import get_correlation_id
-
-# Null correlation ID for records with no correlation_id set
-NULL_CORRELATION_ID: Final = "-buffered-"
 
 
 class FlushOnWarningHandler(logging.Handler):
@@ -23,7 +20,6 @@ class FlushOnWarningHandler(logging.Handler):
         "_config",
         "_buffers",
         "_timestamps",
-        "_correlation_order",
     )
 
     def __init__(self, config: FlushOnWarningConfig) -> None:
@@ -33,11 +29,10 @@ class FlushOnWarningHandler(logging.Handler):
         self.setLevel(logging.DEBUG)
         self._buffers: dict[str, deque[logging.LogRecord]] = {}
         self._timestamps: dict[str, float] = {}
-        self._correlation_order: deque[str] = deque()
 
     def emit(self, record: logging.LogRecord) -> None:
         """Buffer records below flush_level; drain on WARNING+; evict stale entries."""
-        correlation_id = self._get_correlation_id(record)
+        correlation_id = self._get_correlation_id()
         current_time = time.time()
 
         self._evict_expired_buffers(current_time)
@@ -49,11 +44,11 @@ class FlushOnWarningHandler(logging.Handler):
             self._buffer_record(record, correlation_id, current_time)
             self._evict_oldest_correlation_if_exceeded()
 
-    def _get_correlation_id(self, record: logging.LogRecord) -> str:
+    def _get_correlation_id(self) -> str:
         """Resolve correlation_id from ContextVar at emit time."""
         current_id = get_correlation_id()
         if current_id is None:
-            return NULL_CORRELATION_ID
+            return const.NULL_CORRELATION_ID
         return current_id
 
     def _evict_expired_buffers(self, current_time: float) -> None:
@@ -67,11 +62,10 @@ class FlushOnWarningHandler(logging.Handler):
             self._evict_correlation(corr_id)
 
     def _evict_oldest_correlation_if_exceeded(self) -> None:
-        """Evict oldest correlation if max_correlations exceeded."""
+        """Evict the oldest buffers, in creation order, while max_correlations is exceeded."""
         while len(self._buffers) > self._config.max_correlations:
-            if self._correlation_order:  # pragma: no cover
-                oldest = self._correlation_order.popleft()
-                self._evict_correlation(oldest)
+            oldest = next(iter(self._buffers))
+            self._evict_correlation(oldest)
 
     def _evict_correlation(self, correlation_id: str) -> None:
         """Remove all buffered records for a correlation (TTL or capacity eviction)."""
@@ -88,7 +82,6 @@ class FlushOnWarningHandler(logging.Handler):
         if correlation_id not in self._buffers:
             self._buffers[correlation_id] = deque(maxlen=self._config.capacity)
             self._timestamps[correlation_id] = current_time
-            self._correlation_order.append(correlation_id)
 
         self._buffers[correlation_id].append(record)
 

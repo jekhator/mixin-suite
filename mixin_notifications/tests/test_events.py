@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import FrozenInstanceError
+
 import pytest
 
 from mixin_logging import clear_correlation_id, set_correlation_id
 from mixin_notifications import NotificationEvent, NotificationEventClient, Severity
+from mixin_notifications.common.constants import events as const
 
 
 class TestNotificationEvent:
@@ -28,7 +31,7 @@ class TestNotificationEvent:
 
     def test_empty_category_raises(self) -> None:
         """Empty category raises ValueError."""
-        with pytest.raises(ValueError, match="category must be non-empty"):
+        with pytest.raises(ValueError, match=const.ERR_NOTIFICATION_EMPTY_CATEGORY):
             NotificationEvent(
                 category="",
                 severity=Severity.INFO,
@@ -41,7 +44,7 @@ class TestNotificationEvent:
 
     def test_empty_title_raises(self) -> None:
         """Empty title raises ValueError."""
-        with pytest.raises(ValueError, match="title must be non-empty"):
+        with pytest.raises(ValueError, match=const.ERR_NOTIFICATION_EMPTY_TITLE):
             NotificationEvent(
                 category="test",
                 severity=Severity.INFO,
@@ -54,7 +57,7 @@ class TestNotificationEvent:
 
     def test_empty_fingerprint_raises(self) -> None:
         """Empty fingerprint raises ValueError."""
-        with pytest.raises(ValueError, match="fingerprint must be non-empty"):
+        with pytest.raises(ValueError, match=const.ERR_NOTIFICATION_EMPTY_FINGERPRINT):
             NotificationEvent(
                 category="test",
                 severity=Severity.INFO,
@@ -76,8 +79,8 @@ class TestNotificationEvent:
             occurred_at="2026-07-21T10:00:00+00:00",
             correlation_id=None,
         )
-        with pytest.raises(Exception):
-            event.category = "other"  # type: ignore
+        with pytest.raises(FrozenInstanceError):
+            event.category = "other"  # type: ignore[misc]
 
     def test_metadata_tuples(self) -> None:
         """Metadata is stored as tuple of tuples."""

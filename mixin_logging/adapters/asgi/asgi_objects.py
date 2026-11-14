@@ -34,9 +34,7 @@ class AsgiCorrelation:
         """Check if a correlation ID value is safe for logging and HTTP headers."""
         if not value or len(value) > const.CORRELATION_ID_MAX_LENGTH:
             return False
-        if any(char in const.UNSAFE_HEADER_CHARS for char in value):
-            return False
-        return True
+        return const.UNSAFE_HEADER_CHARS.isdisjoint(value)
 
     @classmethod
     def from_scope(cls, scope: Scope) -> Self:

@@ -39,7 +39,7 @@ class CorrelationIdMiddleware:
         receive: objs.Receive,
         send: objs.Send,
     ) -> None:
-        """Resolve, wrap send, execute via ASGIApp, clear on exit."""
+        """Resolve, wrap send, set context, execute, clear on exit."""
         if scope[const.TYPE_KEY] != const.HTTP_SCOPE_TYPE:
             await self.app(scope, receive, send)
             return
@@ -55,6 +55,7 @@ class CorrelationIdMiddleware:
             await send(message)
 
         try:
-            await ASGIApp(self.app, correlation)(scope, receive, wrapped_send)
+            set_correlation_id(correlation.correlation_id)
+            await self.app(scope, receive, wrapped_send)
         finally:
             clear_correlation_id()

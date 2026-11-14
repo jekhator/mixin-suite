@@ -1,6 +1,6 @@
-# logging-mixin. Botocore Adapter
+# mixin-logging. Botocore Adapter
 
-> **Location:** `logging-mixin/docs/apps/adapters/botocore.md`
+> **Location:** `docs/mixin_logging/apps/adapters/botocore.md`
 > **Status:** Implemented. Outbound AWS SDK correlation-ID propagation via the botocore `before-sign` event.
 > **Code location:** `mixin_logging/adapters/botocore/` (`botocore_objects.py` + `botocore_client.py`); constants in `mixin_logging/adapters/constants/botocore.py`.
 > **Diagrams:** `docs/apps/adapters/diagrams.md` (Botocore Subsystem Structure).
@@ -18,7 +18,7 @@ Outbound Propagation, the same category as the httpx and requests adapters, spec
 
 - `CorrelationIdInjector.register_on_session(session)` subscribes the handler on a botocore `Session` event emitter, which affects every client built from that session.
 - `CorrelationIdInjector.register_on_client(client)` scopes it to a single boto3 client via `client.meta.events`.
-- Both register against the `before-sign` event so `X-Correlation-ID` is injected into the canonical request before SigV4 signing, and is therefore covered by the signature. Registering at `before-send` would leave the header unsigned and strippable.
+- Both register against the `before-sign` event so `X-Correlation-ID` is injected into the request string that SigV4 signs, and is therefore covered by the signature. Registering at `before-send` would leave the header unsigned and strippable.
 - On each outbound request the handler reads the current correlation ID from the `ContextVar` via `BotocoreCorrelation.from_context()`. If it is unset or unsafe the handler is a no-op; otherwise it sets the header on the `AWSRequest`, using `replace_header` when the key already exists to avoid duplicate entries in botocore's `HTTPHeaders` mapping.
 
 ## Value Object
@@ -44,13 +44,13 @@ Outbound Propagation, the same category as the httpx and requests adapters, spec
 Install the `botocore` optional dependency:
 
 ```bash
-uv add "logging-mixin[botocore]"
+uv add "mixin-logging[botocore]"
 ```
 
 Or with pip:
 
 ```bash
-pip install "logging-mixin[botocore]"
+pip install "mixin-logging[botocore]"
 ```
 
 ## Compatibility
@@ -58,6 +58,8 @@ pip install "logging-mixin[botocore]"
 boto3 / botocore sync clients; aiobotocore shares the same (synchronous) event emitter. The adapter is duck-typed against the botocore event system, and any caller already has the AWS SDK installed.
 
 ## Example Usage
+
+Illustrative fragment, not run-verified; requires boto3 and AWS credentials, and calls a live AWS API, so it is not run.
 
 ```python
 import boto3

@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-18
+
+### Added
+
+- No new public names in this release.
+
+### Changed
+
+- Correlation ID safety checks in the adapters use a set disjointness test instead of a per-character generator. Behavior is unchanged.
+- The ASGI middleware sets the correlation context directly for each request instead of building a wrapper object. ASGIApp remains exported.
+- The FastAPI middleware reads the request headers mapping without copying it for each request.
+- The ambient logger methods share one helper that builds the extra mapping.
+- The flush handler defaults, validation messages and null correlation key moved to the stdlib adapter constants module. Code that imported them by their old module path must import them from the constants module.
+- The default sensitive field name patterns moved to the redaction constants module, and record fields are iterated without copying the key list.
+- The Celery worker restore reads the request headers attribute through the adapter constant.
+- **Retry wrapper typing**: The retry wrappers are typed with the wrap type parameter instead of Any. Jitter bounds moved to the retry constants module.
+- **Latency context manager docs**: The LatencyClock measure context manager is documented to yield a started clock; call stop() on it after the block to read the duration.
+- **Suppression eviction**: The suppression tracker evicts the least recently recorded key in constant time instead of scanning every entry. Eviction follows record order, which matches timestamp order for a monotonic clock.
+- **Repr masking constants**: The masking token and the SensitiveRepr adoption error text moved to a masking constants module. Code that imported them from the repr module must import them from the constants module.
+- **Notification backend constants**: Backend detail text and the AWS retryable error codes moved to a backends constants module. SES and SNS share one error classifier.
+- **Dead-letter warning text**: The warning logged when a dead_letter backend fails uses one message for both retry fallback paths.
+- **Egress constants**: The redacted body text and the count metadata key moved to the events constants module.
+
+### Fixed
+
+- mixin_notifications ships its py.typed marker like the other roots.
+- **all extra**: The `[all]` extra pulled two unrelated packages named `ses` and `sns`. It now installs `boto3` like the `[ses]` and `[sns]` extras.
+- **Correlation context in new threads**: The correlation context variable now has a default, so the first log call in a thread or context that never set a correlation ID no longer raises LookupError.
+- **WSGI empty correlation header**: An empty X-Correlation-ID request header is treated as absent and a new identifier is generated, instead of failing the request with ValueError.
+- **gRPC handler correlation context**: The gRPC interceptor now sets the correlation context while each handler method runs. Previously the context was cleared before the handler ran, so log calls in the handler had no correlation ID.
+- **Flush handler eviction**: A correlation ID whose buffer expired and later reappeared keeps its records. Capacity eviction now removes the oldest live buffer by creation order.
+- **Retry backoff overflow**: Exponential backoff no longer raises OverflowError for large attempt counts. The delay is capped at the maximum backoff.
+- **Repr masking of string markers**: A field whose sensitivity marker is a plain string value, such as "phi", is masked in SensitiveRepr output. Previously only Sensitivity members masked the field.
+- **SES attachment filename**: Attachment filenames are quoted in the Content-Disposition header, so names with spaces or semicolons are sent intact.
+- **AWS error classification**: An AWS error response whose structure is not a mapping no longer raises while the failure is classified. The failure is reported with the exception class name.
+
+### Removed
+
+- No public names were removed.
+
 ## [0.6.0] - 2026-08-04
 
 ### Added
@@ -23,11 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Python 3.12+ (requires-python floor raise)**: All packages now require Python >=3.12. Updated CI matrix to test 3.12 and 3.14 (dropped 3.11).
 - **PEP 695 type parameters**: mixin_retry's `RetryExecutor.wrap()` and `call()` methods converted to PEP 695 generic method syntax (`def method[TypeParam](...)`), removing need for class-scoped TypeVar definition.
-- **Ruff format-check scope**: Excluded `mixin_notifications/dispatch/_client.py` from format-check to preserve dialect-governed line formatting (P3/P14/P15/P16 conflicts).
+- **Ruff format-check scope**: Excluded `mixin_notifications/dispatch/_client.py` from format-check to keep hand-formatted line breaks that the formatter would rewrite.
 
 ### Fixed
 
-- **SuppressionTracker initialization**: Joined single-argument call to one line within dialect budget (line 35, mixin_notifications/dispatch/_client.py).
+- **SuppressionTracker initialization**: Joined single-argument call to one line within the line length limit (line 35, mixin_notifications/dispatch/_client.py).
 
 ## [0.5.0] - 2026-07-22
 
@@ -39,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **RetryPolicy + RetryExecutor capability** (mixin_retry): Exponential backoff retry strategy as a first-class DTO contract. `RetryPolicy` frozen+slots dataclass with fields: max_attempts, backoff_base_seconds, backoff_multiplier, backoff_max_seconds, jitter, should_retry (predicate, unwraps __cause__), retry_on (exception types). `RetryExecutor` client class with `wrap(fn, policy)` (primary form, rebind once, call many) and `call(fn, *args, policy=..., **kwargs)` (per-call convenience). Supports sync and async functions. Backoff calculated as min(base * (multiplier^attempt), max); jitter adds ±10% when enabled. Full test coverage with async/sync branches, predicate unwrapping, max-attempts exhaustion, backoff bounds validation.
+- **RetryPolicy + RetryExecutor capability** (mixin_retry): Exponential backoff retry strategy as a first-class DTO contract. `RetryPolicy` frozen+slots dataclass with fields: max_attempts, backoff_base_seconds, backoff_multiplier, backoff_max_seconds, jitter, should_retry (predicate, unwraps __cause__), retry_on (exception types). `RetryExecutor` client class with `wrap(fn, policy)` (primary form, rebind once, call many) and `call(fn, *args, policy=..., **kwargs)` (per-call convenience). Supports sync and async functions. Backoff calculated as min(base * (multiplier^attempt), max); jitter adds +/-10% when enabled. Full test coverage with async/sync branches, predicate unwrapping, max-attempts exhaustion, backoff bounds validation.
 - **SensitiveRepr adoption mixin** (mixin_sensitivity): Inherited by frozen+slots dataclasses to mask sensitive fields in `__repr__`. Reads existing field(metadata={"sensitivity": Sensitivity.X}) markers, replaces marked values with `***MASKED***` token in repr output. Field metadata remains introspectable (classify() unaffected). Zero impact on dataclass behavior beyond repr; no instance state (slots-safe).
 - **mixin_latency (NEW root)**: High-precision elapsed-time measurement. `LatencyClock` client class with classmethod `start()` -> running clock; bound method `stop()` -> `LatencyMeasurement` DTO (duration_ms with LATENCY_ROUNDING_DECIMALS rounding rule). Context-manager form: `with LatencyClock.measure() as clock:` (classmethod returning CM, bound-method idiom). Zero dependencies; no decorator surface. Measurement backed by perf_counter(); LatencyMeasurement frozen+slots with named constants for rounding and field names.
 
@@ -81,18 +121,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Tool config section rename**: Renamed pyproject.toml tool configuration sections from `[tool.dto-strict]` and `[tool.dto-strict.loc-cap]` to `[tool.strict-module]` and `[tool.strict-module.loc-cap]` respectively for consistency with domain-suite and the strict-module package naming convention. Configuration values remain unchanged.
+- **Tool config section rename**: Renamed pyproject.toml tool configuration sections from `[tool.dto-strict]` and `[tool.dto-strict.loc-cap]` to `[tool.strict-module]` and `[tool.strict-module.loc-cap]` respectively for consistency with the strict-module package naming convention. Configuration values remain unchanged.
 - **Strict-suite dependency pin to 0.2.0**: Updated CI and coverage gate dependencies to strict-suite v0.2.0, incorporating R010/R011 linting fixes (collections.abc import standardization, function-to-container refactoring).
 
 ### Fixed
 
-- **Full-corpus conformance**: Standardized all imports to use collections.abc (vs. deprecated typing module re-exports). Removed all inline code comments per house rules (only noqa/exception tags retained). Removed employer name references from review documentation. Applied ruff formatting across entire codebase.
+- **Full-corpus conformance**: Standardized all imports to use collections.abc (vs. deprecated typing module re-exports). Removed all inline code comments per the project style rules (only noqa/exception tags retained). Removed vendor name references from review documentation. Applied ruff formatting across entire codebase.
 
 ## [0.1.1] - 2026-07-11
 
 ### Fixed
 
-- Documentation conformance release: README badges and per-package run-verified examples, docs index, corrected extras list formatting, canonical docs tree naming, and removal of internal artifacts. No code changes.
+- Documentation conformance release: README badges and per-package run-verified examples, docs index, corrected extras list formatting, reference docs tree naming, and removal of internal artifacts. No code changes.
 
 ## [0.1.0] - 2026-07-09
 

@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Package rename: logging-mixin to mixin-logging**: Following the govtech OSS suite category-first naming convention (`<category>-<name>`). Distribution name on PyPI changes from `logging-mixin` to `mixin-logging`. Import root changes from `logging_mixin` to `mixin_logging`. The old `logging-mixin` distribution stays live on PyPI for backward compatibility; old pins continue to work.
+- **Package rename: logging-mixin to mixin-logging**: Following the category-first naming convention of the OSS suite (`<category>-<name>`). Distribution name on PyPI changes from `logging-mixin` to `mixin-logging`. Import root changes from `logging_mixin` to `mixin_logging`. The old `logging-mixin` distribution stays live on PyPI for backward compatibility; old pins continue to work.
 - **All public symbols remain unchanged**: `LoggingMixin`, `@logged`, correlation ID API (`set_correlation_id`, `get_correlation_id`, `clear_correlation_id`), and all 13 adapters retain their names and signatures. Only the module path changes.
 - **Version bump to 0.5.0**: Minor version bump reflects the rename; code content is identical to v0.4.0.
 
@@ -49,7 +49,7 @@ uv add mixin-logging
 
 ### Changed
 
-- **Standards-conformance sweep**: Unified constants organization and semantic-literal extraction across all adapters and common modules. Canonical docstring-format section headers and deep extraction to dedicated constants modules. Integration with `strict-module` v0.2.2+ for dataclass configuration and metadata validation.
+- **Standards-conformance pass**: Unified constants organization and semantic-literal extraction across all adapters and common modules. Reference docstring-format section headers and deep extraction to dedicated constants modules. Integration with `strict-module` v0.2.2+ for dataclass configuration and metadata validation.
 - **Docstring and naming conformance**: Package-wide consistency in documentation and parameter naming. All public methods, classes, and packages now start with imperative action verbs. One-line verb-phrase docstrings and scoped module docstrings for semantic clarity.
 - **Publish workflow trigger**: Release workflow now triggered by version-tag push instead of release-branch. Chore/release-* branch pattern deprecated.
 
@@ -71,9 +71,9 @@ uv add mixin-logging
 
 ### Changed
 
-- **Canonical import-idiom enforcement**: Applied `ruff isort` + `PLC0414` (redundant-self-aliases) to standardize imports across adapters. Removed self-referential re-exports in adapter `__init__` files (PR #51).
+- **Reference import-idiom enforcement**: Applied `ruff isort` + `PLC0414` (redundant-self-aliases) to standardize imports across adapters. Removed self-referential re-exports in adapter `__init__` files (PR #51).
 - **LOC-cap scoping refinement**: Adjusted line-count enforcement to target source code only, excluding tests. Configuration in `[tool.strict-module.loc-cap]` remains (hard_cap=300, soft_target=200), but scope now focuses on maintainability of production code (PR #50).
-- **Documentation improvements**: Extensive docs refresh: adapter table expansion, correlation semantics clarification, FAQ additions, version sweep across README and guides. Code of Conduct alignment with Contributor Covenant 2.1 (PR #44, #47).
+- **Documentation improvements**: Extensive docs refresh: adapter table expansion, correlation semantics clarification, FAQ additions, version pass across README and guides. Code of Conduct alignment with Contributor Covenant 2.1 (PR #44, #47).
 
 ### Fixed
 
@@ -90,7 +90,7 @@ uv add mixin-logging
   - **HTTPX Adapter** (`logging_mixin/adapters/httpx/`): Outbound `httpx.Client` and async `httpx.AsyncClient` instrumentation. Injects `X-Correlation-ID` on every request.
   - **Requests Adapter** (`logging_mixin/adapters/requests/`): Outbound `requests.Session` instrumentation via `CorrelationHTTPAdapter`. Injects `X-Correlation-ID` on every request.
   - **Botocore Adapter** (`logging_mixin/adapters/botocore/`): AWS SDK instrumentation. Injects `X-Correlation-ID` into all AWS service calls via event system hooks.
-  - **Celery Adapter** (`logging_mixin/adapters/celery/`): Task-boundary propagation via Celery signals (publish → prerun → postrun). Maintains correlation ID across async task execution.
+  - **Celery Adapter** (`logging_mixin/adapters/celery/`): Task-boundary propagation via Celery signals (publish -> prerun -> postrun). Maintains correlation ID across async task execution.
   - **Stdlib Adapter** (`logging_mixin/adapters/stdlib/`): `logging.Filter` implementation. Stamps `correlation_id` on every `LogRecord` automatically.
   - **Cloud Adapter** (`logging_mixin/adapters/cloud/`): Inbound AWS Lambda event extraction. Supports API Gateway, ALB, SQS, SNS, EventBridge, and top-level direct-invoke. Auto-generates fallback correlation ID if not present.
 

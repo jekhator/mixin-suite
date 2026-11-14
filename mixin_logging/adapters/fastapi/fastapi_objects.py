@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Self
 from uuid import uuid4
@@ -26,12 +27,10 @@ class FastApiCorrelation:
         """Check if a correlation ID value is safe for logging and HTTP headers."""
         if not value or len(value) > const.CORRELATION_ID_MAX_LENGTH:
             return False
-        if any(char in const.UNSAFE_HEADER_CHARS for char in value):
-            return False
-        return True
+        return const.UNSAFE_HEADER_CHARS.isdisjoint(value)
 
     @classmethod
-    def from_headers(cls, headers: dict[str, str]) -> Self:
+    def from_headers(cls, headers: Mapping[str, str]) -> Self:
         """Extract X-Correlation-ID from headers; validate or fall back to uuid4."""
         raw = headers.get(const.CORRELATION_ID_HEADER)
         if isinstance(raw, str) and cls._is_safe(raw):

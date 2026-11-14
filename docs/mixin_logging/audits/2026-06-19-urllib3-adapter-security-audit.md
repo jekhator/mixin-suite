@@ -98,7 +98,7 @@
 3. If the caller passed `headers={"X-Correlation-ID": "caller-value"}`, we overwrite it with `context-value`.
 4. No warning or exception is raised.
 
-**Implication:** The adapter prioritizes the ContextVar value over the caller's explicit header. This is a design choice: the correlation ID from context is the "canonical" value.
+**Implication:** The adapter prioritizes the ContextVar value over the caller's explicit header. This is a design choice: the correlation ID from context is the "reference" value.
 
 **Severity:** Low. Callers setting X-Correlation-ID explicitly are rare (most libraries don't); the context value is the standard trace ID. If a caller wants to force a specific header, they should not use this adapter.
 
@@ -152,7 +152,7 @@
 
 1. Line 27-29 (urllib3_client.py): Headers are injected into kwargs before calling `super().urlopen()`.
 2. The parent `PoolManager.urlopen()` processes kwargs (including headers) and constructs the request.
-3. urllib3's request construction flow: validate args → set connection pool → build request → apply headers → send.
+3. urllib3's request construction flow: validate args -> set connection pool -> build request -> apply headers -> send.
 4. Our injection happens BEFORE the parent method, so our headers are in kwargs when the parent processes them.
 5. No subsequent code in urllib3 removes or overrides our header (urllib3 only adds default headers, not removes caller headers).
 

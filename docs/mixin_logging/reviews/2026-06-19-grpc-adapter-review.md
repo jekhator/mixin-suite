@@ -48,7 +48,7 @@ Total: 485 LOC across 8 files, all under 300-line LOC cap per file.
 - `grpc_client.py` contains executable middleware: CorrelationInterceptor (extends grpc.ServerInterceptor, overrides intercept_service).
 - `__init__.py` is module-docstring-only, one-liner scope statement.
 
-**Evidence:** grpc_objects.py, grpc_client.py structure matches asgi/wsgi canonical pattern.
+**Evidence:** grpc_objects.py, grpc_client.py structure matches asgi/wsgi reference pattern.
 
 ---
 
@@ -116,14 +116,14 @@ Total: 485 LOC across 8 files, all under 300-line LOC cap per file.
 **PASS**
 
 - File docstrings scoped to file only:
-  - grpc_objects.py (line 1): "GRPCCorrelation value object for gRPC adapter." ✓
-  - grpc_client.py (line 1): "CorrelationInterceptor: gRPC inbound entry surface for correlation-ID setup." ✓
-  - __init__.py (line 1): Describes module scope. ✓
+  - grpc_objects.py (line 1): "GRPCCorrelation value object for gRPC adapter." yes
+  - grpc_client.py (line 1): "CorrelationInterceptor: gRPC inbound entry surface for correlation-ID setup." yes
+  - __init__.py (line 1): Describes module scope. yes
 - Class docstrings one-liner:
-  - GRPCCorrelation (line 18): "Correlation-ID value object resolved from gRPC invocation metadata or generated." ✓
-  - CorrelationInterceptor (line 14): "Entry surface for extracting correlation-ID from inbound gRPC metadata." ✓
-- Method docstrings one-liner for all (from_metadata, __post_init__, _is_safe, intercept_service): ✓
-- No references to internal process terms or cross-system framing: ✓
+  - GRPCCorrelation (line 18): "Correlation-ID value object resolved from gRPC invocation metadata or generated." yes
+  - CorrelationInterceptor (line 14): "Entry surface for extracting correlation-ID from inbound gRPC metadata." yes
+- Method docstrings one-liner for all (from_metadata, __post_init__, _is_safe, intercept_service): yes
+- No references to internal process terms or cross-system framing: yes
 
 **Evidence:** grpc_objects.py lines 1, 18; grpc_client.py lines 1, 14; all method docstrings on lines 24, 30, 40, 21.
 
@@ -133,11 +133,11 @@ Total: 485 LOC across 8 files, all under 300-line LOC cap per file.
 
 **PASS**
 
-- Constants section dividers (grpc.py): Lines 16, 21, 28 all have 2 blank lines above + 1 below. ✓
-- Module spacing (grpc_objects.py): 2 blank lines after imports (line 10) before __all__ (line 11): ✓
-- Module spacing (grpc_client.py): 2 blank lines after imports (line 10) before class (line 13): ✓
-- conftest.py: 2 blank lines after imports (line 11) before fixture (line 12): ✓
-- No em dashes detected across all 8 files (grep confirms): ✓
+- Constants section dividers (grpc.py): Lines 16, 21, 28 all have 2 blank lines above + 1 below. yes
+- Module spacing (grpc_objects.py): 2 blank lines after imports (line 10) before __all__ (line 11): yes
+- Module spacing (grpc_client.py): 2 blank lines after imports (line 10) before class (line 13): yes
+- conftest.py: 2 blank lines after imports (line 11) before fixture (line 12): yes
+- No em dashes detected across all 8 files (grep confirms): yes
 
 **Evidence:** grpc.py lines 14-28, grpc_objects.py lines 9-12, grpc_client.py lines 10-13, conftest.py lines 11-12.
 
@@ -152,8 +152,8 @@ Total: 485 LOC across 8 files, all under 300-line LOC cap per file.
   - TestGRPCCorrelationIsSafe (9 tests): empty, valid_id, hex_id, carriage_return, newline, null_byte, oversized, at_max_boundary, just_under_max.
   - TestGRPCCorrelationPostInit (4 tests): unsafe, empty, oversized, accepts_safe.
   - TestCorrelationInterceptorIntercept (8 tests): extracts_and_sets, clears_after_return, clears_on_exception, returns_result, generates_when_absent, generates_when_unsafe, empty_metadata, inheritance.
-- conftest provides autouse `reset_correlation` fixture (lines 12-17) for test isolation, mirrors ASGI/WSGI conftest pattern. ✓
-- Test constants use `test_const.CORRELATION_ID_VALID_ID_123`, `test_const.CORRELATION_ID_HEX`, etc. from shared tests.py (no new entries added to shared file): ✓
+- conftest provides autouse `reset_correlation` fixture (lines 12-17) for test isolation, mirrors ASGI/WSGI conftest pattern. yes
+- Test constants use `test_const.CORRELATION_ID_VALID_ID_123`, `test_const.CORRELATION_ID_HEX`, etc. from shared tests.py (no new entries added to shared file): yes
 
 **Evidence:** test_grpc_objects.py classes 12-174 (21 tests), test_grpc_client.py classes 16-176 (8 tests), conftest.py lines 12-17.
 
@@ -164,21 +164,21 @@ Total: 485 LOC across 8 files, all under 300-line LOC cap per file.
 **PASS**
 
 - **grpc_objects.py coverage:**
-  - Line 18: @dataclass decorator ✓
-  - Lines 20-21: fields (correlation_id, extracted) ✓
-  - Lines 23-26: __post_init__ validation ✓
-  - Lines 28-37: from_metadata classmethod (safe branch, unsafe/absent branch) ✓
-  - Lines 39-44: _is_safe staticmethod (empty, length, chars checks) ✓
+  - Line 18: @dataclass decorator yes
+  - Lines 20-21: fields (correlation_id, extracted) yes
+  - Lines 23-26: __post_init__ validation yes
+  - Lines 28-37: from_metadata classmethod (safe branch, unsafe/absent branch) yes
+  - Lines 39-44: _is_safe staticmethod (empty, length, chars checks) yes
   - **Total: 41 statements, 41 covered = 100%** per impl report.
 
 - **grpc_client.py coverage:**
-  - Lines 13-14: class definition ✓
-  - Lines 16-20: intercept_service signature ✓
-  - Line 22: metadata assignment ✓
-  - Line 23: GRPCCorrelation.from_metadata call ✓
-  - Line 24: set_correlation_id call ✓
-  - Lines 25-26: try block, continuation call ✓
-  - Lines 27-28: finally block, clear_correlation_id call ✓
+  - Lines 13-14: class definition yes
+  - Lines 16-20: intercept_service signature yes
+  - Line 22: metadata assignment yes
+  - Line 23: GRPCCorrelation.from_metadata call yes
+  - Line 24: set_correlation_id call yes
+  - Lines 25-26: try block, continuation call yes
+  - Lines 27-28: finally block, clear_correlation_id call yes
   - **Total: 13 statements, 13 covered = 100%** per impl report.
 
 - **Test count: 29 tests** (21 objects + 8 client) covering all branches and edge cases.
@@ -207,7 +207,7 @@ Total: 485 LOC across 8 files, all under 300-line LOC cap per file.
 
 1. **Byte metadata is silently rejected.** The adapter only accepts string values (line 32 of grpc_objects.py checks isinstance(candidate, str)). Byte values are rejected and replaced with generated IDs. This is safe and acceptable, but differs from ASGI/WSGI adapters which decode bytes. The asymmetry is documented in the security audit.
 
-2. **Case-sensitive key lookup.** Metadata keys are case-sensitive; "x-correlation-id" ≠ "X-CORRELATION-ID". Uppercase metadata will not be recognized and will trigger generation. This aligns with gRPC/HTTP/2 convention but may surprise HTTP-framework users.
+2. **Case-sensitive key lookup.** Metadata keys are case-sensitive; "x-correlation-id" != "X-CORRELATION-ID". Uppercase metadata will not be recognized and will trigger generation. This aligns with gRPC/HTTP/2 convention but may surprise HTTP-framework users.
 
 3. **Mock-based testing.** Tests use MagicMock for gRPC objects (handler_call_details, RpcMethodHandler). This is appropriate for unit tests but integration tests with real grpc.testing servers would be valuable in later phases.
 
@@ -241,10 +241,10 @@ All checklist items pass. Code is production-ready:
 - ServerInterceptor protocol is correctly implemented with try-finally cleanup.
 - Constants use Final, frozenset, ERR_* messages, and section dividers per standing rule.
 - Tests cover 29 scenarios across objects and client with edge cases (unsafe chars, empty, oversized, exception handling).
-- All imports properly ordered (stdlib → third-party → first-party).
-- No docstring cross-system refs, no em dashes, no inline comments, no employer/AI-assistant attribution.
+- All imports properly ordered (stdlib -> third-party -> first-party).
+- No docstring cross-system refs, no em dashes, no inline comments, no vendor or tool attribution.
 - LOC under cap on all files (max 175 LOC).
 - Security audit confirms no code defects; all threat questions resolve to NO ISSUE.
 - Coverage 100% objects, 100% client (exceeds 95% gate).
 
-**Recommended merge:** Code is ready for integration. No changes needed. The adapter is a clean, reusable addition to logging-mixin's inbound-adapter family.
+**Recommended merge:** Code is ready for integration. No changes needed. The adapter is a clean, reusable addition to mixin-logging's inbound-adapter family.

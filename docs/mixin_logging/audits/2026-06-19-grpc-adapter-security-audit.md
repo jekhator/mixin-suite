@@ -91,7 +91,7 @@
 
 1. Line 18: `CORRELATION_ID_KEY: Final = "x-correlation-id"` (lowercase).
 2. grpc_objects.py line 31: `dict(metadata).get(const.CORRELATION_ID_KEY)` does a case-sensitive lookup.
-3. gRPC metadata is case-sensitive; "x-correlation-id" ≠ "X-CORRELATION-ID".
+3. gRPC metadata is case-sensitive; "x-correlation-id" != "X-CORRELATION-ID".
 4. If a caller sends "X-CORRELATION-ID" (uppercase), the adapter will not find it and will generate a fresh ID.
 
 **Expected behavior:** gRPC convention is lowercase header names (matching HTTP/2 pseudo-headers). Uppercase is discouraged but valid.

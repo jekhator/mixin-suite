@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, dataclass, field
 from typing import Any
 
 import pytest
@@ -171,10 +171,17 @@ class TestFieldsOf:
         assert profile.fields_of(Sensitivity.PCI) == ()
         assert profile.fields_of(Sensitivity.SECRET) == ()
 
-    def test_preserves_field_order_in_return_tuple(self, mixed_type: type[Any]) -> None:
+    def test_preserves_field_order_in_return_tuple(self) -> None:
         """Field names in the returned tuple preserve declaration order."""
-        profile = SensitivityProfile.from_dataclass(mixed_type)
-        assert isinstance(profile.fields_of(Sensitivity.PII), tuple)
+
+        @dataclass(frozen=True, slots=True)
+        class TwoPhi:
+            first: str = field(metadata={"sensitivity": Sensitivity.PHI})
+            middle: str = field(default="")
+            last: str = field(metadata={"sensitivity": Sensitivity.PHI}, default="")
+
+        profile = SensitivityProfile.from_dataclass(TwoPhi)
+        assert profile.fields_of(Sensitivity.PHI) == ("first", "last")
 
 
 class TestFrozenProfile:
@@ -183,8 +190,8 @@ class TestFrozenProfile:
     def test_profile_is_frozen(self, mixed_type: type[Any]) -> None:
         """SensitivityProfile instances cannot be mutated."""
         profile = SensitivityProfile.from_dataclass(mixed_type)
-        with pytest.raises((FrozenInstanceError, AttributeError)):
-            object.__setattr__(profile, "id", "test")  # type: ignore[attr-defined]
+        with pytest.raises(FrozenInstanceError):
+            profile.classes = ()  # type: ignore[misc]
 
     def test_profile_is_hashable(self, mixed_type: type[Any]) -> None:
         """SensitivityProfile instances are hashable and can go in a set."""

@@ -23,13 +23,11 @@ class LoggingMixin:
 
     def _log_extra(self, extra: dict[str, Any]) -> dict[str, Any]:
         """Build the log extra: correlation_id + the caller's explicit kwargs."""
-        result: dict[str, Any] = {
+        return {
             const.CORRELATION_ID_KEY: _client.current_id()
             or const.UNSET_CORRELATION_ID,
+            **extra,
         }
-        if extra:
-            result.update(extra)
-        return result
 
     def log_debug(self, event: str, **extra: Any) -> None:
         """Log at DEBUG with auto-injected correlation + class context."""

@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from mixin_logging import clear_correlation_id, set_correlation_id
+from mixin_logging.adapters.asgi import asgi_objects as asgi_objs
 from mixin_logging.adapters.constants import websocket as const
 from mixin_logging.adapters.websocket import websocket_objects as objs
 
-Scope = dict[str, Any]
-Receive = Any
-Send = Any
-App = Any
+Scope = asgi_objs.Scope
+Receive = asgi_objs.Receive
+Send = asgi_objs.Send
+App = asgi_objs.App
 
 
 class CorrelationIdMiddleware:

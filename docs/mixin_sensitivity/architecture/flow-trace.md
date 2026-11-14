@@ -1,97 +1,87 @@
-# mixin_sensitivity Flow Trace
+# mixin-sensitivity Flow Trace
 
-## Architecture Overview
+This trace follows `mixin_sensitivity/repr/_objects.py` and `mixin_sensitivity/services/classify/` as shipped in 0.7.0.
 
-mixin_sensitivity/decorators/sensitive/sensitive_client.py  (+ classify, compliance)
-═══════════════════════════════════════════════════════════════════════════════════════
-Imports: dataclass, is_dataclass; SensitivityProfile, Sensitivity, ClassMakerAware
-┌─ [ENUM,StrEnum] Sensitivity ──────────┐  PHI = "phi" ; PII = "pii" ; PCI = "pci" ; SECRET = "secret"  └─...
-┌─ [PROTOCOL] ClassMakerAware ──────────┐  mask(value: str) -> str  ;  looks_sensitive(field_name: str) -> bool  └─...
-┌─ [DATACLASS,frozen,slots] SensitivityProfile ──────────┐  classes: tuple[(str, Sensitivity), ...] ; from_dataclass[cls_meth] ; is_empty[prop] ; sensitivity_of(name) ; has(kind) ; fields_of(kind)  └─...
-┌─ [DATACLASS,frozen,slots] SensitiveFieldSet ──────────┐  profile: SensitivityProfile ; from_dataclass[cls_meth] ; is_empty[prop] ; masked_repr(instance, policies) -> str  └─...
-┌─ [DATACLASS,frozen,slots] SensitiveDecorator ──────────┐  policies: tuple[(Sensitivity, ClassMakerAware), ...] ; __call__(target) ; _require_dataclass(target)⚠ ; _make_repr(field_set)  └─...
+## Class definition (adoption)
 
-## FLOW TRACE
+1. The subclass is declared `@dataclass(frozen=True, slots=True, repr=False)` and inherits `SensitiveRepr`.
+2. `repr=False` keeps the dataclass from generating a `__repr__`, so `SensitiveRepr.__repr__` is the one in effect.
+3. Fields that carry a sensitivity class declare `field(metadata={"sensitivity": Sensitivity.X})`.
 
-① CONSTRUCT  SensitiveDecorator(policies=()) or the default `sensitive` with empty policies
-      └─ sensitive = SensitiveDecorator(policies=())
-      ← Empty tuple: default masking uses DEFAULT_PLACEHOLDER="***"
+If `repr=False` is omitted, step 2 does not hold. The first construction calls `SensitiveRepr.__post_init__`, which sees that `type(self).__repr__` is not `SensitiveRepr.__repr__` and raises `SensitiveDeclarationError`.
 
-② DECORATE   @sensitive on a dataclass whose fields carry field(metadata={"sensitivity": Sensitivity.PHI/PII/PCI/SECRET}) ⚠ SENSITIVE
+## Construction
 
-   @sensitive
-   @dataclass(frozen=True)
-   class Patient: ──▶ __call__(target=Patient)
-      ├─ _require_dataclass(target) ──⚠─▶ is_dataclass(Patient) → True ✓ (if False: raise TypeError(ERR_SENSITIVE_TARGET_NOT_DATACLASS))
-      ├─ SensitiveFieldSet.from_dataclass(target)
-      │     └─ SensitivityProfile.from_dataclass(target)
-      │           └─ for field in fields(target):
-      │                 ├─ kind = field.metadata.get("sensitivity")
-      │                 │     ← Read ONCE from field.metadata dict
-      │                 ├─ if kind is not None: pairs.append((field.name, Sensitivity(kind)))
-      │                 ├─ Example: Patient.mrn has metadata={"sensitivity": "phi"}
-      │                 │     └─ kind="phi" ──▶ Sensitivity.PHI
-      │                 └─ Example: Patient.name has no sensitivity metadata
-      │                       └─ kind=None ──▶ skip
-      │           └─ return SensitivityProfile(classes=(("mrn", Sensitivity.PHI), ("ssn", Sensitivity.PII)))
-      ├─ field_set.is_empty → len(classes) > 0 → False (has tagged fields)
-      │     └─ Return early if is_empty=True (no fields tagged, no repr injection needed)
-      ├─ _make_repr(field_set) ──▶ Build closure binding policy_for=dict(self.policies)
-      │     └─ def masked_repr(instance: object) -> str:
-      │           return field_set.masked_repr(instance, policies=policy_for)
-      ├─ setattr(target, "__repr__", masked_repr) ← Replace class __repr__ with masked version
-      └─ return target (Patient now has custom __repr__)
+1. The dataclass `__init__` assigns the fields.
+2. `__post_init__` runs. For an adopter without its own `__post_init__`, this is `SensitiveRepr.__post_init__`, which performs the guard in step above.
 
-③ REPR   repr(patient_instance) ──▶ masked_repr(instance, policies=policy_for)
-      ├─ for field in fields(instance):
-      │     ├─ field.name="name", value="Ada Lovelace"
-      │     │     ├─ kind = profile.sensitivity_of("name")
-      │     │     │     └─ Loop through classes: ("mrn", PHI), ("ssn", PII) → name not found → None
-      │     │     └─ kind=None ──▶ parts.append("name='Ada Lovelace'")
-      │     ├─ field.name="mrn", value="MRN-12345"
-      │     │     ├─ kind = profile.sensitivity_of("mrn")
-      │     │     │     └─ Loop: ("mrn", PHI) matches ──▶ return Sensitivity.PHI
-      │     │     ├─ policy = policy_for.get(Sensitivity.PHI)  ← policy_for=dict((PHI, policy1), ...)
-      │     │     ├─ if policy is not None: mask via policy.mask(str(value))
-      │     │     └─ if policy is None: use DEFAULT_PLACEHOLDER="***"
-      │     │           └─ parts.append("mrn=***")
-      │     └─ field.name="ssn", value="123-45-6789"
-      │           ├─ kind = profile.sensitivity_of("ssn")
-      │           │     └─ Loop: ("ssn", PII) matches ──▶ return Sensitivity.PII
-      │           ├─ policy = policy_for.get(Sensitivity.PII)  ← not in policies tuple
-      │           └─ policy=None ──▶ parts.append("ssn=***")
-      └─ return "Patient(name='Ada Lovelace', mrn=***, ssn=***)"
+## repr(instance)
 
-④ NO-OP on untagged dataclass
+1. `SensitiveRepr.__repr__` runs. If the object is not a dataclass, it falls back to `object.__repr__`.
+2. For each field in declaration order, the metadata is read: `field_obj.metadata.get("sensitivity")`.
+   - Not None (any enum member or string marker): the value is shown as `***MASKED***`.
+   - None: `repr(getattr(self, name))` is shown.
+3. The parts are joined as `ClassName(name=value, ...)`.
 
-   @sensitive
-   @dataclass(frozen=True)
-   class Address: ──▶ __call__(target=Address)
-      ├─ _require_dataclass(Address) → True
-      ├─ SensitiveFieldSet.from_dataclass(target)
-      │     └─ SensitivityProfile.from_dataclass(target)
-      │           └─ for field in fields(Address):
-      │                 ├─ field.name="street", metadata={} → kind=None ──▶ skip
-      │                 └─ field.name="city", metadata={} → kind=None ──▶ skip
-      │           └─ return SensitivityProfile(classes=())
-      ├─ field_set.is_empty → len(classes)==0 → True
-      │     └─ return target EARLY (no repr injection)
-      └─ return target (unchanged, default repr used)
-           └─ repr(address) ──▶ Address(street='123 Main St', city='Boston')
+Field metadata is not changed by the masking, so `classify()` returns the same profile before and after a repr.
+
+## classify(target)
+
+1. `classify` is `SensitivityProfile.from_dataclass`. It takes the dataclass type.
+2. `dataclasses.fields(target)` is read; fields with a `"sensitivity"` metadata key are collected as `(name, Sensitivity(value))`.
+3. The result is a frozen `SensitivityProfile`. Its methods answer `is_empty`, `sensitivity_of(name)`, `has(kind)` and `fields_of(kind)`.
 
 ## REAL RUN OUTPUT
 
-Example output with @sensitive decorator on tagged and untagged dataclasses:
-```
-Patient repr: Patient(name='Ada Lovelace', mrn=***, ssn=***)
-Address repr: Address(street='123 Main St', city='Boston')
-CreditCard repr: CreditCard(holder_name='Ada Lovelace', card_number=***)
+Output of the example below, run with `uv run --all-extras python` on Python 3.14 against the 0.7.0 tree:
+
+```python
+from dataclasses import dataclass, field
+
+from mixin_sensitivity import (
+    Sensitivity,
+    SensitiveDeclarationError,
+    SensitiveRepr,
+    classify,
+)
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class Patient(SensitiveRepr):
+    name: str
+    ssn: str = field(metadata={"sensitivity": Sensitivity.PHI})
+    card: str = field(default="", metadata={"sensitivity": Sensitivity.PCI})
+    note: str = ""
+
+
+patient = Patient(name="Alice", ssn="123-45-6789", card="4111111111111111", note="follow-up")
+print(repr(patient))
+print(classify(Patient).classes)
+print(classify(Patient).fields_of(Sensitivity.PHI))
+print(classify(Patient).sensitivity_of("note"))
+
+
+@dataclass(frozen=True, slots=True)
+class Unguarded(SensitiveRepr):
+    ssn: str = field(default="", metadata={"sensitivity": Sensitivity.PII})
+
+
+try:
+    Unguarded(ssn="987-65-4321")
+except SensitiveDeclarationError as error:
+    print("SensitiveDeclarationError:", type(error).__name__)
 ```
 
-Key observations:
-- Decorator reads field.metadata["sensitivity"] exactly once during decoration (lazy binding at @decorator time)
-- No-op when no fields are tagged (is_empty check short-circuits repr injection)
-- Masked repr rendered via SensitiveFieldSet.masked_repr(), which loops all fields every time repr() is called
-- Policy dispatch is optional: if policies tuple is empty (default), all tagged fields → DEFAULT_PLACEHOLDER="***"
-- Non-tagged fields render their value unchanged (e.g., name='Ada Lovelace' not masked)
-- Closure binding in _make_repr ensures policy_for dict persists across repr() calls
+```
+Patient(name='Alice', ssn=***MASKED***, card=***MASKED***, note='follow-up')
+(('ssn', <Sensitivity.PHI: 'phi'>), ('card', <Sensitivity.PCI: 'pci'>))
+('ssn',)
+None
+SensitiveDeclarationError: SensitiveDeclarationError
+```
+
+## Invariants
+
+- No sensitive value is printed by `repr()`; the token `***MASKED***` replaces it.
+- Unmarked fields print exactly as `repr()` of the value.
+- A dataclass that bypasses `SensitiveRepr`'s repr fails at construction, not at log time.

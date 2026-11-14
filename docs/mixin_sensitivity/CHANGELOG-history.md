@@ -45,16 +45,16 @@ Package renamed from `pii-aware-mixin` to `sensitivity-mixin`. Decorator and API
 
 ### Changed
 
-- **Package name:** `pii-aware-mixin` → `sensitivity-mixin` (import: `sensitivity_mixin`)
-- **Decorator:** `@phi_aware` → `@sensitive` (works with broadened taxonomy)
-- **Metadata key:** `"phi"` → `"sensitivity"` with values: `"PHI"`, `"PII"`, `"PCI"`, `"SECRET"`
-- **Default placeholder:** `<phi:redacted>` → `***` (simpler, more readable)
+- **Package name:** `pii-aware-mixin` -> `sensitivity-mixin` (import: `sensitivity_mixin`)
+- **Decorator:** `@phi_aware` -> `@sensitive` (works with broadened taxonomy)
+- **Metadata key:** `"phi"` -> `"sensitivity"` with values: `"PHI"`, `"PII"`, `"PCI"`, `"SECRET"`
+- **Default placeholder:** `<phi:redacted>` -> `***` (simpler, more readable)
 - **API:** `SensitiveDecorator` accepts optional `policies` tuple for per-class masking customization
 
 ### Added
 
 - `@sensitive` decorator with optional policy wiring via `SensitiveDecorator(policies=...)`
-- `classify(instance)` → `SensitivityProfile`: introspect field-level sensitivity
+- `classify(instance)` -> `SensitivityProfile`: introspect field-level sensitivity
 - `Sensitivity` enum (PHI, PII, PCI, SECRET): taxonomy-driven classification
 - `SensitivityProfile` value object with methods: `has()`, `fields_of()`, `sensitivity_of()`, `is_empty`
 - `Compliance` enum (HIPAA, GDPR, PCI_DSS, NONE): governance regime labels for policies
@@ -96,12 +96,12 @@ API redesigned from mixin-inheritance to decorator-based. Consumers must migrate
 - `@phi_aware` decorator: injects PHI-masking `__repr__` on frozen dataclasses
 - `mask_for_logging(instance)` module-level helper: returns dict with PHI fields masked
 - `to_dict(instance)` module-level helper: alias for `dataclasses.asdict()` for consistency
-- Field metadata key renamed `"sensitive"` → `"phi"` (healthcare-aligned)
+- Field metadata key renamed `"sensitive"` -> `"phi"` (healthcare-aligned)
 - 26 comprehensive tests covering decorator, helpers, edge cases, integration
 
 ### Why
 
-Compatible with the canonical "no mixin inheritance on data DTOs" pattern established in downstream QHCG project (2026-05-09). 
+Compatible with the "no mixin inheritance on data DTOs" pattern adopted by a downstream project (2026-05-09). 
 
 v0.1.0 mixin-inheritance API (`class User(PiiAwareMixin, ReprMixin, ToDictMixin)`) caused R003 false-positives in dto-strict v0.2.x when consumers tried to adopt the "no mixin inheritance" rule. The new decorator API allows clean adoption:
 - No inheritance, no MRO issues
@@ -146,9 +146,9 @@ to_dict(user)           # module-level helper
 1. Remove mixin inheritance from class definition
 2. Add `@phi_aware` decorator above `@dataclass`
 3. Remove `repr=False` from `@dataclass` (no longer needed)
-4. Change `metadata={"sensitive": True}` → `metadata={"phi": True}`
-5. Replace `instance.mask_for_logging()` → `mask_for_logging(instance)`
-6. Replace `instance.to_dict()` → `to_dict(instance)`
+4. Change `metadata={"sensitive": True}` -> `metadata={"phi": True}`
+5. Replace `instance.mask_for_logging()` -> `mask_for_logging(instance)`
+6. Replace `instance.to_dict()` -> `to_dict(instance)`
 
 ## [0.1.0] - 2026-05-18
 
